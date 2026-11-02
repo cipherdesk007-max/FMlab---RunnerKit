@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """TouchPad 2 - mouse + tastiera fluttuante per LinuxRunner.
 Parla direttamente con X11 (XTEST): nessun processo esterno per tocco."""
-__version__ = "2.8.1"
+__version__ = "2.8.2"
 
 import glob
 import json
@@ -664,6 +664,13 @@ class App:
             pass
 
     # ---------- aggiornamenti ----------
+    @staticmethod
+    def _url_fresco():
+        """GitHub tiene in cache i file per ~5 minuti: un parametro diverso ogni volta la salta."""
+        if URL_VERSIONE.startswith("http"):
+            return f"{URL_VERSIONE}?t={int(time.time())}"
+        return URL_VERSIONE
+
     def _versione_locale(self):
         try:
             with open(VERSIONE_LOCALE) as f:
@@ -675,7 +682,7 @@ class App:
         """Ogni 6 ore chiede a GitHub la versione di RunnerKit (pochi byte, in sottofondo)."""
         if shutil.which("curl"):
             try:
-                self._vproc = subprocess.Popen(["curl", "-fsS", "--max-time", "15", URL_VERSIONE],
+                self._vproc = subprocess.Popen(["curl", "-fsS", "--max-time", "15", self._url_fresco()],
                                                stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True)
                 self.root.after(1000, self._aggiornamenti_attendi)
             except OSError:
@@ -705,7 +712,7 @@ class App:
             return self._aggiorna_avvia()
         self._avviso("Controllo aggiornamenti...", 3)
         try:
-            self._vchk = subprocess.Popen(["curl", "-fsS", "--max-time", "15", URL_VERSIONE],
+            self._vchk = subprocess.Popen(["curl", "-fsS", "--max-time", "15", self._url_fresco()],
                                           stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True)
         except OSError:
             return self._aggiorna_avvia()

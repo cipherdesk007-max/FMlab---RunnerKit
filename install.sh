@@ -4,6 +4,7 @@
 # Uso:  curl -fsSL https://raw.githubusercontent.com/cipherdesk007-max/mia/main/install.sh | sh
 set -e
 REPO="https://raw.githubusercontent.com/cipherdesk007-max/mia/main"
+T="${RK_T:-$(date +%s)}"   # parametro anti-cache: scarica sempre i file appena pubblicati
 SUDO=""
 [ "$(id -u)" -ne 0 ] && command -v sudo >/dev/null && SUDO="sudo"
 
@@ -13,19 +14,19 @@ $SUDO apt-get install -y python3-tk python3-xlib xcompmgr xdotool shared-mime-in
   $SUDO apt-get update && $SUDO apt-get install -y python3-tk python3-xlib xcompmgr xdotool shared-mime-info desktop-file-utils bash-completion mesa-utils x11-utils; }
 
 echo ">> Scarico TouchPad..."
-curl -fsSL "$REPO/touchpad/touchpad.py" -o /tmp/touchpad.py
+curl -fsSL "$REPO/touchpad/touchpad.py?t=$T" -o /tmp/touchpad.py
 python3 -m py_compile /tmp/touchpad.py
 $SUDO install -m 755 /tmp/touchpad.py /usr/local/bin/touchpad
 
 echo ">> Scarico UnaVolta..."
-curl -fsSL "$REPO/unavolta/unavolta" -o /tmp/unavolta
+curl -fsSL "$REPO/unavolta/unavolta?t=$T" -o /tmp/unavolta
 sh -n /tmp/unavolta
 $SUDO install -m 755 /tmp/unavolta /usr/local/bin/unavolta
 
 echo ">> Scarico RunnerBoost e Terminale..."
-curl -fsSL "$REPO/runnerboost/runnerboost" -o /tmp/runnerboost
-curl -fsSL "$REPO/terminale/terminale.sh" -o /tmp/terminale.sh
-curl -fsSL "$REPO/terminale/rkterminale" -o /tmp/rkterminale
+curl -fsSL "$REPO/runnerboost/runnerboost?t=$T" -o /tmp/runnerboost
+curl -fsSL "$REPO/terminale/terminale.sh?t=$T" -o /tmp/terminale.sh
+curl -fsSL "$REPO/terminale/rkterminale?t=$T" -o /tmp/rkterminale
 sh -n /tmp/runnerboost && bash -n /tmp/terminale.sh && sh -n /tmp/rkterminale
 $SUDO install -m 755 /tmp/runnerboost /usr/local/bin/runnerboost
 $SUDO install -m 755 /tmp/rkterminale /usr/local/bin/rkterminale
@@ -34,11 +35,11 @@ $SUDO install -m 644 /tmp/terminale.sh /usr/local/share/runnerkit/terminale.sh
 
 echo ">> Scarico Collaudo, Backup, Italiano, Aggiorna..."
 for t in rkcollaudo rkbackup rkitaliano rkaggiorna; do
-  curl -fsSL "$REPO/strumenti/$t" -o "/tmp/$t" && bash -n "/tmp/$t" && $SUDO install -m 755 "/tmp/$t" "/usr/local/bin/$t"
+  curl -fsSL "$REPO/strumenti/$t?t=$T" -o "/tmp/$t" && bash -n "/tmp/$t" && $SUDO install -m 755 "/tmp/$t" "/usr/local/bin/$t"
 done
 
 echo ">> Scarico Pulizia..."
-curl -fsSL "$REPO/pulizia/pulizia" -o /tmp/pulizia
+curl -fsSL "$REPO/pulizia/pulizia?t=$T" -o /tmp/pulizia
 sh -n /tmp/pulizia
 $SUDO install -m 755 /tmp/pulizia /usr/local/bin/pulizia
 
@@ -102,7 +103,7 @@ done
 
 # versione del kit (TouchPad la confronta con GitHub e accende il pallino ⟳ se ce n'e' una nuova)
 $SUDO mkdir -p /usr/local/share/runnerkit
-curl -fsSL "$REPO/VERSIONE" 2>/dev/null | $SUDO tee /usr/local/share/runnerkit/versione >/dev/null
+curl -fsSL "$REPO/VERSIONE?t=$T" 2>/dev/null | $SUDO tee /usr/local/share/runnerkit/versione >/dev/null
 
 # TouchPad gia' aperto: lo riavvio, cosi' la versione nuova e' subito attiva
 if pgrep -f /usr/local/bin/touchpad >/dev/null 2>&1; then

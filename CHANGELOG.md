@@ -3,6 +3,11 @@
 Formato: [versione] - data. Le versioni seguono MAJOR.MINOR.PATCH
 (MAJOR = cambia il modo d'uso, MINOR = funzioni nuove, PATCH = correzioni).
 
+## RunnerKit 2026.11.02-8 - niente più versioni vecchie dalla cache
+- GitHub tiene in cache i file per circa 5 minuti: ⟳ diceva "già aggiornato" subito dopo una
+  pubblicazione. Ora TouchPad 2.8.2, `rkaggiorna` e l'installatore aggiungono un parametro che salta
+  la cache e scaricano sempre i file appena pubblicati.
+
 ## RunnerKit 2026.11.02-7 - barra fissa corretta
 - **Terminale 1.3.1**: la barra in cima non chiede più la posizione del cursore al terminale (il Terminal
   dell'app non rispondeva e la barra non compariva); `clear` e Ctrl+L la ridisegnano subito; all'apertura
