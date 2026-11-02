@@ -3,6 +3,13 @@
 Formato: [versione] - data. Le versioni seguono MAJOR.MINOR.PATCH
 (MAJOR = cambia il modo d'uso, MINOR = funzioni nuove, PATCH = correzioni).
 
+## RunnerBoost [1.2.0] - 2026-11-02
+- `runnerboost --gpu` legge le statistiche di LinuxRunner: quanti disegni sono andati su Metal e quanti
+  in software, con la percentuale sulla GPU (prova reale che il chip grafico lavora).
+- Nuovo `runnerboost --gpu-stats`: tabella per programma (FPS, disegni Metal/software, % GPU).
+- Spiegato perché il renderer si chiama "llvmpipe" anche con Metal attivo.
+- Primo risultato sul 15 Pro Max (desktop 960×540, Metal resident): glxgears 68,7 FPS.
+
 ## RunnerKit - aggiornamento GPU 2026-11-02 (LinuxRunner 1.1.0)
 Studiato il codice di LinuxRunner 1.1.0 (gpu-env.sh, desktop-env.sh) per leggere lo stato vero della GPU.
 - **RunnerBoost 1.1.0**: sezione "Grafica (GPU del telefono)" con dispositivo Metal, GPU virgl e stato

@@ -8,7 +8,7 @@ Tutto quello che serve installare sul Debian di LinuxRunner sta qui, con un coma
 | [TouchPad](#touchpad) | 2.6.0 | Mouse, tasto destro e tastiera italiana touch, fluttuanti sul desktop |
 | [UnaVolta](#unavolta) | 1.1.0 | Tocchi ripetuti su un'icona aprono il programma una volta sola; se è già aperto lo porta davanti |
 | [Pulizia](#pulizia) | 1.0.0 | Agente di pulizia del disco: report di cosa occupa spazio, pulizia sicura, automatica a settimana |
-| [RunnerBoost](#runnerboost) | 1.1.0 | Diagnosi della velocità, test ripetibile con storico, profili veloce / bilanciato / normale |
+| [RunnerBoost](#runnerboost) | 1.2.0 | Diagnosi della velocità, test ripetibile con storico, profili veloce / bilanciato / normale |
 | [Terminale](#terminale) | 1.1.0 | Prompt a colori con ramo git, esito e durata dei comandi, statistiche, monitor dal vivo, scorciatoie |
 | *prossimi strumenti* | | |
 
@@ -112,6 +112,7 @@ il telefono non si rompe, ma i numeri peggiorano).
 | `runnerboost --profilo veloce` | Niente trasparenza, niente animazioni GTK, Firefox più leggero |
 | `runnerboost --profilo bilanciato` | Come veloce ma tiene la trasparenza |
 | `runnerboost --profilo normale` | Rimette tutto com'era |
+| `runnerboost --gpu-stats` | Per ogni programma: FPS, disegni su Metal e in software, % sulla GPU |
 | `runnerboost --report` | Diagnosi + storico in un file nella cartella Shared, da mandare |
 
 **Come usa la GPU LinuxRunner 1.1.0** (letto dal suo codice): i programmi aperti dal desktop

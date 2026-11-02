@@ -7,8 +7,9 @@
 #   runnerboost --profilo bilanciato  come veloce ma tiene la trasparenza (compositing)
 #   runnerboost --profilo normale   rimette tutto come prima
 #   runnerboost --gpu               prova la GPU: renderer attivo e fotogrammi al secondo (Metal vs software)
+#   runnerboost --gpu-stats         quanti disegni ogni programma ha fatto su Metal e quanti in software
 #   runnerboost --report            diagnosi + ultimo test in un file da mandare (cartella Shared)
-VERSIONE="1.1.0"
+VERSIONE="1.2.0"
 H="${RB_HOME:-$HOME}"
 CONF="$H/.config/runnerboost"
 STORICO="$CONF/storico.csv"
@@ -92,6 +93,18 @@ gpu_stato() {
   fi
 }
 
+gpu_stats() {  # legge i file <pid>.txt che LinuxRunner scrive per ogni programma sulla GPU
+  d="${LR_MESA_METAL_STATS_DIR:-}"
+  if [ -z "$d" ] || [ ! -d "$d" ]; then echo "  Nessuna statistica: lancia dal terminale del desktop con Renderer = GPU-Resident Metal."; return 1; fi
+  files=$(ls -t "$d"/*.txt 2>/dev/null | head -${1:-15})
+  [ -z "$files" ] && { echo "  Ancora nessun programma ha usato OpenGL in questa sessione."; return 0; }
+  printf '  %-16s %7s %10s %10s %7s\n' "PROGRAMMA" "FPS" "SU METAL" "SOFTWARE" "% GPU"
+  for f in $files; do
+    awk -F= '{v[$1]=$2} END{m=v["metal_draws"]+0; s=v["mesa_draws"]+0; t=m+s; p=(t?m*100/t:0);
+      printf "  %-16s %7s %10d %10d %6.0f%%\n", substr(v["command"],1,16), v["fps"], m, s, p}' "$f"
+  done
+}
+
 prova_gpu() {
   printf '%sRunnerBoost — prova GPU%s\n' "$(c '1;35')" "$(c 0)"
   [ -n "$DISPLAY" ] || { echo "  Lancia dal terminale del desktop (pallino >_), non dal Terminal dell'app."; return 1; }
@@ -107,7 +120,19 @@ prova_gpu() {
       printf '  %s→ %s fotogrammi al secondo%s\n' "$(c 1)" "$fps" "$(c 0)"
       [ -f "$STORICO" ] || echo "data;etichetta;python;avvio;gzip;sha256;sort;totale" > "$STORICO"
       echo "$(date '+%Y-%m-%d %H:%M');GPU glxgears ${LR_GUI_GPU_ACTIVE:-?};;;;;;fps=$fps" >> "$STORICO"
-      echo "  Confronta: prova con Graphics > Renderer su Software e poi su Metal (riavvio dell'app in mezzo)."
+      sleep 1
+      st=$(ls -t "${LR_MESA_METAL_STATS_DIR:-/nonexistent}"/*.txt 2>/dev/null | head -1)
+      if [ -n "$st" ]; then
+        m=$(awk -F= '$1=="metal_draws"{print $2}' "$st"); sw=$(awk -F= '$1=="mesa_draws"{print $2}' "$st")
+        tot=$(( ${m:-0} + ${sw:-0} ))
+        if [ "$tot" -gt 0 ]; then
+          pc=$(( ${m:-0} * 100 / tot ))
+          printf '  disegni: %s su Metal, %s in software → %s%%%s sulla GPU%s\n' "${m:-0}" "${sw:-0}" "$pc" "$(c 1)" "$(c 0)"
+          [ "$pc" -ge 50 ] && ok "la GPU del telefono sta lavorando davvero" || info "la maggior parte dei disegni resta in software"
+        fi
+      fi
+      echo "  Nota: il nome 'llvmpipe' e' normale anche con Metal: LinuxRunner si aggancia sopra Mesa."
+      echo "  Confronta: Graphics > Renderer su Software, riavvia l'app, rifai la prova; poi rimetti Metal."
     else
       echo "  glxgears non ha prodotto misure."
     fi
@@ -213,6 +238,7 @@ case "$1" in
   --storico) column -t -s';' "$STORICO" 2>/dev/null || cat "$STORICO" 2>/dev/null || echo "nessun test ancora: runnerboost --test" ;;
   --profilo) profilo "$2" ;;
   --gpu) prova_gpu ;;
+  --gpu-stats) printf '%sRunnerBoost — statistiche GPU per programma%s\n' "$(c '1;35')" "$(c 0)"; gpu_stats 20 ;;
   --report)
     out="$(dove)/runnerboost-report-$(date +%Y%m%d-%H%M).txt"
     { diagnosi; echo; echo "--- STORICO TEST ---"; cat "$STORICO" 2>/dev/null; } | sed 's/\x1b\[[0-9;]*m//g' > "$out"

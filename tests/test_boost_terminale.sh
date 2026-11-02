@@ -10,7 +10,9 @@ RB="$DIR/runnerboost/runnerboost"
 o=$("$RB"); printf '%s\n' "$o" | grep -q "Consigli" || { printf '%s\n' "$o"; exit 1; }
 printf '%s\n' "$o" | grep -q "Grafica (GPU del telefono)" || { echo "manca sezione GPU"; exit 1; }
 LR_GUI_GPU_ACTIVE=mesa-metal-resident "$RB" | grep -q "disegnano sulla GPU" || { echo "stato GPU non letto"; exit 1; }
-echo "ok: diagnosi (con stato GPU)"
+SD=$(mktemp -d); printf 'pid=1\ncommand=glxgears\nfps=60.0\nmetal_draws=900\nmesa_draws=100\n' > "$SD/1.txt"
+LR_MESA_METAL_STATS_DIR="$SD" "$RB" --gpu-stats | grep -q "glxgears.*900.*100.*90%" || { echo "statistiche GPU non lette"; LR_MESA_METAL_STATS_DIR="$SD" "$RB" --gpu-stats; exit 1; }
+echo "ok: diagnosi (con stato GPU) + statistiche"
 o=$("$RB" --test "prima"); printf '%s\n' "$o" | grep -q "TOTALE" || { echo "FALLITO test prima:"; printf '%s\n' "$o"; exit 1; }
 o=$("$RB" --test "dopo"); printf '%s\n' "$o" | grep -q "rispetto a" || { echo "FALLITO test dopo:"; printf '%s\n' "$o"; exit 1; }
 [ "$(wc -l < "$RB_HOME/.config/runnerboost/storico.csv")" = 3 ]
