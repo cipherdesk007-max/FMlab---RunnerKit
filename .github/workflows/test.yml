@@ -23,7 +23,7 @@ jobs:
           sh -n install.sh
           sh -n unavolta/unavolta
           sh -n pulizia/pulizia
-          for f in strumenti/*; do head -1 "$f" | grep -q bash && bash -n "$f" || sh -n "$f"; done
+          for f in strumenti/*; do case "$(head -1 "$f")" in *python*) /usr/bin/python3 -m py_compile "$f";; *bash*) bash -n "$f";; *) sh -n "$f";; esac; done
           sh -n runnerboost/runnerboost
           bash -n terminale/terminale.sh
       - name: Test RunnerBoost + Terminale
@@ -40,6 +40,8 @@ jobs:
         run: sh tests/test_unavolta.sh
       - name: Test motore X11
         run: xvfb-run -a -s "-screen 0 1280x720x24" /usr/bin/python3 tests/test_x11.py
+      - name: Test Centro RunnerKit + screenshot
+        run: xvfb-run -a -s "-screen 0 960x540x24" /usr/bin/python3 tests/test_centro.py
       - name: Test finestra + screenshot
         run: xvfb-run -a -s "-screen 0 1280x720x24" /usr/bin/python3 tests/test_gui.py
       - name: Salva screenshot

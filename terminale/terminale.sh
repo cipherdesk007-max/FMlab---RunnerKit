@@ -183,6 +183,7 @@ rk() {  # comando unico di RunnerKit: rk, rk aggiorna, rk versioni, rk gpu, ...
     pulisci) pulizia --sicura ;;
     log) unavolta --log; echo; tail -20 ~/.touchpad.log 2>/dev/null ;;
     collaudo) rkcollaudo ;;
+    centro) (rkcentro "${2:-sistema}" >/dev/null 2>&1 &) ;;
     backup) shift; rkbackup "$@" ;;
     ripristina) shift; rkbackup --ripristina "$@" ;;
     italiano) if [[ ${2:-} == off ]]; then rkitaliano --off; else rkitaliano --on; fi ;;
@@ -209,6 +210,7 @@ rk() {  # comando unico di RunnerKit: rk, rk aggiorna, rk versioni, rk gpu, ...
   aiphone FILE         copia verso l'app File dell'iPhone · dalliphone apre la cartella
   aggiorna             aggiorna Debian · installa/cerca/rimuovi PACCHETTO
   estrai FILE · mkcd   estrae qualsiasi archivio · crea ed entra in una cartella
+  rk centro [pulizia|processi]  finestra con sistema, pulizia e processi
   rk collaudo          prova tutto sul telefono e salva un report da mandare
   rk backup · rk ripristina   salva/ripristina impostazioni e file (cartella dell'app File)
   rk copia TESTO · rk incolla  appunti condivisi con l'iPhone (anche: comando | rk copia)

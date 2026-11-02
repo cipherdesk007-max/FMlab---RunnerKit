@@ -26,7 +26,7 @@ chiudi() {  # $1 secondi: conto alla rovescia, Invio chiude subito (solo nella f
 printf '%s== Aggiornamento RunnerKit ==%s\n' "$(v '1;35')" "$(v 0)"
 locale=$(cat "$LOCALE_F" 2>/dev/null)
 T=$(date +%s)   # salta la cache di GitHub (~5 minuti)
-remota=$(curl -fsS --max-time 15 "$REPO/VERSIONE?t=$T" 2>/dev/null | tr -d '[:space:]')
+remota=$(curl -fsSL --max-time 15 "$REPO/VERSIONE?t=$T" 2>/dev/null | tr -d '[:space:]')
 if [ -z "$remota" ]; then
   printf '  %s✘ Nessuna connessione con GitHub: riprova piu'"'"' tardi.%s\n' "$(v 31)" "$(v 0)"
   chiudi 8; exit 1
@@ -44,7 +44,7 @@ if curl -fsSL "$REPO/install.sh?t=$T" | RK_T=$T sh; then
   echo
   printf '  %s✔ Aggiornato a %s%s\n' "$(v '1;32')" "$remota" "$(v 0)"
   # le novita': prima voce del registro delle modifiche
-  novita=$(curl -fsS --max-time 15 "$REPO/CHANGELOG.md?t=$T" 2>/dev/null | awk '/^## /{n++} n==1' | head -14)
+  novita=$(curl -fsSL --max-time 15 "$REPO/CHANGELOG.md?t=$T" 2>/dev/null | awk '/^## /{n++} n==1' | head -14)
   if [ -n "$novita" ]; then echo; printf '%sNovita'"'"':%s\n' "$(v 1)" "$(v 0)"; echo "$novita" | sed 's/^/  /'; fi
   echo
   echo "  I terminali gia' aperti prendono la versione nuova con: exec bash"

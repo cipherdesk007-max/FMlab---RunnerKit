@@ -33,9 +33,11 @@ $SUDO install -m 755 /tmp/rkterminale /usr/local/bin/rkterminale
 $SUDO mkdir -p /usr/local/share/runnerkit
 $SUDO install -m 644 /tmp/terminale.sh /usr/local/share/runnerkit/terminale.sh
 
-echo ">> Scarico Collaudo, Backup, Italiano, Aggiorna..."
-for t in rkcollaudo rkbackup rkitaliano rkaggiorna; do
-  curl -fsSL "$REPO/strumenti/$t?t=$T" -o "/tmp/$t" && bash -n "/tmp/$t" && $SUDO install -m 755 "/tmp/$t" "/usr/local/bin/$t"
+echo ">> Scarico Centro, Collaudo, Backup, Italiano, Aggiorna..."
+for t in rkcollaudo rkbackup rkitaliano rkaggiorna rkcentro; do
+  curl -fsSL "$REPO/strumenti/$t?t=$T" -o "/tmp/$t" || continue
+  case "$(head -1 "/tmp/$t")" in *python*) python3 -m py_compile "/tmp/$t" ;; *) bash -n "/tmp/$t" ;; esac &&
+    $SUDO install -m 755 "/tmp/$t" "/usr/local/bin/$t"
 done
 
 echo ">> Scarico Pulizia..."
@@ -87,6 +89,20 @@ command -v update-desktop-database >/dev/null && update-desktop-database "$HOME/
 # Terminale RunnerKit (si spegne con: rkterminale --off)
 [ "${RUNNERKIT_NO_TERMINALE:-0}" = "1" ] || /usr/local/bin/rkterminale --on >/dev/null
 
+# icona "RunnerKit Centro" (sistema, pulizia, processi)
+cat > "$HOME/.local/share/applications/runnerkit-centro.desktop" <<'EOF'
+[Desktop Entry]
+Type=Application
+Name=RunnerKit Centro
+Comment=Sistema, pulizia del disco e processi
+Exec=rkcentro
+Icon=utilities-system-monitor
+Categories=Utility;System;
+EOF
+for D in "$HOME/Desktop" "$HOME/Scrivania"; do
+  [ -d "$D" ] && cp "$HOME/.local/share/applications/runnerkit-centro.desktop" "$D/" && chmod +x "$D/runnerkit-centro.desktop"
+done
+
 # icona "Aggiorna RunnerKit" (desktop e menu)
 cat > "$HOME/.local/share/applications/runnerkit-aggiorna.desktop" <<'EOF'
 [Desktop Entry]
@@ -121,6 +137,7 @@ echo "   UnaVolta    $(/usr/local/bin/unavolta --versione | cut -d' ' -f2)"
 echo "   Pulizia     $(/usr/local/bin/pulizia --versione | cut -d' ' -f2)"
 echo "   RunnerBoost $(/usr/local/bin/runnerboost --versione | cut -d' ' -f2)"
 echo "   Terminale   $(/usr/local/bin/rkterminale --versione)"
+echo "   Centro      $(grep -m1 '__version__' /usr/local/bin/rkcentro 2>/dev/null | cut -d'"' -f2)  (icona sul desktop, pallini ♻ e ⚡)"
 echo "   Collaudo, Backup, Italiano: rk collaudo · rk backup · rk italiano"
 echo ""
 echo "   Comandi: scrivi 'rk' in un terminale nuovo."

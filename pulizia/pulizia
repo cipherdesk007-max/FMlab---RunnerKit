@@ -5,8 +5,11 @@
 #   pulizia --prova      come --sicura ma senza cancellare: mostra cosa farebbe
 #   pulizia --auto-on    pulizia sicura automatica all'avvio del desktop, max 1 volta a settimana
 #   pulizia --auto-off   spegne quella automatica
+#   pulizia --json       dimensioni per categoria (nome|descrizione|KB), usato dal Centro RunnerKit
+#   pulizia --sicura --solo apt,cache   pulisce solo le categorie indicate
+#   pulizia --autoremove toglie i pacchetti Debian non piu' necessari
 # I file personali (documenti, Desktop, Shared, progetti) non vengono MAI cancellati.
-VERSIONE="1.0.0"
+VERSIONE="1.1.0"
 R="${PULIZIA_ROOT:-}"          # prefisso per i test
 H="${PULIZIA_HOME:-$HOME}"
 STATO="$H/.config/pulizia"
@@ -42,6 +45,7 @@ pulisci() {  # $1 = prova|vero
   modo="$1"; prima=$(spazio_libero); tot=0
   echo "== Pulizia sicura ($( [ "$modo" = prova ] && echo 'PROVA, non cancello niente' || echo 'in corso'))"
   sicure | while IFS='|' read -r nome desc percorsi; do
+    if [ -n "$SOLO" ]; then case ",$SOLO," in *",$nome,"*) ;; *) continue;; esac; fi
     lista=$(espandi "$percorsi")
     [ -z "$lista" ] && { printf '  %-8s %-48s %s\n' "$nome" "$desc" "vuoto"; continue; }
     k=$(echo "$lista" | tr '\n' '\0' | xargs -0 du -sk 2>/dev/null | awk '{s+=$1} END{print s+0}')
@@ -49,7 +53,7 @@ pulisci() {  # $1 = prova|vero
     [ "$modo" = vero ] && echo "$lista" | tr '\n' '\0' | xargs -0 $SUDO rm -rf 2>/dev/null
   done
   if [ "$modo" = vero ]; then
-    $SUDO apt-get clean >/dev/null 2>&1
+    case ",${SOLO:-apt}," in *",apt,"*) $SUDO apt-get clean >/dev/null 2>&1;; esac
     dopo=$(spazio_libero)
     lib=$(( ${dopo:-0} - ${prima:-0} )); [ "$lib" -lt 0 ] && lib=0
     echo "== Liberati circa $(umano "$lib"). Spazio libero ora: $(umano "${dopo:-0}")"
@@ -103,7 +107,23 @@ dove_report() {  # cartella condivisa con l'app File dell'iPhone, se c'e'
   echo "$H"
 }
 
+json() {  # nome|descrizione|KB per ogni categoria sicura + pacchetti inutili
+  sicure | while IFS='|' read -r nome desc percorsi; do
+    lista=$(espandi "$percorsi")
+    k=0; [ -n "$lista" ] && k=$(echo "$lista" | tr '\n' '\0' | xargs -0 du -sk 2>/dev/null | awk '{s+=$1} END{print s+0}')
+    echo "$nome|$desc|$k"
+  done
+  ar=$(apt-get -s autoremove 2>/dev/null | awk '/^Remv/ {print $2}')
+  k=0; [ -n "$ar" ] && k=$(dpkg-query -Wf '${Package} ${Installed-Size}\n' $ar 2>/dev/null | awk '{s+=$2} END{print s+0}')
+  echo "autoremove|Pacchetti Debian non piu' necessari ($(echo "$ar" | sed '/^$/d' | wc -l))|$k"
+}
+
+SOLO=""
+for a in "$@"; do case "$prev" in --solo) SOLO="$a";; esac; prev="$a"; done
+
 case "$1" in
+  --json) json ;;
+  --autoremove) $SUDO apt-get -y autoremove ;;
   --versione) echo "Pulizia $VERSIONE" ;;
   --prova) pulisci prova ;;
   --sicura) pulisci vero ;;

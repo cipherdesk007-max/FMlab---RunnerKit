@@ -3,6 +3,18 @@
 Formato: [versione] - data. Le versioni seguono MAJOR.MINOR.PATCH
 (MAJOR = cambia il modo d'uso, MINOR = funzioni nuove, PATCH = correzioni).
 
+## RunnerKit 2026.11.02-9 - Centro RunnerKit
+- **Nuovo Centro RunnerKit** (`rkcentro` 1.0.0, icona sul desktop, pallini ♻ e ⚡, `rk centro`):
+  - *Sistema*: indicatori circolari RAM/processore/disco, grafico degli ultimi 3 minuti, swap, carico,
+    uptime, processi, GPU, JIT; tutto letto da /proc senza lanciare programmi, solo la scheda visibile.
+  - *Pulizia*: categorie con dimensione e barra, scelta con caselle, pacchetti inutili "avanzati" non
+    scelti di default, pulizia settimanale on/off, report completo.
+  - *Processi*: i più pesanti per RAM e CPU, Chiudi poi Forza; processi di sistema protetti.
+- **Pulizia 1.1.0**: `--json`, `--solo`, `--autoremove`.
+- **TouchPad 2.9.0**: ♻ apre la Pulizia del Centro, ⚡ il Sistema.
+- Aggiornamenti: curl segue i reindirizzamenti (pronto per il cambio di nome del repository).
+- README rifatto con le foto dal telefono e i ringraziamenti a LinuxRunner e iSH.
+
 ## RunnerKit 2026.11.02-8 - niente più versioni vecchie dalla cache
 - GitHub tiene in cache i file per circa 5 minuti: ⟳ diceva "già aggiornato" subito dopo una
   pubblicazione. Ora TouchPad 2.8.2, `rkaggiorna` e l'installatore aggiungono un parametro che salta

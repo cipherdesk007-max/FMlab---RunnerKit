@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """TouchPad 2 - mouse + tastiera fluttuante per LinuxRunner.
 Parla direttamente con X11 (XTEST): nessun processo esterno per tocco."""
-__version__ = "2.8.2"
+__version__ = "2.9.0"
 
 import glob
 import json
@@ -682,7 +682,7 @@ class App:
         """Ogni 6 ore chiede a GitHub la versione di RunnerKit (pochi byte, in sottofondo)."""
         if shutil.which("curl"):
             try:
-                self._vproc = subprocess.Popen(["curl", "-fsS", "--max-time", "15", self._url_fresco()],
+                self._vproc = subprocess.Popen(["curl", "-fsSL", "--max-time", "15", self._url_fresco()],
                                                stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True)
                 self.root.after(1000, self._aggiornamenti_attendi)
             except OSError:
@@ -712,7 +712,7 @@ class App:
             return self._aggiorna_avvia()
         self._avviso("Controllo aggiornamenti...", 3)
         try:
-            self._vchk = subprocess.Popen(["curl", "-fsS", "--max-time", "15", self._url_fresco()],
+            self._vchk = subprocess.Popen(["curl", "-fsSL", "--max-time", "15", self._url_fresco()],
                                           stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True)
         except OSError:
             return self._aggiorna_avvia()
@@ -962,7 +962,8 @@ class App:
     def _b_up(self, e, act):
         if self._bmoved <= 8:  # tocco
             {"apri": self.toggle_mini, "chiudi": self.chiudi_finestra,
-             "pulizia": self.pulizia_rapida, "boost": lambda: self._in_terminale("runnerboost"),
+             "pulizia": lambda: self._centro("pulizia", self.pulizia_rapida),
+             "boost": lambda: self._centro("sistema", lambda: self._in_terminale("runnerboost")),
              "term": lambda: self._in_terminale(None), "aggiorna": self.aggiorna}[act]()
             return
         S, n = self.S, len(self.DOCK)  # trascinata: si aggancia al lato piu' vicino
@@ -973,6 +974,13 @@ class App:
         self.save()
 
     # ---------- azioni dei pallini ----------
+    def _centro(self, scheda, ripiego):
+        """♻ e ⚡ aprono il Centro RunnerKit (pulizia / sistema); se manca, il comportamento di prima."""
+        c = shutil.which("rkcentro")
+        if not c:
+            return ripiego()
+        subprocess.Popen([c, scheda], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                         start_new_session=True)
     def _toast(self, testo, secondi=4):
         """Messaggio breve accanto alla colonna di pallini."""
         t = tk.Toplevel(self.root)

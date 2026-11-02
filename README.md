@@ -1,186 +1,159 @@
 # RunnerKit 📱🐧
 
-**Il kit per usare Linux sull'iPhone con LinuxRunner.**
-Tutto quello che serve installare sul Debian di LinuxRunner sta qui, con un comando solo.
+**Il kit tutto-in-uno per usare Linux sull'iPhone con [LinuxRunner](https://github.com/mxhm11cr/LinuxRunner).**
+Tocco, tastiera, pulizia, velocità, backup e aggiornamenti per il desktop Debian di LinuxRunner.
+Si installa con un comando e poi si aggiorna con un tocco.
 
-| Strumento | Versione | A cosa serve |
-|---|---|---|
-| [TouchPad](#touchpad) | 2.8.2 | Mouse, tasto destro e tastiera italiana touch, fluttuanti sul desktop |
-| [UnaVolta](#unavolta) | 1.2.0 | Tocchi ripetuti su un'icona aprono il programma una volta sola; se è già aperto lo porta davanti |
-| [Pulizia](#pulizia) | 1.0.0 | Agente di pulizia del disco: report di cosa occupa spazio, pulizia sicura, automatica a settimana |
-| [RunnerBoost](#runnerboost) | 1.2.0 | Diagnosi della velocità, test ripetibile con storico, profili veloce / bilanciato / normale |
-| [Terminale](#terminale) | 1.3.1 | Prompt a colori con ramo git, esito e durata dei comandi, statistiche, monitor dal vivo, scorciatoie |
-| [Collaudo](#collaudo-backup-italiano-appunti) | 1.0.0 | `rk collaudo`: prova tutto sul telefono e salva un report |
-| [Backup](#collaudo-backup-italiano-appunti) | 1.0.0 | `rk backup` / `rk ripristina`: impostazioni e file nella cartella dell'app File |
-| [Italiano](#collaudo-backup-italiano-appunti) | 1.0.0 | `rk italiano`: Linux, programmi e Firefox in italiano |
-| *prossimi strumenti* | | |
+<p align="center">
+  <img src="screenshots/telefono/touchpad-tasti.png" width="49%" alt="TouchPad, pagina Tasti">
+  <img src="screenshots/telefono/pallini.png" width="49%" alt="Colonna di pallini">
+</p>
 
-> Pensato per i limiti di LinuxRunner: niente kernel né compositing, CPU emulata.
-> Per questo gli strumenti evitano processi esterni e grafica pesante.
+## Installazione
 
-## TouchPad
-
-Pulsantiera fluttuante e semitrasparente con **mini touchpad**, **tasto destro** e
-**tastiera italiana completa**, pensata per usare il desktop Linux col dito.
-
-![TouchPad v1](screenshots/v1.0-touchpad.png)
-
-### Installare o aggiornare
-
-Nel terminale **del desktop** (xterm):
+Nel terminale di Debian (in LinuxRunner):
 
 ```sh
 apt install -y curl && curl -fsSL https://raw.githubusercontent.com/cipherdesk007-max/mia/main/install.sh | sh
 ```
 
-**Aggiornare**: pallino **⟳** di TouchPad (arancione = novità disponibile), icona **Aggiorna RunnerKit**
-sul desktop, pulsante in ⚙, oppure `rk aggiorna`. Il comando qui sopra serve solo la prima volta.
+Serve **solo la prima volta**. Poi si aggiorna da solo, senza comandi:
+- pallino **⟳** di TouchPad, che **diventa arancione** quando c'è una novità (controllo ogni 6 ore);
+- icona **Aggiorna RunnerKit** sul desktop;
+- `rk aggiorna` nel terminale.
 
-Poi aprilo dall'**icona sul desktop**, da **Applications → TouchPad** oppure scrivendo `touchpad` in qualsiasi terminale (anche il Terminal dell'app: si apre comunque sul desktop). Per aggiornare rilancia lo stesso comando.
+Provato su **iPhone 15 Pro Max, iOS 27.2, LinuxRunner 1.1.0 (build 900), Debian 13**, con desktop
+LinuxRunner (Openbox) a 960×540 e GPU Metal attiva.
 
-### Come si usa
+## Gli strumenti
+
+| Strumento | Cosa fa |
+|---|---|
+| [**TouchPad**](#touchpad) | Mouse con mirino, tasto destro, tastiera italiana, tasti speciali e colonna di pallini sul lato |
+| [**Centro**](#centro-runnerkit) | Finestra con sistema (RAM, CPU, disco dal vivo), pulizia del disco a scelta e processi |
+| [**UnaVolta**](#unavolta) | Tocchi ripetuti su un'icona aprono il programma una volta sola |
+| [**Pulizia**](#pulizia) | Pulizia sicura del disco, report, automatica una volta a settimana |
+| [**RunnerBoost**](#runnerboost) | Diagnosi della velocità, prova della GPU Metal, test ripetibile con storico, profili |
+| [**Terminale**](#terminale) | Barra di stato, prompt a colori, comando unico `rk`, appunti condivisi con l'iPhone |
+| [**Collaudo · Backup · Italiano**](#collaudo-backup-italiano-appunti) | Report di prova, salvataggio dei file, Linux in italiano |
+
+Scrivi `rk` in un terminale per vedere tutti i comandi, e `rk versioni` per sapere cosa è installato.
+
+## TouchPad
+
+<p align="center">
+  <img src="screenshots/telefono/touchpad-mouse.png" width="32%" alt="Pagina Mouse">
+  <img src="screenshots/telefono/touchpad-tasti.png" width="32%" alt="Pagina Tasti">
+  <img src="screenshots/telefono/touchpad-impostazioni.png" width="32%" alt="Impostazioni">
+</p>
 
 | Pagina | Cosa fa |
 |---|---|
-| **Mouse** | Trascina sul riquadro = muovi il mirino rosso · tocco = clic sinistro · tieni premuto = clic destro. Tasti Sx, Dx, 2×, scroll ▲▼, Trasc (segna partenza, sposta, ripremi), Dx fisso (ogni tocco sullo schermo = destro), ◎ centra il mirino. |
-| **Tastiera** | QWERTY italiana con à è ì ò ù, `?123` per i simboli, ⇧ una volta / ⇪ bloccato, Ctrl e Alt valgono per il tasto successivo. ⌫ e frecce si ripetono tenendo premuto. |
-| **Tasti** | Esc, Tab, frecce, Home/Fine, PgSu/PgGiù, F1–F12, Copia/Incolla (anche versione terminale), Annulla, Salva, Trova, Alt+Tab, Alt+F4. |
-| **⚙** | Tema, dimensione S/M/L, opacità, velocità del mirino. |
+| **Mouse** | Trascini sul riquadro per muovere il mirino rosso: tocco = clic sinistro, pressione lunga = clic destro. Tasti Sx, Dx, doppio clic, scroll, Trascina, Dx fisso, centra il mirino, velocità |
+| **Tastiera** | QWERTY italiana con à è ì ò ù, simboli (`?123`), ⇧ e ⇪, Ctrl e Alt per il tasto successivo. ⌫ e frecce si ripetono tenendo premuto |
+| **Tasti** | Esc, Tab, frecce, Home/Fine, PgSu/PgGiù, F1–F12, Copia/Incolla (anche da terminale), Alt+Tab, Alt+F4, **→ iPhone** e **Incolla iPhone** |
+| **⚙** | Tema, dimensione, opacità, velocità, Auto-riduci, avvio col desktop, copia automatica verso l'iPhone, aggiornamento. In fondo mostra GPU e risoluzione |
 
-Barra in alto: **⠿** sposta la finestra · **—** riduce · **×** chiude.
-La finestra resta sempre dentro lo schermo.
-
-**Avvio automatico:** dopo l'installazione TouchPad si apre da solo ogni volta che avvii il desktop.
-Si spegne/riaccende da **⚙ → Avvio col desktop**.
-
-**Colonna di pallini:** con **—**, o da solo quando non lo usi per 1 minuto (Auto-riduci, regolabile in ⚙),
-TouchPad diventa una colonna di pallini rotondi sul lato dello schermo:
+**Colonna di pallini.** Con **—**, o da solo dopo 1 minuto che non lo usi, TouchPad diventa una colonna sul lato:
 
 | Pallino | Tocco |
 |---|---|
 | ⌨ | Riapre TouchPad dov'era, sulla stessa pagina |
-| ✕ | Chiudi finestra: tocca la finestra e si chiude. Se è bloccata, ✕ di nuovo entro 15 s la forza |
-| ♻ | Pulizia sicura in sottofondo, poi ti dice quanto ha liberato |
-| ⚡ | Apre RunnerBoost (diagnosi) in un terminale |
+| ✕ | Tocchi una finestra e si chiude. Se è bloccata, ✕ di nuovo la forza. Desktop, barra e TouchPad sono protetti |
+| ♻ | Apre il Centro sulla **Pulizia** |
+| ⚡ | Apre il Centro sul **Sistema** |
 | >_ | Apre il terminale |
-| ⟳ | Aggiorna RunnerKit: se è già aggiornato lo dice e basta, altrimenti installa e mostra le novità. **Diventa arancione** quando c'è una versione nuova (controllo ogni 6 ore) |
+| ⟳ | Aggiorna RunnerKit. Se è già aggiornato lo dice soltanto. **Arancione** = c'è una novità |
 
-Trascinando un pallino si sposta tutta la colonna, che si aggancia al lato più vicino.
-Se rilanci `touchpad` mentre è già aperto, riappare quello che c'è.
+Trascinando un pallino si sposta tutta la colonna, che si aggancia al lato più vicino. TouchPad parte con
+il desktop, riprende lo stato in cui l'avevi lasciato, si apre una volta sola e resta sempre sopra le altre finestre.
 
-**Tutto in uno:** l'installatore mette TouchPad insieme a tutti gli altri strumenti di RunnerKit.
+## Centro RunnerKit
 
-**Trasparenza:** serve il *compositing*: TouchPad avvia `xcompmgr` da solo.
-Su LinuxRunner funziona (provato al 45%, vedi `screenshots/v2.2-impostazioni-opacita-45.png`).
-Se in **⚙** leggi "non disponibile", usa Auto-riduci.
+Si apre dall'icona **RunnerKit Centro**, dai pallini ♻ e ⚡, oppure con `rk centro`.
+
+| Scheda | Cosa mostra |
+|---|---|
+| **Sistema** | Indicatori circolari per RAM, processore e disco (verde, giallo, rosso), grafico degli ultimi 3 minuti, swap, carico, da quanto è acceso, processi, GPU e JIT |
+| **Pulizia** | Ogni categoria con la sua dimensione e una barra: scegli e premi **Pulisci selezionati**. I pacchetti inutili sono "avanzati" e non vengono scelti di default. Pulizia settimanale on/off e report completo |
+| **Processi** | I programmi che usano più memoria e CPU, aggiornati ogni 3 s, con **Chiudi**, poi **Forza** se non rispondono. I processi del sistema sono protetti |
+
+Legge tutto direttamente dal sistema, senza lanciare programmi per misurare, e aggiorna solo la scheda visibile.
 
 ## UnaVolta
 
-Sul telefono un tocco "sporco" vale due o tre clic e apre lo stesso programma più volte.
-UnaVolta si mette davanti a tutti i lanciatori (icone del desktop, menu Applications, barra):
-
-- tocchi ripetuti sulla stessa icona **entro 4 secondi** → **un solo avvio**;
-- programma **già aperto** → porta davanti la sua finestra invece di aprirne un'altra.
-
-Si installa insieme a RunnerKit con lo stesso comando. Altri comandi:
-
-```sh
-unavolta --ripristina     # toglie UnaVolta da icone e menu
-unavolta --applica        # lo rimette (anche dopo aver installato nuovi programmi)
-echo xterm >> ~/.config/unavolta/escludi   # un programma che vuoi poter aprire più volte
-```
-
-Dopo `--applica` / `--ripristina` riavvia il desktop (Stop Desktop → Open Desktop).
+Sul telefono un tocco "sporco" vale due o tre clic. UnaVolta sta davanti a icone, menu e barra:
+più tocchi entro 4 secondi producono **un solo avvio**. Se il programma è già aperto, anche se lento a comparire
+come Firefox, UnaVolta **porta davanti la sua finestra** invece di aprirne un'altra.
+`unavolta --log` mostra cosa è successo, `unavolta --ripristina` lo toglie.
 
 ## Pulizia
 
-Agente di pulizia del disco. **Non tocca mai i file personali** (Desktop, documenti, Shared, progetti).
+Non tocca **mai** i file personali (Desktop, documenti, Shared, progetti).
 
 | Comando | Cosa fa |
 |---|---|
-| `pulizia` | **Report**: disco, RAM, processi pesanti, cosa si può cancellare, pacchetti inutili e più grandi, cartelle e file più grandi. Lo salva in `Shared`, quindi lo vedi nell'app **File** dell'iPhone (In questo iPhone → LinuxRunner → Shared) e puoi mandarlo |
-| `pulizia --prova` | Mostra cosa cancellerebbe la pulizia sicura, senza cancellare |
-| `pulizia --sicura` | Cancella solo ciò che si ricrea da solo: cache di apt, cache dei programmi, cestino, log vecchi, temporanei con più di 3 giorni, dump di crash |
-| `pulizia --auto-on` / `--auto-off` | Pulizia sicura automatica all'avvio del desktop, al massimo una volta a settimana |
-
-Tutto il resto (pacchetti grandi, `apt autoremove`, file enormi) lo decidi tu guardando il report.
+| `pulizia` | Report: disco, RAM, cosa si può cancellare, pacchetti inutili e più grandi, cartelle e file più grandi. Lo salva in Shared, quindi lo vedi dall'app **File** |
+| `pulizia --sicura` | Cancella solo ciò che si ricrea da solo: cache di apt e dei programmi, cestino, log vecchi, file temporanei con più di 3 giorni, dump di crash |
+| `pulizia --sicura --solo apt,cache` | Pulisce solo le categorie indicate |
+| `pulizia --auto-on` / `--auto-off` | Pulizia automatica all'avvio del desktop, al massimo una volta a settimana |
 
 ## RunnerBoost
 
-Far rendere al massimo LinuxRunner senza stressare il telefono (iOS rallenta da solo se si scalda:
-il telefono non si rompe, ma i numeri peggiorano).
-
 | Comando | Cosa fa |
 |---|---|
-| `runnerboost` | Diagnosi: JIT, GPU o rendering software, compositing, RAM, disco, programmi all'avvio. Chiude con i **consigli in ordine di effetto** |
-| `runnerboost --test "etichetta"` | Test ripetibile (calcolo Python, avvio programmi, compressione, sha256, ordinamento; 3 giri, mediana). Confronta col test precedente |
-| `runnerboost --storico` | Tutti i test fatti |
-| `runnerboost --gpu` | Prova la GPU: stato reale (Metal o software), renderer OpenGL e fotogrammi al secondo con glxgears. Da lanciare dal terminale del desktop |
-| `runnerboost --profilo veloce` | Niente trasparenza, niente animazioni GTK, Firefox più leggero |
-| `runnerboost --profilo bilanciato` | Come veloce ma tiene la trasparenza |
-| `runnerboost --profilo normale` | Rimette tutto com'era |
-| `runnerboost --gpu-stats` | Per ogni programma: FPS, disegni su Metal e in software, % sulla GPU |
-| `runnerboost --report` | Diagnosi + storico in un file nella cartella Shared, da mandare |
+| `runnerboost` | Diagnosi: JIT, GPU Metal, risoluzione, RAM, disco, programmi all'avvio, con i **consigli in ordine di effetto** |
+| `runnerboost --gpu` | Prova la GPU: fotogrammi al secondo e **% di disegni fatti su Metal** (dalle statistiche di LinuxRunner) |
+| `runnerboost --gpu-stats` | Per ogni programma: FPS, disegni su Metal e in software |
+| `runnerboost --test "etichetta"` | Test ripetibile (Python, avvio programmi, compressione, sha256, ordinamento), con confronto e storico |
+| `runnerboost --profilo veloce \| bilanciato \| normale` | Meno animazioni e un Firefox più leggero; normale rimette tutto com'era |
 
-**Come usa la GPU LinuxRunner 1.1.0** (letto dal suo codice): i programmi aperti dal desktop
-disegnano l'OpenGL sul chip grafico dell'iPhone tramite una libreria che LinuxRunner carica nei
-processi (`LR_GUI_GPU_ACTIVE=mesa-metal-resident`, dispositivo `/dev/linuxrunner-gpu`).
-I browser restano sempre in software per scelta di LinuxRunner. RunnerBoost, Terminale e TouchPad
-leggono questi valori reali.
-
-Le modifiche più grosse sono nell'app LinuxRunner, non in Linux: **aggiornare alla 1.1.0 (build 900)**,
-**Graphics → Metal**, e (sperimentale) **JIT con StikDebug**. La diagnosi te lo segnala.
-
-Metodo: un `--test` prima, una modifica alla volta, un `--test` dopo. Differenze sotto il 5% sono rumore.
+**Come usa la GPU LinuxRunner 1.1.0**, letto dal suo codice: i programmi aperti dal desktop disegnano l'OpenGL
+sul chip grafico dell'iPhone tramite una libreria che LinuxRunner carica nei processi
+(`LR_GUI_GPU_ACTIVE=mesa-metal-resident`, dispositivo `/dev/linuxrunner-gpu`). I browser restano in software
+per scelta di LinuxRunner. Primo risultato su 15 Pro Max: **glxgears a 68,7 FPS** a 960×540 con Metal.
 
 ## Terminale
 
-Attivato dall'installatore (si spegne con `rkterminale --off`). Scritto in bash puro che legge `/proc`:
-non lancia programmi a ogni prompt, quindi non rallenta.
-
-- **Schermata iniziale**: RAM e disco con barre colorate, da quanto è acceso, carico, processi, stato JIT
-- **Prompt**: utente (rosso se root), cartella, ramo git, ✘ e codice se l'ultimo comando fallisce, ⏱ durata se supera 3 s
-- **Storia comandi** lunga, senza doppioni, con data e ora; completamento automatico
-- **Resta in alto**: `clear` o Ctrl+L puliscono lo schermo e rimettono le statistiche
-- `rk` comando unico: `rk info`, `rk top`, `rk gpu`, `rk boost`, `rk pulizia`, `rk pulisci`, `rk log`, `rk aggiorna`, `rk versioni`
-- `aiphone FILE` copia nella cartella dell'app File · `dalliphone` apre quella cartella
-- `aggiorna`, `installa`, `cerca`, `rimuovi`, `estrai`, `mkcd`, `spazio`, `memoria`, `rkaggiorna`
+- **Barra di stato fissa** in cima (RAM, disco, GPU, JIT) mentre i comandi scorrono sotto; si spegne con `rk fisso off`
+- Prompt a colori: utente, cartella, ramo git, ✘ se l'ultimo comando fallisce, ⏱ se dura più di 3 s
+- Storia dei comandi lunga, senza doppioni, con data e ora
+- Comando unico **`rk`**: `rk centro`, `rk info`, `rk top`, `rk gpu`, `rk boost`, `rk pulizia`, `rk pulisci`,
+  `rk log`, `rk collaudo`, `rk backup`, `rk ripristina`, `rk italiano`, `rk copia`, `rk incolla`, `rk aggiorna`, `rk versioni`
 
 ## Collaudo, Backup, Italiano, Appunti
 
 | Comando | Cosa fa |
 |---|---|
-| `rk collaudo` | Prova ogni strumento sul telefono vero (GPU, XTEST, TouchPad, UnaVolta con 4 tocchi, icone, pulizia, spazio, backup) e salva il report in Shared, da mandare |
-| `rk backup` | Salva impostazioni RunnerKit, desktop, script, `.bashrc`, chiavi e l'elenco dei pacchetti in `Shared/RunnerKit-backup` (ultimi 5) |
-| `rk backup --aggiungi PERCORSO` | Aggiunge una cartella da salvare sempre |
-| `rk ripristina` | Ripristina l'ultimo backup (prima fa una copia di sicurezza). `rk backup --pacchetti` reinstalla i pacchetti |
-| `rk italiano` / `rk italiano off` | Lingua italiana: Debian, programmi aperti da icone e menu (tramite UnaVolta), terminale e Firefox |
-| `rk copia TESTO` / `comando \| rk copia` | Copia negli appunti dell'iPhone (dispositivo `/dev/clipboard` di LinuxRunner) |
-| `rk incolla` | Mostra gli appunti dell'iPhone |
+| `rk collaudo` | Prova ogni strumento sul telefono vero (GPU, XTEST, TouchPad, UnaVolta con 4 tocchi, icone, pulizia, spazio, backup) e salva un report in Shared |
+| `rk backup` / `rk ripristina` | Impostazioni, desktop, script, chiavi ed elenco dei pacchetti in `Shared/RunnerKit-backup` (ultimi 5). Prima di ripristinare fa una copia di sicurezza |
+| `rk italiano` / `rk italiano off` | Lingua italiana per Debian, per i programmi aperti da icone e menu (tramite UnaVolta), per il terminale e per Firefox |
+| `rk copia TESTO` · `comando \| rk copia` · `rk incolla` | Appunti condivisi con l'iPhone, tramite il dispositivo `/dev/clipboard` di LinuxRunner |
 
-**Appunti in TouchPad** (pagina Tasti): **→ iPhone** copia la selezione negli appunti dell'iPhone,
-**Incolla iPhone** incolla dove scrivi (versione *term* per i terminali). In ⚙ "Copia → iPhone auto":
-tutto ciò che copi in Linux arriva da solo sull'iPhone. Non legge di continuo gli appunti di iOS, così
-iOS non mostra l'avviso "Incolla da...".
+## Qualità e verifiche
 
-**Barra fissa del terminale**: le prime due righe restano sempre in cima (RAM, disco, GPU, JIT,
-comandi) mentre i comandi scorrono sotto; torna da sola dopo `clear` o programmi a tutto schermo.
-`rk fisso off` la spegne.
+- Ogni modifica viene provata da **GitHub Actions** su uno schermo virtuale: motore di tasti e clic, finestre
+  di TouchPad e del Centro, pallini, istanza unica, appunti, UnaVolta, Pulizia, backup e ripristino,
+  italiano, barra del terminale in un pseudo-terminale, prova GPU.
+- Gli screenshot dei test si aggiornano da soli in [`screenshots/ultima-versione/`](screenshots/ultima-versione/);
+  le foto dal telefono sono in [`screenshots/telefono/`](screenshots/telefono/).
+- Storico delle versioni: [CHANGELOG.md](CHANGELOG.md) · versione del kit: [VERSIONE](VERSIONE).
 
-### Versioni e test
+## Ringraziamenti
 
-- Storico: [CHANGELOG.md](CHANGELOG.md) · versione attuale nel file `touchpad/touchpad.py` (`__version__`).
-- Ogni aggiornamento viene provato in automatico da GitHub Actions (scheda **Actions**):
-  motore tasti/clic (`tests/test_x11.py`) e finestra completa con screenshot
-  di ogni pagina (`tests/test_gui.py`, scaricabili come artifact "screenshots").
-- Test manuale sul telefono: `xev -event button &`, porta il mirino sulla finestra bianca,
-  premi **Dx** → deve comparire `button 3`.
+- **[LinuxRunner](https://github.com/mxhm11cr/LinuxRunner)** di Leminos (@mxhm11cr): l'app che porta Linux
+  ARM64 su iPhone e iPad senza jailbreak, con GPU Metal e JIT. RunnerKit esiste perché esiste LinuxRunner.
+- **[iSH](https://github.com/ish-app/ish)**: la base su cui è costruito LinuxRunner.
+- Debian, Mesa, Openbox, Tk e tutti i progetti open source su cui poggia il desktop.
 
-### Struttura
+RunnerKit è un progetto indipendente e non è affiliato a LinuxRunner.
+
+## Struttura
 
 ```
-install.sh            installatore/aggiornatore
-touchpad/touchpad.py  il programma
-tests/                test automatici
-screenshots/          screenshot dal telefono (e ci/ dai test)
+install.sh        installatore/aggiornatore     VERSIONE     versione del kit
+touchpad/         TouchPad                      strumenti/   Centro, Collaudo, Backup, Italiano, Aggiorna
+unavolta/         UnaVolta                      pulizia/     Pulizia
+runnerboost/      RunnerBoost                   terminale/   Terminale
+tests/            test automatici               screenshots/ foto dal telefono e dai test
 ```

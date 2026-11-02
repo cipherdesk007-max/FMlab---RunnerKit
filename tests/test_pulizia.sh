@@ -37,6 +37,12 @@ for f in "$H/Documenti/contratto.txt" "$H/Desktop/nota.txt" "$H/Shared/foto.jpg"
   [ -e "$f" ] || { echo "FALLITO: cancellato per errore $f"; exit 1; }
 done
 echo "ok: sicura cancella solo il sicuro"
+head -c 100000 /dev/zero > "$R/var/cache/apt/archives/a.deb"; head -c 100000 /dev/zero > "$H/.cache/b.bin"
+"$P" --json | grep -q "^apt|.*|[0-9]*$"
+"$P" --json | grep -q "^autoremove|"
+"$P" --sicura --solo cache >/dev/null
+[ -e "$R/var/cache/apt/archives/a.deb" ] && [ ! -e "$H/.cache/b.bin" ] || { echo "FALLITO: --solo"; exit 1; }
+echo "ok: --json e --solo"
 
 out=$("$P")
 echo "$out" | grep -q "REPORT PULIZIA"

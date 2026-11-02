@@ -26,7 +26,7 @@ esac
 [ -e /dev/clipboard ] && ok "appunti dell'iPhone raggiungibili (/dev/clipboard)" || avv "/dev/clipboard assente: appunti condivisi non disponibili"
 
 sez "Strumenti installati"
-for t in touchpad unavolta pulizia runnerboost rkterminale rkbackup rkitaliano rkaggiorna; do
+for t in touchpad unavolta pulizia runnerboost rkterminale rkbackup rkitaliano rkaggiorna rkcentro; do
   command -v "$t" >/dev/null 2>&1 && ok "$t presente" || ko "$t mancante (rilancia: rk aggiorna)"
 done
 [ -r /usr/local/share/runnerkit/installato ] && riga "  installato il: $(cat /usr/local/share/runnerkit/installato)"
