@@ -25,13 +25,14 @@ pkill -x uvtestsleep || true
 echo "ok: programma lento non viene riaperto"
 
 # programmi a piu' finestre (terminali, gestore file): il secondo tocco ne apre un altro
-cp /bin/sleep "$T/lxterminal"
-"$UV" "$T/lxterminal" 30
-UNAVOLTA_SECONDI=0 "$UV" "$T/lxterminal" 30
-sleep 1
-n=$(pgrep -c -x lxterminal || true)
-pkill -x lxterminal || true
-[ "$n" = 2 ] || { echo "FALLITO: terminale a piu' finestre aperto $n volte invece di 2"; exit 1; }
+printf '#!/bin/sh\necho avviato >> "%s/lxterminal.avvii"\nwhile :; do sleep 1; done\n' "$T" > "$T/lxterminal"
+chmod +x "$T/lxterminal"
+"$UV" "$T/lxterminal"
+UNAVOLTA_SECONDI=0 "$UV" "$T/lxterminal"
+sleep 2
+n=$(wc -l < "$T/lxterminal.avvii" 2>/dev/null || echo 0); n=$((n + 0))
+pkill -f "$T/lxterminal" || true
+[ "$n" = 2 ] || { echo "FALLITO: terminale a piu' finestre aperto $n volte invece di 2"; "$UV" --log; exit 1; }
 echo "ok: terminale -> seconda finestra"
 
 # 2) --applica modifica i lanciatori, --ripristina li riporta com'erano

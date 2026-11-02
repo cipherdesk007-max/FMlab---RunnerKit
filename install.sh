@@ -79,6 +79,8 @@ done
 $SUDO install -m 644 "$W/terminale/terminale.sh" /usr/local/share/runnerkit/terminale.sh
 
 mkdir -p "$HOME/.local/share/applications"
+# ~/Templates: pannello e desktop di LinuxRunner lo cercano a ogni avvio (avviso nel report di LinuxRunner)
+mkdir -p "$HOME/Templates" 2>/dev/null
 cat > "$HOME/.local/share/applications/touchpad.desktop" <<'EOF'
 [Desktop Entry]
 Name=TouchPad

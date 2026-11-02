@@ -27,6 +27,8 @@ Formato: [versione] - data. Le versioni seguono MAJOR.MINOR.PATCH
 - Terminale 1.4.0: dopo `rk top` Ctrl+C torna normale; la barra si rimette a posto quando ruoti il telefono;
   all'uscita lo schermo torna normale; convive con altri PROMPT_COMMAND; lingua corretta anche non italiana.
 - Test nuovi: prova completa dell'installatore (installa, già aggiornato, file rovinato, pagina HTML, disinstalla).
+- Dal report di LinuxRunner: la Pulizia non tocca la cartella di lavoro della sessione (`/tmp/lr-runtime.*`)
+  né i socket del display; creata `~/Templates` che pannello e desktop cercavano a ogni avvio.
 - Licenza MIT.
 
 ## FMlab - RunnerKit 2026.11.02-12
