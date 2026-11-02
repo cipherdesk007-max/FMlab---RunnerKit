@@ -174,7 +174,7 @@ for i in range($n): s+=i*i'")
   tot=$((py + av + gz + sh2 + so))
   printf '  %s%-26s %6s ms%s\n' "$(c 1)" "TOTALE" "$tot" "$(c 0)"
   [ -f "$STORICO" ] || echo "data;etichetta;python;avvio;gzip;sha256;sort;totale" > "$STORICO"
-  prec=$(tail -n +2 "$STORICO" | tail -1)
+  prec=$(tail -n +2 "$STORICO" | grep -v ";GPU " | tail -1)   # salta le righe della prova GPU
   echo "$(date '+%Y-%m-%d %H:%M');$etichetta;$py;$av;$gz;$sh2;$so;$tot" >> "$STORICO"
   if [ -n "$prec" ]; then
     pt=$(echo "$prec" | cut -d';' -f8); pe=$(echo "$prec" | cut -d';' -f2)
