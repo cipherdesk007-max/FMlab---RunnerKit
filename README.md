@@ -5,7 +5,7 @@ Tutto quello che serve installare sul Debian di LinuxRunner sta qui, con un coma
 
 | Strumento | Versione | A cosa serve |
 |---|---|---|
-| [TouchPad](#touchpad) | 2.2.0 | Mouse, tasto destro e tastiera italiana touch, fluttuanti sul desktop |
+| [TouchPad](#touchpad) | 2.3.0 | Mouse, tasto destro e tastiera italiana touch, fluttuanti sul desktop |
 | *prossimi strumenti* | | |
 
 > Pensato per i limiti di LinuxRunner: niente kernel né compositing, CPU emulata.
@@ -40,9 +40,13 @@ Poi aprilo dall'**icona sul desktop**, da **Applications → TouchPad** oppure s
 Barra in alto: **⠿** sposta la finestra · **—** riduce · **×** chiude.
 La finestra resta sempre dentro lo schermo.
 
-**Trasparenza:** funziona solo se lo schermo ha il *compositing*. TouchPad prova ad avviare
-`xcompmgr` da solo e in **⚙** ti dice se è disponibile. Su LinuxRunner di solito non lo è:
-in quel caso usa **Auto-riduci** (10 s / 30 s), che lascia visibile solo la barra quando non lo tocchi.
+**Pallino:** **—** (o Auto-riduci) trasforma TouchPad in un pallino rotondo nell'angolo.
+Toccalo e torna esattamente dov'era, sulla stessa pagina. Trascinalo e si aggancia al bordo più vicino.
+Se rilanci `touchpad` mentre è già aperto, non se ne apre un secondo: riappare quello che c'è.
+
+**Trasparenza:** serve il *compositing*: TouchPad avvia `xcompmgr` da solo.
+Su LinuxRunner funziona (provato al 45%, vedi `screenshots/v2.2-impostazioni-opacita-45.png`).
+Se in **⚙** leggi "non disponibile", usa Auto-riduci.
 
 ### Versioni e test
 

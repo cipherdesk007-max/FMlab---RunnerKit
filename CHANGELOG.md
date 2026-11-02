@@ -3,6 +3,16 @@
 Formato: [versione] - data. Le versioni seguono MAJOR.MINOR.PATCH
 (MAJOR = cambia il modo d'uso, MINOR = funzioni nuove, PATCH = correzioni).
 
+## [2.3.0] - 2026-11-02
+### Nuovo
+- **Pallino intelligente:** "—" e Auto-riduci riducono TouchPad a un pallino rotondo nell'angolo
+  (in alto a destra la prima volta). Tocco = torna dov'era, sulla stessa pagina.
+  Trascinato = si aggancia al bordo più vicino e ricorda la posizione.
+- **Una sola istanza:** rilanciare `touchpad` (o l'icona) mentre è aperto riapre quello esistente.
+- La trasparenza vale anche per il pallino.
+### Verificato
+- Opacità funzionante su LinuxRunner con xcompmgr (screenshot dal telefono al 45%).
+
 ## [2.2.0] - 2026-11-02
 ### Nuovo
 - **Auto-riduci** (⚙ → Off / 10 s / 30 s): se non lo tocchi resta solo la barra;

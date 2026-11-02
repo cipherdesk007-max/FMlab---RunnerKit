@@ -44,6 +44,25 @@ def main():
         assert r.winfo_x() + r.winfo_reqwidth() <= app.sw, f"{page} esce a destra"
         assert r.winfo_y() + r.winfo_reqheight() <= app.sh, f"{page} esce in basso"
     print("trasparenza disponibile:", app.trasp)
+    # pallino: riduci, deve comparire; tocco = riapre nella stessa posizione
+    app.root.geometry("+300+200")
+    app.root.update()
+    app.toggle_mini()
+    app.root.update()
+    assert app.bubble.winfo_viewable() and not app.root.winfo_viewable(), "pallino non mostrato"
+    shot(app, "pallino")
+    app.toggle_mini()
+    app.root.update()
+    assert app.root.winfo_viewable() and (app.root.winfo_x(), app.root.winfo_y()) == (300, 200), \
+        f"non e' tornato dov'era: {app.root.winfo_x()},{app.root.winfo_y()}"
+    # seconda istanza: deve riaprire quella esistente
+    app.toggle_mini()
+    app.root.update()
+    assert touchpad._gia_aperto(), "socket istanza unica non risponde"
+    for _ in range(20):
+        app.root.update()
+    assert not app.mini, "la seconda istanza non ha riaperto"
+
     app.set_autohide(10)
     app.last_touch -= 60
     app._autohide_loop()

@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """TouchPad 2 - mouse + tastiera fluttuante per LinuxRunner.
 Parla direttamente con X11 (XTEST): nessun processo esterno per tocco."""
-__version__ = "2.2.0"
+__version__ = "2.3.0"
 
 import glob
 import json
 import shutil
+import socket
 import time
 import os
 import subprocess
@@ -34,8 +35,27 @@ def _stacca_dal_terminale():
     sys.exit(0)
 
 
+SOCK = f"/tmp/touchpad-{os.getuid()}.sock"
+
+
+def _gia_aperto():
+    """Se TouchPad e' gia' aperto gli chiede di riaprirsi (dal pallino) ed esce."""
+    try:
+        c = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        c.settimeout(1)
+        c.connect(SOCK)
+        c.sendall(b"show")
+        c.close()
+        return True
+    except OSError:
+        return False
+
+
 _trova_display()
 if __name__ == "__main__":
+    if _gia_aperto():
+        print("TouchPad era gia' aperto: l'ho riaperto sul desktop.")
+        sys.exit(0)
     _stacca_dal_terminale()
 
 import tkinter as tk  # noqa: E402
@@ -171,6 +191,8 @@ class App:
         r.bind_all("<ButtonPress>", self._touched, add="+")
         r.after(100, self._clamp)
         r.after(2000, self._autohide_loop)
+        self.bubble = None
+        self._server()
         self.say(f"TouchPad v{__version__}")
 
     # ---------- costruzione ----------
@@ -511,7 +533,9 @@ class App:
 
     def _alpha(self, d=0):
         a = self.cfg["alpha"] = max(0.3, min(1.0, round(self.cfg["alpha"] + d, 2)))
-        for w in (self.root, self.mk):
+        for w in (self.root, self.mk, getattr(self, "bubble", None)):
+            if w is None:
+                continue
             try:
                 w.attributes("-alpha", a if self.trasp else 1.0)
             except tk.TclError:
@@ -562,22 +586,129 @@ class App:
         if (nx, ny) != (x, y):
             r.geometry(f"+{nx}+{ny}")
 
+    # ---------- pallino ----------
     def toggle_mini(self):
+        """— riduce a pallino nell'angolo; toccando il pallino torna dov'era."""
         self.mini = not self.mini
         if self.mini:
-            self.holder.pack_forget()
-            self.status.pack_forget()
+            self.save()  # posizione e pagina da ritrovare alla riapertura
+            self._stop_rep()
+            self.root.withdraw()
+            self.mk.withdraw()
+            self._show_bubble()
         else:
-            self.holder.pack(fill="both", padx=5, pady=(0, 5))
-            self.status.pack(fill="x")
+            if self.bubble:
+                self.bubble.withdraw()
+            self.root.deiconify()
+            self.root.geometry(self.cfg.get("geo", ""))
+            self.root.attributes("-topmost", True)
+            self.root.lift()
+            self.mk.deiconify()
+            self._place()
             self.last_touch = time.time()
             self.root.after_idle(self._clamp)
+
+    def _show_bubble(self):
+        S = 52
+        if not self.bubble:
+            b = self.bubble = tk.Toplevel(self.root)
+            b.title("tp-bubble")
+            b.overrideredirect(True)
+            b.attributes("-topmost", True)
+            cv = self.bcv = tk.Canvas(b, width=S, height=S, highlightthickness=0, bd=0)
+            cv.pack()
+            cv.bind("<ButtonPress-1>", self._b_down)
+            cv.bind("<B1-Motion>", self._b_move)
+            cv.bind("<ButtonRelease-1>", self._b_up)
+        cv = self.bcv
+        cv.delete("all")
+        cv.config(bg=self.T("bg"))
+        cv.create_oval(1, 1, S - 2, S - 2, fill=self.T("acc"), outline=self.T("fg"), width=2)
+        cv.create_text(S // 2, S // 2, text="⌨", fill="white",
+                       font=("DejaVu Sans", 18, "bold"))
+        x, y = self.cfg.get("bubble", (self.sw - S - 6, 6))
+        x, y = max(0, min(x, self.sw - S)), max(0, min(y, self.sh - S))
+        self.bubble.geometry(f"{S}x{S}+{x}+{y}")
+        self.bubble.deiconify()
+        self.bubble.lift()
+        if self.trasp:
+            self.bubble.attributes("-alpha", max(0.6, self.cfg["alpha"]))
+        self.bubble.update_idletasks()
+        self._round(self.bubble, S)
+
+    def _round(self, win, S):
+        """Ritaglia la finestra a cerchio (estensione SHAPE di X11), se c'e'."""
+        try:
+            from Xlib.ext import shape
+            if not self.x.d.has_extension("SHAPE"):
+                return
+            w = self.x.d.create_resource_object("window", int(win.wm_frame(), 16))
+            pm = w.create_pixmap(S, S, 1)
+            gc = pm.create_gc(foreground=0, background=0)
+            pm.fill_rectangle(gc, 0, 0, S, S)
+            gc.change(foreground=1)
+            pm.fill_arc(gc, 0, 0, S, S, 0, 360 * 64)
+            w.shape_mask(shape.SO.Set, shape.SK.Bounding, 0, 0, pm)
+            gc.free()
+            pm.free()
+            self.x.d.sync()
+        except Exception:
+            pass  # resta quadrato: funziona lo stesso
+
+    def _b_down(self, e):
+        self._bx, self._by = e.x_root, e.y_root
+        self._box = e.x_root - self.bubble.winfo_x()
+        self._boy = e.y_root - self.bubble.winfo_y()
+        self._bmoved = 0
+
+    def _b_move(self, e):
+        self._bmoved = max(self._bmoved, abs(e.x_root - self._bx) + abs(e.y_root - self._by))
+        if self._bmoved > 8:
+            self.bubble.geometry(f"+{e.x_root - self._box}+{e.y_root - self._boy}")
+
+    def _b_up(self, e):
+        if self._bmoved <= 8:  # tocco: riapri
+            self.toggle_mini()
+            return
+        S = 52  # trascinato: si aggancia al bordo piu' vicino
+        x = 6 if self.bubble.winfo_x() + S // 2 < self.sw // 2 else self.sw - S - 6
+        y = max(6, min(self.bubble.winfo_y(), self.sh - S - 6))
+        self.bubble.geometry(f"+{x}+{y}")
+        self.cfg["bubble"] = (x, y)
+        self.save()
+
+    # ---------- una sola istanza ----------
+    def _server(self):
+        """Ascolta: se rilanci touchpad mentre e' aperto, si riapre invece di duplicarsi."""
+        try:
+            if os.path.exists(SOCK):
+                os.unlink(SOCK)
+            s = self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+            s.bind(SOCK)
+            s.listen(2)
+            self.root.tk.createfilehandler(s, tk.READABLE, self._on_sock)
+        except Exception:
+            self.sock = None
+
+    def _on_sock(self, *_):
+        try:
+            c, _ = self.sock.accept()
+            c.recv(16)
+            c.close()
+        except OSError:
+            return
+        if self.mini:
+            self.toggle_mini()
+        else:
+            self.root.lift()
+            self.mk.lift()
 
     def say(self, t):
         self.status.config(text=t)
 
     def save(self):
-        self.cfg["geo"] = f"+{self.root.winfo_x()}+{self.root.winfo_y()}"
+        if not self.mini and self.root.winfo_viewable():
+            self.cfg["geo"] = f"+{self.root.winfo_x()}+{self.root.winfo_y()}"
         try:
             os.makedirs(os.path.dirname(CFG), exist_ok=True)
             with open(CFG, "w") as f:
@@ -588,7 +719,15 @@ class App:
     def quit(self):
         if self.lock:
             self.x.swap(False)
-        self.save()
+        if not self.mini:
+            self.save()
+        try:
+            if self.sock:
+                self.root.tk.deletefilehandler(self.sock)
+                self.sock.close()
+                os.unlink(SOCK)
+        except Exception:
+            pass
         self.root.destroy()
 
 
