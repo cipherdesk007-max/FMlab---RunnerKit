@@ -1,14 +1,45 @@
 #!/usr/bin/env python3
 """TouchPad 2 - mouse + tastiera fluttuante per LinuxRunner.
 Parla direttamente con X11 (XTEST): nessun processo esterno per tocco."""
-__version__ = "2.0.1"
+__version__ = "2.1.0"
 
+import glob
 import json
 import os
-import tkinter as tk
+import subprocess
+import sys
 
-from Xlib import X, XK, display
-from Xlib.ext import xtest
+
+def _trova_display():
+    """Se lanciato dal Terminal dell'app (senza DISPLAY) usa lo schermo del desktop."""
+    if os.environ.get("DISPLAY"):
+        return
+    socks = sorted(glob.glob("/tmp/.X11-unix/X*"))
+    os.environ["DISPLAY"] = ":" + socks[0].rsplit("X", 1)[1] if socks else ":0"
+
+
+def _stacca_dal_terminale():
+    """Da terminale: apre TouchPad sul desktop e restituisce subito il prompt."""
+    if os.environ.get("TP_FIGLIO") or not sys.stdin.isatty() or "--qui" in sys.argv:
+        return
+    env = dict(os.environ, TP_FIGLIO="1")
+    log = open(os.path.expanduser("~/.touchpad.log"), "w")
+    subprocess.Popen([sys.executable, os.path.abspath(__file__)], env=env,
+                     stdin=subprocess.DEVNULL, stdout=log, stderr=log,
+                     start_new_session=True)
+    print(f"TouchPad v{__version__} aperto sul desktop ({os.environ['DISPLAY']}).")
+    print("Errori eventuali in ~/.touchpad.log")
+    sys.exit(0)
+
+
+_trova_display()
+if __name__ == "__main__":
+    _stacca_dal_terminale()
+
+import tkinter as tk  # noqa: E402
+
+from Xlib import X, XK, display  # noqa: E402
+from Xlib.ext import xtest  # noqa: E402
 
 CFG = os.path.expanduser("~/.config/touchpad.json")
 THEMES = {

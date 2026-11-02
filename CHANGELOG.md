@@ -3,6 +3,13 @@
 Formato: [versione] - data. Le versioni seguono MAJOR.MINOR.PATCH
 (MAJOR = cambia il modo d'uso, MINOR = funzioni nuove, PATCH = correzioni).
 
+## [2.1.0] - 2026-11-02
+### Nuovo
+- `touchpad` funziona anche dal **Terminal dell'app**: trova da solo lo schermo del desktop
+  (niente più "Can't open display") e si apre lì, restituendo subito il prompt.
+  Eventuali errori finiscono in `~/.touchpad.log`. Con `touchpad --qui` resta in primo piano.
+- L'installatore mette l'icona TouchPad anche **sul desktop**.
+
 ## [2.0.1] - 2026-11-02
 ### Corretto
 - Tastiera: ultima riga con tasti "ù" e "-" troppo stretti, ora tutti i tasti hanno larghezza minima uguale.

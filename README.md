@@ -17,7 +17,7 @@ Nel terminale **del desktop** (xterm):
 apt install -y curl && curl -fsSL https://raw.githubusercontent.com/cipherdesk007-max/mia/main/install.sh | sh
 ```
 
-Poi apri **Applications → TouchPad**. Per aggiornare rilancia lo stesso comando.
+Poi aprilo dall'**icona sul desktop**, da **Applications → TouchPad** oppure scrivendo `touchpad` in qualsiasi terminale (anche il Terminal dell'app: si apre comunque sul desktop). Per aggiornare rilancia lo stesso comando.
 
 ### Come si usa
 

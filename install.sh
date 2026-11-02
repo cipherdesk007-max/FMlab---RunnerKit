@@ -26,7 +26,15 @@ Type=Application
 Categories=Utility;
 EOF
 
+# icona anche sul desktop (stessa cartella di Firefox ESR / Tastiera)
+for D in "$HOME/Desktop" "$HOME/Scrivania"; do
+  if [ -d "$D" ]; then
+    cp "$HOME/.local/share/applications/touchpad.desktop" "$D/"
+    chmod +x "$D/touchpad.desktop"
+  fi
+done
+
 V=$(grep -m1 '__version__' /usr/local/bin/touchpad | cut -d'"' -f2)
 echo ">> TouchPad v$V installato."
-echo "   Aprilo dal desktop: Applications -> TouchPad  (oppure 'touchpad &' in xterm)"
+echo "   Aprilo: icona sul desktop, Applications -> TouchPad, oppure scrivi 'touchpad' (anche dal Terminal dell'app)"
 echo "   Per aggiornare in futuro: rilancia lo stesso comando curl."
