@@ -9,9 +9,17 @@ SUDO=""
 [ "$(id -u)" -ne 0 ] && command -v sudo >/dev/null && SUDO="sudo"
 
 echo "== RunnerKit =="
-echo ">> Pacchetti (python3-tk, python3-xlib, xcompmgr)..."
-$SUDO apt-get install -y python3-tk python3-xlib xcompmgr xdotool shared-mime-info desktop-file-utils bash-completion mesa-utils x11-utils >/dev/null 2>&1 || {
-  $SUDO apt-get update && $SUDO apt-get install -y python3-tk python3-xlib xcompmgr xdotool shared-mime-info desktop-file-utils bash-completion mesa-utils x11-utils; }
+# pacchetti: apt solo se ne manca qualcuno (apt su LinuxRunner e' pesante: niente lavoro inutile)
+PACCHETTI="python3-tk python3-xlib xcompmgr xdotool shared-mime-info desktop-file-utils bash-completion mesa-utils x11-utils"
+MANCANO=""
+for p in $PACCHETTI; do dpkg -s "$p" >/dev/null 2>&1 || MANCANO="$MANCANO $p"; done
+if [ -n "$MANCANO" ]; then
+  echo ">> Installo i pacchetti mancanti:$MANCANO"
+  $SUDO dpkg --configure -a >/dev/null 2>&1 || true   # completa eventuali installazioni interrotte
+  $SUDO apt-get install -y $MANCANO >/dev/null 2>&1 || { $SUDO apt-get update && $SUDO apt-get install -y $MANCANO; }
+else
+  echo ">> Pacchetti gia' presenti"
+fi
 
 echo ">> Scarico TouchPad..."
 curl -fsSL "$REPO/touchpad/touchpad.py?t=$T" -o /tmp/touchpad.py
@@ -83,7 +91,11 @@ done
 [ "${RUNNERKIT_NO_UNAVOLTA:-0}" = "1" ] || /usr/local/bin/unavolta --applica
 
 # tipi di file: le icone .desktop si aprono subito (niente finestra "Execute File")
-command -v update-mime-database >/dev/null && $SUDO update-mime-database /usr/share/mime >/dev/null 2>&1
+# (solo la prima volta o se sono stati installati pacchetti: e' un'operazione pesante)
+if [ -n "$MANCANO" ] || [ ! -f /usr/local/share/runnerkit/mime-ok ]; then
+  command -v update-mime-database >/dev/null && $SUDO update-mime-database /usr/share/mime >/dev/null 2>&1
+  $SUDO mkdir -p /usr/local/share/runnerkit && $SUDO touch /usr/local/share/runnerkit/mime-ok
+fi
 command -v update-desktop-database >/dev/null && update-desktop-database "$HOME/.local/share/applications" >/dev/null 2>&1
 
 # Terminale RunnerKit (si spegne con: rkterminale --off)

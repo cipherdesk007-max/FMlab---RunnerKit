@@ -3,6 +3,13 @@
 Formato: [versione] - data. Le versioni seguono MAJOR.MINOR.PATCH
 (MAJOR = cambia il modo d'uso, MINOR = funzioni nuove, PATCH = correzioni).
 
+## RunnerKit 2026.11.02-10 - aggiornamenti leggeri
+- Un aggiornamento ha fatto chiudere LinuxRunner: l'installatore rilanciava ogni volta apt e la
+  ricostruzione dell'archivio dei tipi di file, le operazioni più pesanti sotto l'interprete.
+  Ora apt parte solo se manca un pacchetto (e prima completa installazioni interrotte con
+  `dpkg --configure -a`), l'archivio dei tipi di file si ricostruisce solo la prima volta.
+  Un aggiornamento normale scarica solo i file di RunnerKit.
+
 ## RunnerKit 2026.11.02-9 - Centro RunnerKit
 - **Nuovo Centro RunnerKit** (`rkcentro` 1.0.0, icona sul desktop, pallini ♻ e ⚡, `rk centro`):
   - *Sistema*: indicatori circolari RAM/processore/disco, grafico degli ultimi 3 minuti, swap, carico,
