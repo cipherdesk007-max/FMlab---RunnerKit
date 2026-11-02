@@ -47,7 +47,7 @@ fi
 #    Si installa solo se e' tutto a posto: una rete che cade a meta' non lascia mai il kit mezzo vecchio e mezzo nuovo.
 echo ">> Scarico i file..."
 FILES="VERSIONE touchpad/touchpad.py unavolta/unavolta runnerboost/runnerboost terminale/terminale.sh terminale/rkterminale
-pulizia/pulizia strumenti/rkcollaudo strumenti/rkbackup strumenti/rkitaliano strumenti/rkaggiorna strumenti/rkcentro strumenti/rkdisinstalla"
+pulizia/pulizia strumenti/rkcollaudo strumenti/rkbackup strumenti/rkitaliano strumenti/rkaggiorna strumenti/rkcentro strumenti/rkdisinstalla strumenti/rkavvio"
 for f in $FILES; do
   mkdir -p "$W/$(dirname "$f")"
   e=0; curl -fsS --location --retry 3 --retry-delay 2 --max-time 120 "$REPO/$f?t=$T" -o "$W/$f" 2>/dev/null || e=$?
@@ -77,7 +77,7 @@ echo ">> Installo FMlab - RunnerKit $NUOVA..."
 $SUDO mkdir -p /usr/local/share/runnerkit
 $SUDO install -m 755 "$W/touchpad/touchpad.py" /usr/local/bin/touchpad
 for f in unavolta/unavolta runnerboost/runnerboost terminale/rkterminale pulizia/pulizia \
-         strumenti/rkcollaudo strumenti/rkbackup strumenti/rkitaliano strumenti/rkaggiorna strumenti/rkcentro strumenti/rkdisinstalla; do
+         strumenti/rkcollaudo strumenti/rkbackup strumenti/rkitaliano strumenti/rkaggiorna strumenti/rkcentro strumenti/rkdisinstalla strumenti/rkavvio; do
   $SUDO install -m 755 "$W/$f" "/usr/local/bin/$(basename "$f")"
 done
 $SUDO install -m 644 "$W/terminale/terminale.sh" /usr/local/share/runnerkit/terminale.sh
@@ -108,6 +108,15 @@ X-GNOME-Autostart-enabled=true
 X-XFCE-Autostart-Override=true
 Hidden=false
 EOF
+fi
+
+# Il desktop di LinuxRunner non legge ~/.config/autostart (avvia openbox, lxpanel e pcmanfm da solo):
+# TouchPad parte tramite D-Bus, che all'avvio del desktop attiva il servizio di accessibilita'.
+# rkavvio fa partire TouchPad e poi passa la mano al vero servizio, se installato.
+SVC="$HOME/.local/share/dbus-1/services/org.a11y.Bus.service"
+if [ ! -e "$SVC" ] || grep -q rkavvio "$SVC" 2>/dev/null; then
+  mkdir -p "$(dirname "$SVC")"
+  printf '[D-BUS Service]\nName=org.a11y.Bus\nExec=/usr/local/bin/rkavvio\n' > "$SVC"
 fi
 
 # icona anche sul desktop (stessa cartella di Firefox ESR / Tastiera)

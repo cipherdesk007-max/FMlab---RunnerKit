@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """TouchPad 2 - mouse + tastiera fluttuante per LinuxRunner.
 Parla direttamente con X11 (XTEST): nessun processo esterno per tocco."""
-__version__ = "3.1.0"
+__version__ = "3.2.0"
 
 import glob
 import json
@@ -14,12 +14,51 @@ import subprocess
 import sys
 
 
+def _env_desktop():
+    """Ambiente di un programma del desktop vivo (pcmanfm/lxpanel/openbox): DISPLAY giusto,
+    cartella della sessione e variabili della GPU di LinuxRunner. None se il desktop non c'e'."""
+    for nome in ("pcmanfm", "lxpanel", "openbox", "pcmanfm-qt", "lxqt-panel"):
+        for d in glob.glob("/proc/[0-9]*"):
+            try:
+                with open(d + "/comm") as f:
+                    if f.read().strip() != nome:
+                        continue
+                if os.stat(d).st_uid != os.getuid():
+                    continue
+                with open(d + "/environ", "rb") as f:
+                    env = dict(v.split("=", 1) for v in f.read().decode(errors="replace").split("\0") if "=" in v)
+                if env.get("DISPLAY"):
+                    return env
+            except (OSError, ValueError):
+                continue
+    return None
+
+
 def _trova_display():
-    """Se lanciato dal Terminal dell'app (senza DISPLAY) usa lo schermo del desktop."""
+    """Se lanciato dal Terminal dell'app (senza DISPLAY) usa lo schermo del desktop VIVO.
+    In /tmp/.X11-unix restano i socket delle sessioni vecchie: si guarda il desktop che gira."""
     if os.environ.get("DISPLAY"):
         return
-    socks = sorted(glob.glob("/tmp/.X11-unix/X*"))
+    env = _env_desktop()
+    if env:
+        os.environ["DISPLAY"] = env["DISPLAY"]
+        return
+    socks = sorted(glob.glob("/tmp/.X11-unix/X*"), key=os.path.getmtime, reverse=True)
     os.environ["DISPLAY"] = ":" + socks[0].rsplit("X", 1)[1] if socks else ":0"
+
+
+def _adotta_ambiente():
+    """Avviato da D-Bus all'apertura del desktop: l'ambiente e' ridotto. Prendo quello del desktop
+    (aspettando che compaia), cosi' terminale, Centro e prove GPU aperti da TouchPad usano la GPU."""
+    if os.environ.get("LR_GUI_SESSION_DIR"):
+        return
+    for _ in range(30):
+        env = _env_desktop()
+        if env and (not os.environ.get("DISPLAY") or env["DISPLAY"] == os.environ["DISPLAY"]):
+            for k, v in env.items():
+                os.environ.setdefault(k, v)
+            return
+        time.sleep(0.5)
 
 
 def _stacca_dal_terminale():
@@ -52,6 +91,8 @@ def _gia_aperto(messaggio=b"show"):
         return False
 
 
+if __name__ == "__main__" and "--avvio" in sys.argv:
+    _adotta_ambiente()
 _trova_display()
 if __name__ == "__main__":
     if "--avvio" in sys.argv:  # avvio automatico: se c'e' gia', non toccarlo
@@ -751,8 +792,30 @@ class App:
                 self.mk.lift()
         except tk.TclError:
             pass
+        self._riapertura_desktop()
         # ridotto a pallini: controllo meno spesso (ogni risveglio costa processore sul telefono)
         self.root.after(2500 if self.mini else 1500, self._sempre_sopra)
+
+    def _riapertura_desktop(self):
+        """Ogni "Open Desktop" dell'app collega di nuovo il visore (x11vnc lo scrive in display.log
+        della sessione): in quel momento TouchPad si rimette come colonna di pallini sul lato."""
+        f = os.path.join(os.environ.get("LR_GUI_SESSION_DIR", ""), "display.log")
+        try:
+            n = os.path.getsize(f)
+        except OSError:
+            return
+        prima = getattr(self, "_vnc_pos", None)
+        self._vnc_pos = n
+        if prima is None or n <= prima:
+            return
+        try:
+            with open(f, "rb") as fh:
+                fh.seek(prima)
+                nuovo = fh.read(min(n - prima, 65536))
+        except OSError:
+            return
+        if b"Got connection from client" in nuovo and not self.mini:
+            self.toggle_mini()
 
     def _errore(self, tipo, valore, tb):
         """Un errore in un pulsante non deve far sparire niente: lo scrivo nel log e vado avanti."""

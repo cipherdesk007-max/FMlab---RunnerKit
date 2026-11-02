@@ -3,6 +3,19 @@
 Formato: [versione] - data. Le versioni seguono MAJOR.MINOR.PATCH
 (MAJOR = cambia il modo d'uso, MINOR = funzioni nuove, PATCH = correzioni).
 
+## FMlab - RunnerKit 2026.11.02-17 - avvio col desktop che funziona davvero
+Trovato leggendo il codice di LinuxRunner (session.sh, desktop-components.sh): il desktop avvia openbox,
+lxpanel e pcmanfm direttamente e **non legge mai `~/.config/autostart`**. Quindi TouchPad non partiva da solo
+(sembrava di sì solo perché la sessione restava aperta) e anche la pulizia settimanale non partiva.
+- Nuovo **rkavvio**: all'apertura del desktop i programmi GTK chiedono a D-Bus il servizio di accessibilità;
+  RunnerKit si registra lì, fa partire TouchPad (e la pulizia settimanale, se accesa) e passa la mano al vero
+  servizio se è installato. Si spegne come prima: ⚙ → Avvio col desktop → No.
+- **Ogni "Open Desktop"** (anche tornando al desktop già aperto) TouchPad si rimette subito come colonna di
+  pallini sul lato: se ne accorge dal registro del visore di LinuxRunner (display.log della sessione).
+- TouchPad avviato così prende l'ambiente del desktop (GPU Metal compresa) per i programmi che apre.
+- TouchPad e Centro aperti dal Terminal dell'app trovano lo schermo giusto: prima potevano scegliere il socket
+  di una sessione vecchia (nel report ce n'erano 15 in /tmp/.X11-unix).
+
 ## FMlab - RunnerKit 2026.11.02-16 - TouchPad 3.1
 - All'apertura del desktop TouchPad compare **subito come colonna di pallini sul lato** (attesa ridotta da 3 a 1
   secondo, nessuna finestra grande che lampeggia e sparisce). Tocca ⌨ per aprirlo.

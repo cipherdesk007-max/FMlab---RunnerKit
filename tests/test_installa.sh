@@ -20,11 +20,14 @@ mkdir -p "$H/Desktop"
 # 1) installazione completa
 out=$(sh "$SRV/install.sh" 2>&1) || { printf '%s\n' "$out"; echo "FALLITO: installazione"; exit 1; }
 printf '%s\n' "$out" | grep -q "installato ==" || { printf '%s\n' "$out"; exit 1; }
-for t in touchpad unavolta pulizia runnerboost rkterminale rkcollaudo rkbackup rkitaliano rkaggiorna rkcentro rkdisinstalla; do
+for t in touchpad unavolta pulizia runnerboost rkterminale rkcollaudo rkbackup rkitaliano rkaggiorna rkcentro rkdisinstalla rkavvio; do
   [ -x "/usr/local/bin/$t" ] || { echo "FALLITO: manca $t"; exit 1; }
 done
 [ "$(cat /usr/local/share/runnerkit/versione)" = "$(tr -d '[:space:]' < "$DIR/VERSIONE")" ] || { echo "FALLITO: versione"; exit 1; }
 [ -f "$H/Desktop/runnerkit-centro.desktop" ] && grep -q "RunnerKit Terminale inizio" "$H/.bashrc"
+grep -q "Exec=/usr/local/bin/rkavvio" "$H/.local/share/dbus-1/services/org.a11y.Bus.service" || { echo "FALLITO: servizio D-Bus di avvio"; exit 1; }
+# rkavvio deve finire subito (D-Bus aspetta la sua uscita prima di rispondere ai programmi del desktop)
+inizio=$(date +%s); RKAVVIO_PROVA=1 HOME="$H" /usr/local/bin/rkavvio; [ $(( $(date +%s) - inizio )) -le 2 ] || { echo "FALLITO: rkavvio lento"; exit 1; }
 [ ! -d /tmp/runnerkit-installa.lock ] || { echo "FALLITO: blocco rimasto"; exit 1; }
 echo "ok: installazione completa"
 
@@ -53,6 +56,7 @@ mkdir -p "$H/.config/runnerkit"; echo x > "$H/.config/runnerkit/prova"
 /usr/local/bin/rkdisinstalla --si >/dev/null
 for t in touchpad rkcentro rkdisinstalla; do [ ! -e "/usr/local/bin/$t" ] || { echo "FALLITO: $t rimasto"; exit 1; }; done
 [ ! -f "$H/Desktop/runnerkit-centro.desktop" ] && ! grep -q "RunnerKit Terminale" "$H/.bashrc"
+[ ! -f "$H/.local/share/dbus-1/services/org.a11y.Bus.service" ] || { echo "FALLITO: servizio D-Bus rimasto"; exit 1; }
 [ -f "$H/.config/runnerkit/prova" ] || { echo "FALLITO: impostazioni cancellate senza --tutto"; exit 1; }
 echo "ok: disinstalla"
 echo "OK installa"

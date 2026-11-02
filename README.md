@@ -72,7 +72,7 @@ Scrivi `rk` in un terminale per vedere tutti i comandi, e `rk versioni` per sape
 | ⟳ | Aggiorna RunnerKit. Se è già aggiornato lo dice soltanto. **Arancione** = c'è una novità |
 
 Trascinando un pallino si sposta tutta la colonna, che si aggancia al lato più vicino. TouchPad parte con
-il desktop direttamente come colonna di pallini sul lato, si apre una volta sola e resta sempre sopra le altre finestre.
+il desktop (e a ogni "Open Desktop") direttamente come colonna di pallini sul lato, si apre una volta sola e resta sempre sopra le altre finestre.
 
 ## Centro RunnerKit
 

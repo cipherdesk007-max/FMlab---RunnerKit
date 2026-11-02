@@ -42,11 +42,12 @@ for f in touchpad.desktop runnerkit-centro.desktop runnerkit-aggiorna.desktop; d
   rm -f "$H/.local/share/applications/$f" "$H/Desktop/$f" "$H/Scrivania/$f"
 done
 rm -f "$H/.config/autostart/touchpad.desktop" "$H/.config/autostart/pulizia.desktop"
+grep -q rkavvio "$H/.local/share/dbus-1/services/org.a11y.Bus.service" 2>/dev/null && rm -f "$H/.local/share/dbus-1/services/org.a11y.Bus.service"
 command -v update-desktop-database >/dev/null && update-desktop-database "$H/.local/share/applications" >/dev/null 2>&1
 echo "Icone e avvio automatico: tolti"
 
 # 4) programmi
-for t in touchpad unavolta pulizia runnerboost rkterminale rkcollaudo rkbackup rkitaliano rkaggiorna rkcentro; do
+for t in touchpad unavolta pulizia runnerboost rkterminale rkcollaudo rkbackup rkitaliano rkaggiorna rkcentro rkavvio; do
   $SUDO rm -f "$B/$t"
 done
 $SUDO rm -rf "$P/usr/local/share/runnerkit"

@@ -3,7 +3,7 @@
    rkcentro [sistema|pulizia|processi]
 Legge tutto da /proc e os.statvfs (niente programmi lanciati per misurare), aggiorna solo la
 scheda visibile, e per la pulizia usa lo strumento `pulizia` (solo categorie sicure)."""
-__version__ = "1.2.0"
+__version__ = "1.2.1"
 
 import json
 import os
@@ -15,9 +15,26 @@ import sys
 import time
 
 if not os.environ.get("DISPLAY"):
+    # schermo del desktop VIVO (in /tmp/.X11-unix restano i socket delle sessioni vecchie)
     import glob
-    s = sorted(glob.glob("/tmp/.X11-unix/X*"))
-    os.environ["DISPLAY"] = ":" + s[0].rsplit("X", 1)[1] if s else ":0"
+    disp = None
+    for d in glob.glob("/proc/[0-9]*"):
+        try:
+            with open(d + "/comm") as f:
+                if f.read().strip() not in ("pcmanfm", "lxpanel", "openbox"):
+                    continue
+            with open(d + "/environ", "rb") as f:
+                for v in f.read().split(b"\0"):
+                    if v.startswith(b"DISPLAY="):
+                        disp = v[8:].decode()
+            if disp:
+                break
+        except OSError:
+            continue
+    if not disp:
+        s = sorted(glob.glob("/tmp/.X11-unix/X*"), key=os.path.getmtime, reverse=True)
+        disp = ":" + s[0].rsplit("X", 1)[1] if s else ":0"
+    os.environ["DISPLAY"] = disp
 
 SOCK = f"/tmp/rkcentro-{os.getuid()}.sock"
 SCHEDE = ("sistema", "pulizia", "prestazioni", "processi")

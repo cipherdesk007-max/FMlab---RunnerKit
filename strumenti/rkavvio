@@ -1,0 +1,28 @@
+#!/bin/sh
+# FMlab - RunnerKit Avvio - fa partire TouchPad quando si apre il desktop di LinuxRunner.
+#
+# Perche' cosi': il desktop di LinuxRunner avvia openbox, lxpanel e pcmanfm direttamente (vedi
+# session.sh e desktop-components.sh nel codice di LinuxRunner), quindi i file di ~/.config/autostart
+# non vengono mai letti. All'avvio pero' ogni programma GTK chiede a D-Bus il servizio
+# "org.a11y.Bus" (accessibilita'): questo script e' registrato come quel servizio, parte con il
+# desktop, avvia TouchPad e poi passa la mano al vero servizio di accessibilita', se c'e'.
+# Si spegne da TouchPad: ⚙ -> Avvio col desktop -> No (toglie ~/.config/autostart/touchpad.desktop).
+LOCK=/tmp/rkavvio-$(id -u).lock
+if [ -f "$HOME/.config/autostart/touchpad.desktop" ] && [ -x /usr/local/bin/touchpad ]; then
+  # lxpanel e pcmanfm partono insieme: un solo avvio (blocco valido 30 s)
+  if mkdir "$LOCK" 2>/dev/null || { [ -z "$(find "$LOCK" -maxdepth 0 -mmin -1 2>/dev/null)" ] && rm -rf "$LOCK" && mkdir "$LOCK" 2>/dev/null; }; then
+    if ! pgrep -f '^/usr/bin/python3 /usr/local/bin/touchpad|^python3 /usr/local/bin/touchpad' >/dev/null 2>&1; then
+      (setsid /usr/local/bin/touchpad --avvio </dev/null >/dev/null 2>&1 &)
+    fi
+  fi
+fi
+# pulizia settimanale (stesso problema: ~/.config/autostart non viene letto)
+find "$LOCK-pulizia" -maxdepth 0 -mmin +60 -exec rmdir {} \; 2>/dev/null
+if [ -f "$HOME/.config/autostart/pulizia.desktop" ] && [ -x /usr/local/bin/pulizia ] && mkdir "$LOCK-pulizia" 2>/dev/null; then
+  (setsid sh -c '/usr/local/bin/pulizia --auto-giro; sleep 3600; rmdir "$0"' "$LOCK-pulizia" </dev/null >/dev/null 2>&1 &)
+fi
+# il vero servizio di accessibilita' (pacchetto at-spi2-core), se installato, continua a funzionare
+for l in /usr/libexec/at-spi-bus-launcher /usr/lib/at-spi2-core/at-spi-bus-launcher; do
+  [ -x "$l" ] && exec "$l" "$@"
+done
+exit 0
