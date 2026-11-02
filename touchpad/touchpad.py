@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """TouchPad 2 - mouse + tastiera fluttuante per LinuxRunner.
 Parla direttamente con X11 (XTEST): nessun processo esterno per tocco."""
-__version__ = "2.4.1"
+__version__ = "2.5.0"
 
 import glob
 import json
@@ -178,7 +178,10 @@ class App:
         c = self.cfg
         c.setdefault("theme", "scuro"); c.setdefault("size", "M")
         c.setdefault("alpha", 0.8); c.setdefault("speed", 1.8)
-        c.setdefault("page", "Mouse"); c.setdefault("autohide", 0)
+        c.setdefault("page", "Mouse"); c.setdefault("autohide", 60)
+        if c.get("cfgver", 1) < 2:  # dalla 2.5: si riduce da solo quando non lo usi
+            c["autohide"] = 60
+            c["cfgver"] = 2
         self.x = X11()
         r = self.root = tk.Tk()
         r.title("TouchPad")
@@ -201,7 +204,9 @@ class App:
         r.bind_all("<ButtonPress>", self._touched, add="+")
         r.after(100, self._clamp)
         r.after(2000, self._autohide_loop)
-        self.bubble = None
+        self.bubble = None   # pallino principale (apre TouchPad)
+        self.dock = []       # colonna di pallini: (finestra, canvas, simbolo, azione)
+        self._da_forzare = None
         self._server()
         self.say(f"TouchPad v{__version__}")
 
@@ -413,7 +418,7 @@ class App:
                  ("Mirino ◎", self.center)],
                 [("Auto-riduci", None)] +
                 [(lab, lambda v=v: self.set_autohide(v))
-                 for lab, v in (("Off", 0), ("10 s", 10), ("30 s", 30))],
+                 for lab, v in (("Off", 0), ("30 s", 30), ("1 min", 60), ("2 min", 120))],
                 [("Avvio col desktop", None), ("Sì", lambda: self.set_autostart(True)),
                  ("No", lambda: self.set_autostart(False))]]
         b = self.cfg_btn = self.grid_rows(f, rows)
@@ -437,7 +442,7 @@ class App:
                 return
         except tk.TclError:
             return
-        for lab, v in (("Off", 0), ("10 s", 10), ("30 s", 30)):
+        for lab, v in (("Off", 0), ("30 s", 30), ("1 min", 60), ("2 min", 120)):
             b[lab].config(bg=self.T("acc") if self.cfg["autohide"] == v else self.T("key"))
         auto = os.path.exists(AUTOSTART)
         b["Sì"].config(bg=self.T("acc") if auto else self.T("key"))
@@ -450,7 +455,7 @@ class App:
             t = "Opacità: non disponibile su questo schermo\n(manca il compositing). Usa Auto-riduci."
         ah = self.cfg["autohide"]
         self.cfg_info.config(text=f"{t}\nVelocità mirino: {self.cfg['speed']}\n"
-                                  f"Auto-riduci: {'spento' if not ah else f'dopo {ah} s'}\n"
+                                  f"Auto-riduci: {'spento' if not ah else f'dopo {ah} s senza tocchi'}\n"
                                   f"Avvio col desktop: {'sì' if auto else 'no'}\n"
                                   f"Tema: {self.cfg['theme']} · Dimensione: {self.cfg['size']}")
 
@@ -549,7 +554,7 @@ class App:
 
     def _alpha(self, d=0):
         a = self.cfg["alpha"] = max(0.3, min(1.0, round(self.cfg["alpha"] + d, 2)))
-        for w in (self.root, self.mk, getattr(self, "bubble", None)):
+        for w in (self.root, self.mk, *[b for b, *_ in getattr(self, "dock", [])]):
             if w is None:
                 continue
             try:
@@ -617,9 +622,13 @@ class App:
         if (nx, ny) != (x, y):
             r.geometry(f"+{nx}+{ny}")
 
-    # ---------- pallino ----------
+    # ---------- colonna di pallini ----------
+    DOCK = (("⌨", "apri"), ("✕", "chiudi"), ("♻", "pulizia"), ("⚡", "boost"), (">_", "term"))
+    S, G = 48, 10   # diametro pallino, spazio tra pallini
+
     def toggle_mini(self):
-        """— riduce a pallino nell'angolo; toccando il pallino torna dov'era."""
+        """— (o Auto-riduci) riduce TouchPad a una colonna di pallini sul lato dello schermo.
+        Pallino ⌨: torna dov'era. Gli altri: chiudi finestra, pulizia, boost, terminale."""
         self.mini = not self.mini
         if self.mini:
             self.save()  # posizione e pagina da ritrovare alla riapertura
@@ -628,8 +637,8 @@ class App:
             self.mk.withdraw()
             self._show_bubble()
         else:
-            if self.bubble:
-                self.bubble.withdraw()
+            for b, *_ in self.dock:
+                b.withdraw()
             self.root.deiconify()
             self.root.geometry(self.cfg.get("geo", ""))
             self.root.attributes("-topmost", True)
@@ -639,33 +648,48 @@ class App:
             self.last_touch = time.time()
             self.root.after_idle(self._clamp)
 
+    def _dock_xy(self):
+        S, G, n = self.S, self.G, len(self.DOCK)
+        x, y = self.cfg.get("bubble", (self.sw - S - 6, 40))
+        x = max(0, min(x, self.sw - S))
+        y = max(0, min(y, self.sh - n * (S + G)))
+        return x, y
+
+    def _place_dock(self, x, y):
+        for i, (b, *_) in enumerate(self.dock):
+            b.geometry(f"{self.S}x{self.S}+{x}+{y + i * (self.S + self.G)}")
+
     def _show_bubble(self):
-        S = 52
-        if not self.bubble:
-            b = self.bubble = tk.Toplevel(self.root)
-            b.title("tp-bubble")
-            b.overrideredirect(True)
-            b.attributes("-topmost", True)
-            cv = self.bcv = tk.Canvas(b, width=S, height=S, highlightthickness=0, bd=0)
-            cv.pack()
-            cv.bind("<ButtonPress-1>", self._b_down)
-            cv.bind("<B1-Motion>", self._b_move)
-            cv.bind("<ButtonRelease-1>", self._b_up)
-        cv = self.bcv
-        cv.delete("all")
-        cv.config(bg=self.T("bg"))
-        cv.create_oval(1, 1, S - 2, S - 2, fill=self.T("acc"), outline=self.T("fg"), width=2)
-        cv.create_text(S // 2, S // 2, text="⌨", fill="white",
-                       font=("DejaVu Sans", 18, "bold"))
-        x, y = self.cfg.get("bubble", (self.sw - S - 6, 6))
-        x, y = max(0, min(x, self.sw - S)), max(0, min(y, self.sh - S))
-        self.bubble.geometry(f"{S}x{S}+{x}+{y}")
-        self.bubble.deiconify()
-        self.bubble.lift()
-        if self.trasp:
-            self.bubble.attributes("-alpha", max(0.6, self.cfg["alpha"]))
-        self.bubble.update_idletasks()
-        self._round(self.bubble, S)
+        S = self.S
+        if not self.dock:
+            for sym, act in self.DOCK:
+                b = tk.Toplevel(self.root)
+                b.title("tp-bubble")
+                b.overrideredirect(True)
+                b.attributes("-topmost", True)
+                cv = tk.Canvas(b, width=S, height=S, highlightthickness=0, bd=0)
+                cv.pack()
+                cv.bind("<ButtonPress-1>", self._b_down)
+                cv.bind("<B1-Motion>", self._b_move)
+                cv.bind("<ButtonRelease-1>", lambda e, a=act: self._b_up(e, a))
+                self.dock.append((b, cv, sym, act))
+            self.bubble = self.dock[0][0]
+        for i, (b, cv, sym, act) in enumerate(self.dock):
+            cv.delete("all")
+            cv.config(bg=self.T("bg"))
+            fill = self.T("acc") if act == "apri" else self.T("key")
+            cv.create_oval(1, 1, S - 2, S - 2, fill=fill, outline=self.T("fg"), width=2)
+            cv.create_text(S // 2, S // 2, text=sym, fill="white" if act == "apri" else self.T("fg"),
+                           font=("DejaVu Sans", 16 if len(sym) == 1 else 12, "bold"))
+        self._place_dock(*self._dock_xy())
+        for b, *_ in self.dock:
+            b.deiconify()
+            b.lift()
+            if self.trasp:
+                b.attributes("-alpha", max(0.6, self.cfg["alpha"]))
+        self.root.update_idletasks()
+        for b, *_ in self.dock:
+            self._round(b, S)
 
     def _round(self, win, S):
         """Ritaglia la finestra a cerchio (estensione SHAPE di X11), se c'e'."""
@@ -692,25 +716,127 @@ class App:
 
     def _b_down(self, e):
         self._bx, self._by = e.x_root, e.y_root
-        self._box = e.x_root - self.bubble.winfo_x()
-        self._boy = e.y_root - self.bubble.winfo_y()
+        self._bo = (self.bubble.winfo_x(), self.bubble.winfo_y())
         self._bmoved = 0
 
     def _b_move(self, e):
-        self._bmoved = max(self._bmoved, abs(e.x_root - self._bx) + abs(e.y_root - self._by))
-        if self._bmoved > 8:
-            self.bubble.geometry(f"+{e.x_root - self._box}+{e.y_root - self._boy}")
+        dx, dy = e.x_root - self._bx, e.y_root - self._by
+        self._bmoved = max(self._bmoved, abs(dx) + abs(dy))
+        if self._bmoved > 8:  # trascinando un pallino si sposta tutta la colonna
+            self._place_dock(self._bo[0] + dx, self._bo[1] + dy)
 
-    def _b_up(self, e):
-        if self._bmoved <= 8:  # tocco: riapri
-            self.toggle_mini()
+    def _b_up(self, e, act):
+        if self._bmoved <= 8:  # tocco
+            {"apri": self.toggle_mini, "chiudi": self.chiudi_finestra,
+             "pulizia": self.pulizia_rapida, "boost": lambda: self._in_terminale("runnerboost"),
+             "term": lambda: self._in_terminale(None)}[act]()
             return
-        S = 52  # trascinato: si aggancia al bordo piu' vicino
+        S, n = self.S, len(self.DOCK)  # trascinata: si aggancia al lato piu' vicino
         x = 6 if self.bubble.winfo_x() + S // 2 < self.sw // 2 else self.sw - S - 6
-        y = max(6, min(self.bubble.winfo_y(), self.sh - S - 6))
-        self.bubble.geometry(f"+{x}+{y}")
+        y = max(6, min(self.bubble.winfo_y(), self.sh - n * (S + self.G)))
+        self._place_dock(x, y)
         self.cfg["bubble"] = (x, y)
         self.save()
+
+    # ---------- azioni dei pallini ----------
+    def _toast(self, testo, secondi=4):
+        """Messaggio breve accanto alla colonna di pallini."""
+        t = tk.Toplevel(self.root)
+        t.overrideredirect(True)
+        t.attributes("-topmost", True)
+        tk.Label(t, text=testo, bg=self.T("key"), fg=self.T("fg"), padx=10, pady=6,
+                 font=("DejaVu Sans", 10, "bold"), justify="left").pack()
+        t.update_idletasks()
+        w = t.winfo_reqwidth()
+        bx, by = (self.bubble.winfo_x(), self.bubble.winfo_y()) if self.bubble else (self.sw - 60, 40)
+        x = bx - w - 8 if bx > self.sw // 2 else bx + self.S + 8
+        t.geometry(f"+{max(0, x)}+{by}")
+        t.after(secondi * 1000, t.destroy)
+        return t
+
+    def chiudi_finestra(self):
+        """✕: tocca una finestra e si chiude (gentilmente). Se non risponde: ✕ di nuovo = forza."""
+        f = self._da_forzare
+        if f and time.time() - f[1] < 15:
+            self._da_forzare = None
+            try:
+                self.x.d.kill_client(f[0])
+                self.x.d.sync()
+                self._toast("Chiusura forzata ✔")
+            except Exception:
+                self._toast("Già chiusa")
+            return
+        if not shutil.which("xdotool"):
+            self._toast("Serve xdotool: rilancia l'installatore")
+            return
+        self._toast("Tocca la finestra da chiudere", 5)
+        self._sel = subprocess.Popen(["xdotool", "selectwindow"], stdout=subprocess.PIPE,
+                                     stderr=subprocess.DEVNULL, text=True)
+        self.root.after(200, self._chiudi_attendi)
+
+    def _chiudi_attendi(self):
+        if self._sel.poll() is None:
+            self.root.after(200, self._chiudi_attendi)
+            return
+        try:
+            wid = int((self._sel.stdout.read() or "0").strip() or 0)
+        except ValueError:
+            wid = 0
+        mie = {int(w.wm_frame(), 16) for w in [self.root, self.mk] + [b for b, *_ in self.dock]}
+        if not wid or wid in mie:
+            return
+        from Xlib.protocol import event
+        d = self.x.d
+        w = d.create_resource_object("window", wid)
+        try:
+            ev = event.ClientMessage(window=w, client_type=d.intern_atom("WM_PROTOCOLS"),
+                                     data=(32, [d.intern_atom("WM_DELETE_WINDOW"), X.CurrentTime, 0, 0, 0]))
+            w.send_event(ev, event_mask=0)
+            d.sync()
+        except Exception:
+            return
+        self.root.after(5000, lambda: self._chiudi_verifica(wid))
+
+    def _chiudi_verifica(self, wid):
+        try:
+            self.x.d.create_resource_object("window", wid).get_attributes()
+            self.x.d.sync()
+        except Exception:
+            return  # chiusa
+        self._da_forzare = (wid, time.time())
+        self._toast("Non risponde: tocca ✕ entro 15 s\nper forzare la chiusura", 6)
+
+    def pulizia_rapida(self):
+        """♻: pulizia sicura in sottofondo (solo cache, cestino, log vecchi...)."""
+        if not shutil.which("pulizia"):
+            self._toast("Pulizia non installata: rilancia l'installatore")
+            return
+        self._toast("Pulizia sicura in corso...", 3)
+        self._pul = subprocess.Popen(["pulizia", "--sicura"], stdout=subprocess.PIPE,
+                                     stderr=subprocess.DEVNULL, text=True)
+        self.root.after(500, self._pulizia_attendi)
+
+    def _pulizia_attendi(self):
+        if self._pul.poll() is None:
+            self.root.after(500, self._pulizia_attendi)
+            return
+        out = self._pul.stdout.read() or ""
+        riga = next((r for r in out.splitlines() if "Liberati" in r), "Pulizia fatta")
+        self._toast(riga.strip("= ").replace(". ", "\n"), 6)
+
+    def _in_terminale(self, comando):
+        """Apre un terminale; con un comando lo esegue e aspetta Invio prima di chiudersi."""
+        for t in ("x-terminal-emulator", "xterm", "lxterminal", "qterminal", "xfce4-terminal"):
+            if shutil.which(t):
+                break
+        else:
+            self._toast("Nessun terminale trovato")
+            return
+        cmd = [t]
+        if comando:
+            cmd += ["-e", "bash", "-c", f"{comando}; echo; read -p 'Invio per chiudere ' x"]
+        subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                         start_new_session=True)
 
     # ---------- una sola istanza ----------
     def _server(self):

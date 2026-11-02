@@ -3,6 +3,13 @@
 Formato: [versione] - data. Le versioni seguono MAJOR.MINOR.PATCH
 (MAJOR = cambia il modo d'uso, MINOR = funzioni nuove, PATCH = correzioni).
 
+## TouchPad [2.5.0] - 2026-11-02
+### Nuovo
+- **Colonna di pallini** sul lato dello schermo quando è ridotto: ⌨ riapri, ✕ chiudi finestra
+  (gentile, poi forzata se bloccata), ♻ pulizia sicura con risultato, ⚡ RunnerBoost, >_ terminale.
+  Si trascina tutta insieme e si aggancia al lato.
+- **Auto-riduci di default**: si riduce da solo dopo 1 minuto senza tocchi (Off / 30 s / 1 min / 2 min).
+
 ## RunnerKit - aggiornamento completo 2026-11-02
 - **RunnerBoost 1.0.0** (nuovo): diagnosi con consigli, test di velocità con storico e confronto,
   profili veloce / bilanciato / normale (reversibili), report da mandare.

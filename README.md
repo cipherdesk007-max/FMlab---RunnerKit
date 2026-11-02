@@ -5,7 +5,7 @@ Tutto quello che serve installare sul Debian di LinuxRunner sta qui, con un coma
 
 | Strumento | Versione | A cosa serve |
 |---|---|---|
-| [TouchPad](#touchpad) | 2.4.1 | Mouse, tasto destro e tastiera italiana touch, fluttuanti sul desktop |
+| [TouchPad](#touchpad) | 2.5.0 | Mouse, tasto destro e tastiera italiana touch, fluttuanti sul desktop |
 | [UnaVolta](#unavolta) | 1.1.0 | Tocchi ripetuti su un'icona aprono il programma una volta sola; se è già aperto lo porta davanti |
 | [Pulizia](#pulizia) | 1.0.0 | Agente di pulizia del disco: report di cosa occupa spazio, pulizia sicura, automatica a settimana |
 | [RunnerBoost](#runnerboost) | 1.0.0 | Diagnosi della velocità, test ripetibile con storico, profili veloce / bilanciato / normale |
@@ -47,9 +47,21 @@ La finestra resta sempre dentro lo schermo.
 **Avvio automatico:** dopo l'installazione TouchPad si apre da solo ogni volta che avvii il desktop.
 Si spegne/riaccende da **⚙ → Avvio col desktop**.
 
-**Pallino:** **—** (o Auto-riduci) trasforma TouchPad in un pallino rotondo nell'angolo.
-Toccalo e torna esattamente dov'era, sulla stessa pagina. Trascinalo e si aggancia al bordo più vicino.
-Se rilanci `touchpad` mentre è già aperto, non se ne apre un secondo: riappare quello che c'è.
+**Colonna di pallini:** con **—**, o da solo quando non lo usi per 1 minuto (Auto-riduci, regolabile in ⚙),
+TouchPad diventa una colonna di pallini rotondi sul lato dello schermo:
+
+| Pallino | Tocco |
+|---|---|
+| ⌨ | Riapre TouchPad dov'era, sulla stessa pagina |
+| ✕ | Chiudi finestra: tocca la finestra e si chiude. Se è bloccata, ✕ di nuovo entro 15 s la forza |
+| ♻ | Pulizia sicura in sottofondo, poi ti dice quanto ha liberato |
+| ⚡ | Apre RunnerBoost (diagnosi) in un terminale |
+| >_ | Apre il terminale |
+
+Trascinando un pallino si sposta tutta la colonna, che si aggancia al lato più vicino.
+Se rilanci `touchpad` mentre è già aperto, riappare quello che c'è.
+
+**Tutto in uno:** l'installatore mette TouchPad insieme a tutti gli altri strumenti di RunnerKit.
 
 **Trasparenza:** serve il *compositing*: TouchPad avvia `xcompmgr` da solo.
 Su LinuxRunner funziona (provato al 45%, vedi `screenshots/v2.2-impostazioni-opacita-45.png`).

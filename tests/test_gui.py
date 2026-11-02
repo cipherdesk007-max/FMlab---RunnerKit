@@ -50,6 +50,12 @@ def main():
     app.toggle_mini()
     app.root.update()
     assert app.bubble.winfo_viewable() and not app.root.winfo_viewable(), "pallino non mostrato"
+    assert len(app.dock) == 5, "attesi 5 pallini"
+    xs = {b.winfo_x() for b, *_ in app.dock}
+    ys = [b.winfo_y() for b, *_ in app.dock]
+    assert len(xs) == 1 and ys == sorted(ys) and len(set(ys)) == 5, f"pallini non in colonna: {xs} {ys}"
+    app._toast("prova messaggio")
+    app.root.update()
     shot(app, "pallino")
     app.toggle_mini()
     app.root.update()
