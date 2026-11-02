@@ -9,7 +9,7 @@ Tutto quello che serve installare sul Debian di LinuxRunner sta qui, con un coma
 | [UnaVolta](#unavolta) | 1.1.0 | Tocchi ripetuti su un'icona aprono il programma una volta sola; se è già aperto lo porta davanti |
 | [Pulizia](#pulizia) | 1.0.0 | Agente di pulizia del disco: report di cosa occupa spazio, pulizia sicura, automatica a settimana |
 | [RunnerBoost](#runnerboost) | 1.2.0 | Diagnosi della velocità, test ripetibile con storico, profili veloce / bilanciato / normale |
-| [Terminale](#terminale) | 1.1.0 | Prompt a colori con ramo git, esito e durata dei comandi, statistiche, monitor dal vivo, scorciatoie |
+| [Terminale](#terminale) | 1.2.0 | Prompt a colori con ramo git, esito e durata dei comandi, statistiche, monitor dal vivo, scorciatoie |
 | *prossimi strumenti* | | |
 
 > Pensato per i limiti di LinuxRunner: niente kernel né compositing, CPU emulata.
@@ -134,7 +134,8 @@ non lancia programmi a ogni prompt, quindi non rallenta.
 - **Schermata iniziale**: RAM e disco con barre colorate, da quanto è acceso, carico, processi, stato JIT
 - **Prompt**: utente (rosso se root), cartella, ramo git, ✘ e codice se l'ultimo comando fallisce, ⏱ durata se supera 3 s
 - **Storia comandi** lunga, senza doppioni, con data e ora; completamento automatico
-- `rk` elenco comandi · `rkinfo` statistiche · `rktop` monitor dal vivo
+- **Resta in alto**: `clear` o Ctrl+L puliscono lo schermo e rimettono le statistiche
+- `rk` comando unico: `rk info`, `rk top`, `rk gpu`, `rk boost`, `rk pulizia`, `rk pulisci`, `rk log`, `rk aggiorna`, `rk versioni`
 - `aiphone FILE` copia nella cartella dell'app File · `dalliphone` apre quella cartella
 - `aggiorna`, `installa`, `cerca`, `rimuovi`, `estrai`, `mkcd`, `spazio`, `memoria`, `rkaggiorna`
 

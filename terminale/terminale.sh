@@ -2,7 +2,7 @@
 # Caricato da ~/.bashrc. Tutto e' scritto in bash puro, leggendo /proc: niente programmi
 # lanciati a ogni prompt, perche' su LinuxRunner ogni processo costa.
 case $- in *i*) ;; *) return ;; esac
-RK_TERM_VERSIONE="1.1.0"
+RK_TERM_VERSIONE="1.2.0"
 
 # ---------- storia comandi ----------
 HISTSIZE=20000; HISTFILESIZE=40000
@@ -109,7 +109,8 @@ alias aggiorna='apt update && apt full-upgrade -y'
 alias installa='apt install' cerca='apt search' rimuovi='apt remove'
 alias spazio='df -h /' memoria='free -h'
 alias boost='runnerboost' pulisci='pulizia'
-alias rkaggiorna='curl -fsSL https://raw.githubusercontent.com/cipherdesk007-max/mia/main/install.sh | sh'
+# aggiorna RunnerKit e ricarica subito il terminale con la versione nuova
+alias rkaggiorna='curl -fsSL https://raw.githubusercontent.com/cipherdesk007-max/mia/main/install.sh | sh && exec bash'
 mkcd() { mkdir -p "$1" && cd "$1"; }
 estrai() {  # estrae qualsiasi archivio
   case "$1" in
@@ -124,18 +125,45 @@ aiphone() {  # copia file nella cartella che vedi dall'app File dell'iPhone
   cp -rv "$@" "$d"/ && echo "-> app File: In questo iPhone > LinuxRunner > Shared"
 }
 dalliphone() { local d=/mnt/LinuxRunnerShared; [[ -d $d ]] || d=~/Shared; cd "$d" && ls -lh; }
-rk() {
-  printf '%sRunnerKit%s — comandi\n' "$(_rk_n '1;35')" "$(_rk_n 0)"
-  cat <<'EOF'
-  touchpad          mouse, tasto destro e tastiera touch (pallino nell'angolo)
-  unavolta --log    cosa e' successo agli ultimi avvii (anti doppia apertura)
-  pulizia           report disco · pulizia --sicura per pulire
-  runnerboost       diagnosi velocita' · runnerboost --test per misurare
-  rkinfo / rktop    statistiche · monitor dal vivo
-  aiphone FILE      copia verso l'app File dell'iPhone · dalliphone per aprire la cartella
-  aggiorna          aggiorna Debian · rkaggiorna aggiorna RunnerKit
-  estrai FILE       estrae qualsiasi archivio · mkcd DIR crea ed entra
+rk() {  # comando unico di RunnerKit: rk, rk aggiorna, rk versioni, rk gpu, ...
+  case "${1:-}" in
+    aggiorna) rkaggiorna ;;
+    versioni|v)
+      printf '%sRunnerKit%s — versioni installate\n' "$(_rk_n '1;35')" "$(_rk_n 0)"
+      printf '  TouchPad     %s\n' "$(grep -m1 '__version__' /usr/local/bin/touchpad 2>/dev/null | cut -d'"' -f2)"
+      printf '  UnaVolta     %s\n' "$(unavolta --versione 2>/dev/null | cut -d' ' -f2)"
+      printf '  Pulizia      %s\n' "$(pulizia --versione 2>/dev/null | cut -d' ' -f2)"
+      printf '  RunnerBoost  %s\n' "$(runnerboost --versione 2>/dev/null | cut -d' ' -f2)"
+      printf '  Terminale    %s\n' "$RK_TERM_VERSIONE"
+      if [[ -r /usr/local/share/runnerkit/installato ]]; then printf '  installato   %s\n' "$(cat /usr/local/share/runnerkit/installato)"; fi ;;
+    info) rkinfo ;;
+    top) rktop ;;
+    gpu) runnerboost --gpu ;;
+    boost) runnerboost ;;
+    pulizia) pulizia ;;
+    pulisci) pulizia --sicura ;;
+    log) unavolta --log; echo; tail -20 ~/.touchpad.log 2>/dev/null ;;
+    *)
+      printf '%sRunnerKit%s — comandi  (rk versioni · rk aggiorna)\n' "$(_rk_n '1;35')" "$(_rk_n 0)"
+      cat <<'EOF'
+  rk info · rk top     statistiche · monitor dal vivo
+  rk gpu · rk boost    prova GPU · diagnosi velocita'
+  rk pulizia           report del disco · rk pulisci = pulizia sicura
+  rk log               ultimi avvii (UnaVolta) e errori di TouchPad
+  rk aggiorna          aggiorna RunnerKit (e ricarica il terminale)
+  rk versioni          versioni installate
+  touchpad             mouse, tasto destro, tastiera, pallini
+  aiphone FILE         copia verso l'app File dell'iPhone · dalliphone apre la cartella
+  aggiorna             aggiorna Debian · installa/cerca/rimuovi PACCHETTO
+  estrai FILE · mkcd   estrae qualsiasi archivio · crea ed entra in una cartella
+  clear (o Ctrl+L)     pulisce lo schermo e rimette le statistiche in alto
 EOF
+      ;;
+  esac
 }
+
+# clear e Ctrl+L puliscono lo schermo ma la schermata RunnerKit resta sempre in alto
+clear() { command clear; if [[ ${RK_BANNER:-1} = 1 ]]; then rkinfo; fi; }
+bind -x '"\C-l": clear' 2>/dev/null
 
 [[ ${RK_BANNER:-1} = 1 ]] && rkinfo

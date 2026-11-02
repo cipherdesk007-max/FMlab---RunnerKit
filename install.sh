@@ -81,18 +81,21 @@ command -v update-desktop-database >/dev/null && update-desktop-database "$HOME/
 # Terminale RunnerKit (si spegne con: rkterminale --off)
 [ "${RUNNERKIT_NO_TERMINALE:-0}" = "1" ] || /usr/local/bin/rkterminale --on >/dev/null
 
-V=$(grep -m1 '__version__' /usr/local/bin/touchpad | cut -d'"' -f2)
-echo ">> TouchPad v$V installato."
-echo "   Aprilo: icona sul desktop, Applications -> TouchPad, oppure scrivi 'touchpad' (anche dal Terminal dell'app)"
-echo "   Si apre da solo a ogni avvio del desktop (disattivabile nelle impostazioni)."
-echo ">> UnaVolta: ogni programma si apre una volta sola anche con tocchi ripetuti."
+# TouchPad gia' aperto: lo riavvio, cosi' la versione nuova e' subito attiva
+if pgrep -f /usr/local/bin/touchpad >/dev/null 2>&1; then
+  pkill -f /usr/local/bin/touchpad 2>/dev/null; sleep 1
+  (nohup /usr/local/bin/touchpad --avvio >/dev/null 2>&1 &)
+  RIAVVIATO=" (riavviato)"
+fi
+$SUDO mkdir -p /usr/local/share/runnerkit
+date '+%Y-%m-%d %H:%M' | $SUDO tee /usr/local/share/runnerkit/installato >/dev/null
+
 echo ""
 echo "== RunnerKit installato =="
-echo "   TouchPad    v$(grep -m1 '__version__' /usr/local/bin/touchpad | cut -d'\"' -f2)"
+echo "   TouchPad    $(grep -m1 '__version__' /usr/local/bin/touchpad | cut -d'"' -f2)${RIAVVIATO:-}"
 echo "   UnaVolta    $(/usr/local/bin/unavolta --versione | cut -d' ' -f2)"
 echo "   Pulizia     $(/usr/local/bin/pulizia --versione | cut -d' ' -f2)"
 echo "   RunnerBoost $(/usr/local/bin/runnerboost --versione | cut -d' ' -f2)"
 echo "   Terminale   $(/usr/local/bin/rkterminale --versione)"
-echo ">> Apri un nuovo terminale per il Terminale RunnerKit, poi scrivi: rk"
-echo ">> Pulizia: scrivi 'pulizia' per il report, 'pulizia --sicura' per pulire."
-echo "   Per aggiornare in futuro: rilancia lo stesso comando curl."
+echo ""
+echo "   Comandi: scrivi 'rk' in un terminale nuovo. Aggiornare in futuro: rk aggiorna"

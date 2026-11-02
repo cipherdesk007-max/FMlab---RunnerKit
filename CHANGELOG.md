@@ -3,6 +3,14 @@
 Formato: [versione] - data. Le versioni seguono MAJOR.MINOR.PATCH
 (MAJOR = cambia il modo d'uso, MINOR = funzioni nuove, PATCH = correzioni).
 
+## Terminale [1.2.0] + installatore - 2026-11-02
+- **La schermata RunnerKit resta in alto**: `clear` e Ctrl+L puliscono lo schermo e la rimettono subito.
+- **Comando unico `rk`**: `rk info`, `rk top`, `rk gpu`, `rk boost`, `rk pulizia`, `rk pulisci`, `rk log`,
+  `rk aggiorna`, `rk versioni`.
+- `rkaggiorna` / `rk aggiorna` ricaricano subito il terminale con la versione nuova.
+- Installatore: se TouchPad è aperto lo riavvia con la versione nuova; registra data di installazione;
+  riepilogo finale pulito.
+
 ## RunnerBoost [1.2.0] - 2026-11-02
 - `runnerboost --gpu` legge le statistiche di LinuxRunner: quanti disegni sono andati su Metal e quanti
   in software, con la percentuale sulla GPU (prova reale che il chip grafico lavora).

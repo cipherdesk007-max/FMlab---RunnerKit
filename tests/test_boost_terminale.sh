@@ -32,12 +32,14 @@ echo "ok: profili veloce / normale reversibili"
 
 # Terminale: sintassi, caricamento in una shell interattiva, prompt e statistiche
 bash -n "$DIR/terminale/terminale.sh"
-out=$(HOME="$T/home" bash --norc -i -c ". '$DIR/terminale/terminale.sh'; _rk_prompt; echo \"PS1=\$PS1\"; rk; type rktop >/dev/null && echo RKTOP" 2>&1)
+out=$(HOME="$T/home" bash --norc -i -c ". '$DIR/terminale/terminale.sh'; _rk_prompt; echo \"PS1=\$PS1\"; rk; type rktop >/dev/null && echo RKTOP; TERM=xterm clear; rk versioni" 2>&1)
 printf "%s\n" "$out" | grep -q "RunnerKit"
 printf "%s\n" "$out" | grep -q "RAM"
 printf "%s\n" "$out" | grep -q "PS1=.*❯"
 printf "%s\n" "$out" | grep -q "RKTOP"
 printf "%s\n" "$out" | grep -q "GPU:"
+[ "$(printf "%s\n" "$out" | grep -c "RunnerKit ─")" -ge 2 ] || { echo "dopo clear la schermata non torna"; exit 1; }
+printf "%s\n" "$out" | grep -q "versioni installate"
 echo "ok: terminale (banner con GPU, prompt, comandi)"
 rm -rf "$T" /tmp/runnerboost-dati
 echo "OK runnerboost + terminale"
