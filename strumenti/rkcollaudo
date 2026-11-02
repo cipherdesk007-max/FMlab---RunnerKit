@@ -11,7 +11,7 @@ ko()   { FAIL=$((FAIL + 1)); riga "  [ERRORE] $*"; }
 avv()  { AVV=$((AVV + 1));   riga "  [AVVISO] $*"; }
 sez()  { riga ""; riga "== $* =="; }
 
-riga "RunnerKit Collaudo $VERSIONE — $(date '+%Y-%m-%d %H:%M')"
+riga "FMlab - RunnerKit Collaudo $VERSIONE — $(date '+%Y-%m-%d %H:%M')"
 
 sez "LinuxRunner"
 [ -r /etc/os-release ] && riga "  sistema: $(. /etc/os-release; echo "$PRETTY_NAME")"

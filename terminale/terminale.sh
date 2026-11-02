@@ -2,7 +2,7 @@
 # Caricato da ~/.bashrc. Tutto e' scritto in bash puro, leggendo /proc: niente programmi
 # lanciati a ogni prompt, perche' su LinuxRunner ogni processo costa.
 case $- in *i*) ;; *) return ;; esac
-RK_TERM_VERSIONE="1.3.2"
+RK_TERM_VERSIONE="1.3.3"
 [ -r "$HOME/.config/runnerkit/terminale" ] && . "$HOME/.config/runnerkit/terminale"   # RK_FISSO=0/1
 # lingua scelta con "rk italiano"
 if [ -r "$HOME/.config/runnerkit/lingua" ]; then export LANG="$(cat "$HOME/.config/runnerkit/lingua")" LANGUAGE=it:en; fi
@@ -59,7 +59,7 @@ rkinfo() {
   read -r du dt dp <<< "$disk"
   [[ -r /proc/ish/jit ]] && jit=$(grep -m1 -i mode /proc/ish/jit 2>/dev/null)
   printf '%s' "$(_rk_n '1;35')"
-  echo '  ╭─ RunnerKit ─────────────────────────────╮'
+  echo '  ╭─ FMlab - RunnerKit ─────────────────────╮'
   printf '  │ %-40s│\n' "$(date '+%A %d %B, %H:%M')"
   echo '  ╰─────────────────────────────────────────╯'
   printf '%s' "$(_rk_n 0)"
@@ -117,7 +117,7 @@ _rk_riga1() {
   case ${LR_GUI_GPU_ACTIVE:-} in mesa-metal-resident) gpu="Metal";; esac
   [[ -z ${LR_GUI_GPU_ACTIVE:-} && -c /dev/linuxrunner-gpu ]] && gpu="Metal disp."
   if [[ -r /proc/ish/jit ]]; then jit=$(grep -m1 -i mode /proc/ish/jit 2>/dev/null); jit=${jit##*: }; fi
-  printf '\033[1;45;97m RunnerKit \033[0;100;97m RAM %s %3d%% \033[0;100;97m│ Disco %s \033[0;100;97m│ GPU %s%s \033[0m' \
+  printf '\033[1;45;97m FMlab·RunnerKit \033[0;100;97m RAM %s %3d%% \033[0;100;97m│ Disco %s \033[0;100;97m│ GPU %s%s \033[0m' \
     "$(_rk_barra_mini "$pct")" "$pct" "${_rk_disco:-?}" "$gpu" "${jit:+ │ JIT $jit}"
 }
 _rk_barra_mini() { local p=$1 f=$(( $1 * 8 / 100 )) i s=""; for (( i = 0; i < 8; i++ )); do (( i < f )) && s+="▮" || s+="▯"; done; printf '%s' "$s"; }

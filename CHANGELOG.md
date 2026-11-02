@@ -1,7 +1,11 @@
-# Changelog — RunnerKit
+# Changelog — FMlab - RunnerKit
 
 Formato: [versione] - data. Le versioni seguono MAJOR.MINOR.PATCH
 (MAJOR = cambia il modo d'uso, MINOR = funzioni nuove, PATCH = correzioni).
+
+## FMlab - RunnerKit 2026.11.02-12
+- Il progetto si chiama **FMlab - RunnerKit**: titolo della pagina GitHub (italiano e inglese),
+  installatore, aggiornamento, collaudo, finestra del Centro, schermata e barra del terminale.
 
 ## RunnerKit 2026.11.02-11 - prestazioni e pulizia rapida
 - **Centro 1.1.0**: finestra più piccola e compatta; **⚡ Pulizia rapida** (un tocco, tutte le categorie

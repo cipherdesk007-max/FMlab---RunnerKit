@@ -8,7 +8,7 @@ T="${RK_T:-$(date +%s)}"   # parametro anti-cache: scarica sempre i file appena 
 SUDO=""
 [ "$(id -u)" -ne 0 ] && command -v sudo >/dev/null && SUDO="sudo"
 
-echo "== RunnerKit =="
+echo "== FMlab - RunnerKit =="
 # pacchetti: apt solo se ne manca qualcuno (apt su LinuxRunner e' pesante: niente lavoro inutile)
 PACCHETTI="python3-tk python3-xlib xcompmgr xdotool shared-mime-info desktop-file-utils bash-completion mesa-utils x11-utils"
 MANCANO=""
@@ -143,7 +143,7 @@ $SUDO mkdir -p /usr/local/share/runnerkit
 date '+%Y-%m-%d %H:%M' | $SUDO tee /usr/local/share/runnerkit/installato >/dev/null
 
 echo ""
-echo "== RunnerKit $(cat /usr/local/share/runnerkit/versione 2>/dev/null) installato =="
+echo "== FMlab - RunnerKit $(cat /usr/local/share/runnerkit/versione 2>/dev/null) installato =="
 echo "   TouchPad    $(grep -m1 '__version__' /usr/local/bin/touchpad | cut -d'"' -f2)${RIAVVIATO:-}"
 echo "   UnaVolta    $(/usr/local/bin/unavolta --versione | cut -d' ' -f2)"
 echo "   Pulizia     $(/usr/local/bin/pulizia --versione | cut -d' ' -f2)"

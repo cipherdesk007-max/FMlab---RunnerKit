@@ -1,4 +1,4 @@
-# RunnerKit 📱🐧
+# FMlab - RunnerKit 📱🐧
 
 [🇮🇹 Italiano](README.md) · 🇬🇧 English
 
@@ -86,4 +86,4 @@ pseudo-terminal, GPU check. Test screenshots update themselves in
 - **[iSH](https://github.com/ish-app/ish)**, the foundation LinuxRunner is built on.
 - Debian, Mesa, Openbox, Tk and every open-source project the desktop relies on.
 
-RunnerKit is an independent project, not affiliated with LinuxRunner.
+FMlab - RunnerKit is an independent FMlab project, not affiliated with LinuxRunner.

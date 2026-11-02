@@ -1,8 +1,8 @@
-# RunnerKit 📱🐧
+# FMlab - RunnerKit 📱🐧
 
 🇮🇹 Italiano · [🇬🇧 English](README.en.md)
 
-**Il kit tutto-in-uno per usare Linux sull'iPhone con [LinuxRunner](https://github.com/mxhm11cr/LinuxRunner).**
+**FMlab - RunnerKit** è il kit tutto-in-uno per usare Linux sull'iPhone con [LinuxRunner](https://github.com/mxhm11cr/LinuxRunner).
 Tocco, tastiera, pulizia, velocità, backup e aggiornamenti per il desktop Debian di LinuxRunner.
 Si installa con un comando e poi si aggiorna con un tocco.
 
@@ -149,7 +149,7 @@ per scelta di LinuxRunner. Primo risultato su 15 Pro Max: **glxgears a 68,7 FPS*
 - **[iSH](https://github.com/ish-app/ish)**: la base su cui è costruito LinuxRunner.
 - Debian, Mesa, Openbox, Tk e tutti i progetti open source su cui poggia il desktop.
 
-RunnerKit è un progetto indipendente e non è affiliato a LinuxRunner.
+FMlab - RunnerKit è un progetto indipendente di FMlab e non è affiliato a LinuxRunner.
 
 ## Struttura
 

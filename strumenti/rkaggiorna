@@ -23,7 +23,7 @@ chiudi() {  # $1 secondi: conto alla rovescia, Invio chiude subito (solo nella f
   echo
 }
 
-printf '%s== Aggiornamento RunnerKit ==%s\n' "$(v '1;35')" "$(v 0)"
+printf '%s== Aggiornamento FMlab - RunnerKit ==%s\n' "$(v '1;35')" "$(v 0)"
 locale=$(cat "$LOCALE_F" 2>/dev/null)
 T=$(date +%s)   # salta la cache di GitHub (~5 minuti)
 remota=$(curl -fsSL --max-time 15 "$REPO/VERSIONE?t=$T" 2>/dev/null | tr -d '[:space:]')
