@@ -3,6 +3,12 @@
 Formato: [versione] - data. Le versioni seguono MAJOR.MINOR.PATCH
 (MAJOR = cambia il modo d'uso, MINOR = funzioni nuove, PATCH = correzioni).
 
+## TouchPad [2.5.2] - 2026-11-02
+### Corretto
+- **✕ poteva chiudere il desktop o la barra** se si toccava lo sfondo, le icone o la barra in basso.
+  Ora quelle finestre sono protette (tipo DESKTOP/DOCK, pcmanfm, pannelli): ✕ risponde "non la chiudo".
+  Se è già successo: Stop Desktop -> Open Desktop rimette tutto, nessun file perso.
+
 ## TouchPad [2.5.1] - 2026-11-02
 ### Corretto
 - **I pallini sparivano e tornava la tastiera:** l'avvio automatico lanciava un secondo TouchPad che

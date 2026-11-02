@@ -90,6 +90,19 @@ def main():
     app.toggle_mini()
     app.root.update()
 
+    # ✕ non deve mai chiudere desktop o barra
+    import tkinter as _tk
+    finto = _tk.Toplevel(app.root)
+    finto.title("finto pannello")
+    finto.update()
+    fw = app.x.d.create_resource_object("window", int(finto.wm_frame(), 16))
+    fw.change_property(app.x.d.intern_atom("_NET_WM_WINDOW_TYPE"), app.x.d.intern_atom("ATOM"), 32,
+                       [app.x.d.intern_atom("_NET_WM_WINDOW_TYPE_DOCK")])
+    app.x.d.sync()
+    assert app._protetta(fw), "una barra (DOCK) deve essere protetta"
+    assert app._protetta(app.x.d.screen().root), "lo sfondo deve essere protetto"
+    finto.destroy()
+
     app.set_autohide(10)
     app.last_touch -= 60
     app._autohide_loop()

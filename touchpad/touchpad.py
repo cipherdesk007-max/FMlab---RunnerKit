@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """TouchPad 2 - mouse + tastiera fluttuante per LinuxRunner.
 Parla direttamente con X11 (XTEST): nessun processo esterno per tocco."""
-__version__ = "2.5.1"
+__version__ = "2.5.2"
 
 import glob
 import json
@@ -823,6 +823,9 @@ class App:
         from Xlib.protocol import event
         d = self.x.d
         w = d.create_resource_object("window", wid)
+        if self._protetta(w):
+            self._toast("Quella è il desktop o la barra:\nnon la chiudo")
+            return
         try:
             ev = event.ClientMessage(window=w, client_type=d.intern_atom("WM_PROTOCOLS"),
                                      data=(32, [d.intern_atom("WM_DELETE_WINDOW"), X.CurrentTime, 0, 0, 0]))
@@ -831,6 +834,24 @@ class App:
         except Exception:
             return
         self.root.after(5000, lambda: self._chiudi_verifica(wid))
+
+    def _protetta(self, w):
+        """Desktop (icone), barra delle applicazioni, sfondo: non si chiudono mai con ✕."""
+        d = self.x.d
+        try:
+            if w.id == d.screen().root.id:
+                return True
+            tipi = w.get_full_property(d.intern_atom("_NET_WM_WINDOW_TYPE"), X.AnyPropertyType)
+            nomi = {d.get_atom_name(a) for a in (tipi.value if tipi else [])}
+            if nomi & {"_NET_WM_WINDOW_TYPE_DESKTOP", "_NET_WM_WINDOW_TYPE_DOCK"}:
+                return True
+            cls = w.get_wm_class() or ("", "")
+            testo = " ".join(cls).lower()
+            if any(k in testo for k in ("pcmanfm", "panel", "desktop", "xfdesktop", "tint2", "plank", "lxqt-panel")):
+                return True
+        except Exception:
+            return True  # nel dubbio non chiudo
+        return False
 
     def _chiudi_verifica(self, wid):
         try:
