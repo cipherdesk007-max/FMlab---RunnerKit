@@ -1,0 +1,128 @@
+#!/bin/sh
+# Pulizia (RunnerKit) - agente di pulizia del disco per Debian su LinuxRunner.
+#   pulizia              report: cosa occupa spazio e cosa si puo' togliere (non cancella nulla)
+#   pulizia --sicura     cancella SOLO cose che si ricreano da sole, poi mostra quanto ha liberato
+#   pulizia --prova      come --sicura ma senza cancellare: mostra cosa farebbe
+#   pulizia --auto-on    pulizia sicura automatica all'avvio del desktop, max 1 volta a settimana
+#   pulizia --auto-off   spegne quella automatica
+# I file personali (documenti, Desktop, Shared, progetti) non vengono MAI cancellati.
+VERSIONE="1.0.0"
+R="${PULIZIA_ROOT:-}"          # prefisso per i test
+H="${PULIZIA_HOME:-$HOME}"
+STATO="$H/.config/pulizia"
+AUTOSTART="$H/.config/autostart/pulizia.desktop"
+SUDO=""
+[ "$(id -u)" -ne 0 ] && command -v sudo >/dev/null && SUDO="sudo"
+
+kb() { du -sk "$@" 2>/dev/null | awk '{s+=$1} END {print s+0}'; }
+umano() { awk -v k="$1" 'BEGIN{ if(k>=1048576) printf "%.1f GB",k/1048576; else if(k>=1024) printf "%.0f MB",k/1024; else printf "%d KB",k }'; }
+spazio_libero() { df -Pk "${R:-/}" 2>/dev/null | awk 'NR==2{print $4}'; }
+
+# --- categorie SICURE: si ricreano da sole o sono scarti ---
+# formato: nome|descrizione|percorsi (separati da spazio)
+sicure() {
+  cat <<EOF
+apt|Pacchetti .deb gia' installati (cache di apt)|$R/var/cache/apt/archives/*.deb $R/var/cache/apt/archives/partial/*
+cache|Cache dei programmi (miniature, browser, shader, pip...)|$H/.cache/*
+cestino|Cestino|$H/.local/share/Trash/files/* $H/.local/share/Trash/info/*
+log|Log vecchi e compressi|$R/var/log/*.gz $R/var/log/*.[0-9] $R/var/log/*/*.gz $R/var/log/*/*.[0-9]
+tmp|File temporanei piu' vecchi di 3 giorni|TMPVECCHI
+crash|Dump di crash|$R/var/crash/* $H/core $H/core.[0-9]*
+EOF
+}
+
+tmp_vecchi() { find "$R/tmp" "$R/var/tmp" -xdev -mindepth 1 -maxdepth 1 -mtime +3 ! -name '.*' ! -name 'touchpad-*' ! -name 'unavolta-*' 2>/dev/null; }
+
+espandi() {  # stampa i percorsi esistenti di una categoria
+  if [ "$1" = TMPVECCHI ]; then tmp_vecchi; return; fi
+  for p in $1; do [ -e "$p" ] && echo "$p"; done
+}
+
+pulisci() {  # $1 = prova|vero
+  modo="$1"; prima=$(spazio_libero); tot=0
+  echo "== Pulizia sicura ($( [ "$modo" = prova ] && echo 'PROVA, non cancello niente' || echo 'in corso'))"
+  sicure | while IFS='|' read -r nome desc percorsi; do
+    lista=$(espandi "$percorsi")
+    [ -z "$lista" ] && { printf '  %-8s %-48s %s\n' "$nome" "$desc" "vuoto"; continue; }
+    k=$(echo "$lista" | tr '\n' '\0' | xargs -0 du -sk 2>/dev/null | awk '{s+=$1} END{print s+0}')
+    printf '  %-8s %-48s %s\n' "$nome" "$desc" "$(umano "$k")"
+    [ "$modo" = vero ] && echo "$lista" | tr '\n' '\0' | xargs -0 $SUDO rm -rf 2>/dev/null
+  done
+  if [ "$modo" = vero ]; then
+    $SUDO apt-get clean >/dev/null 2>&1
+    dopo=$(spazio_libero)
+    lib=$(( ${dopo:-0} - ${prima:-0} )); [ "$lib" -lt 0 ] && lib=0
+    echo "== Liberati circa $(umano "$lib"). Spazio libero ora: $(umano "${dopo:-0}")"
+    mkdir -p "$STATO"; date +%s > "$STATO/ultima"
+  fi
+}
+
+report() {
+  ora=$(date '+%Y-%m-%d %H:%M')
+  echo "=================== REPORT PULIZIA (RunnerKit Pulizia $VERSIONE) ==================="
+  echo "Data: $ora"
+  echo
+  echo "--- DISCO ---"
+  df -h "${R:-/}" 2>/dev/null | sed 's/^/  /'
+  echo
+  echo "--- MEMORIA (RAM) ---"
+  free -m 2>/dev/null | sed 's/^/  /'
+  echo "  Processi che usano piu' memoria:"
+  ps -eo rss,comm --sort=-rss 2>/dev/null | awk 'NR>1 && NR<=9 {printf "    %6.0f MB  %s\n", $1/1024, $2}'
+  echo
+  echo "--- SI PUO' CANCELLARE SUBITO, IN SICUREZZA (pulizia --sicura) ---"
+  pulisci prova | sed '1d'
+  echo
+  echo "--- PACCHETTI NON PIU' NECESSARI (apt autoremove) ---"
+  ar=$(apt-get -s autoremove 2>/dev/null | awk '/^Remv/ {print $2}')
+  if [ -n "$ar" ]; then echo "$ar" | sed 's/^/  /'; echo "  -> si tolgono con: apt autoremove"
+  else echo "  nessuno"; fi
+  echo
+  echo "--- PACCHETTI PIU' GRANDI (da valutare insieme) ---"
+  dpkg-query -Wf '${Installed-Size}\t${Package}\n' 2>/dev/null | sort -rn | head -20 |
+    awk -F'\t' '{printf "  %7.0f MB  %s\n", $1/1024, $2}'
+  echo
+  echo "--- CARTELLE PIU' GRANDI ---"
+  for d in "$R/usr" "$R/var" "$R/opt" "$H" "$R/tmp"; do
+    [ -d "$d" ] && du -xk -d 2 "$d" 2>/dev/null | sort -rn | head -8 |
+      awk '{printf "  %7.0f MB  %s\n", $1/1024, $2}'
+  done
+  echo
+  echo "--- FILE PIU' GRANDI DI 50 MB ---"
+  find "$R/" -xdev -type f -size +50M ! -path '*/proc/*' ! -path '*/sys/*' 2>/dev/null |
+    head -40 | while read -r f; do printf '  %7.0f MB  %s\n' "$(( $(kb "$f") / 1024 ))" "$f"; done
+  echo
+  echo "--- PULIZIA AUTOMATICA ---"
+  if [ -f "$AUTOSTART" ]; then echo "  attiva (max 1 volta a settimana)"; else echo "  spenta (accendi con: pulizia --auto-on)"; fi
+  [ -f "$STATO/ultima" ] && echo "  ultima pulizia: $(date -d "@$(cat "$STATO/ultima")" '+%Y-%m-%d %H:%M' 2>/dev/null)"
+  echo "=================================================================================="
+}
+
+dove_report() {  # cartella condivisa con l'app File dell'iPhone, se c'e'
+  for d in "$R/mnt/LinuxRunnerShared" "$H/Shared"; do [ -d "$d" ] && [ -w "$d" ] && { echo "$d"; return; }; done
+  echo "$H"
+}
+
+case "$1" in
+  --versione) echo "Pulizia $VERSIONE" ;;
+  --prova) pulisci prova ;;
+  --sicura) pulisci vero ;;
+  --auto-on)
+    mkdir -p "$(dirname "$AUTOSTART")"
+    printf '[Desktop Entry]\nType=Application\nName=Pulizia automatica\nExec=pulizia --auto-giro\nX-GNOME-Autostart-enabled=true\nHidden=false\n' > "$AUTOSTART"
+    echo "Pulizia sicura automatica attiva: all'avvio del desktop, al massimo una volta a settimana." ;;
+  --auto-off) rm -f "$AUTOSTART"; echo "Pulizia automatica spenta." ;;
+  --auto-giro)  # chiamato all'avvio: solo se sono passati 7 giorni
+    ult=$(cat "$STATO/ultima" 2>/dev/null || echo 0)
+    [ $(( $(date +%s) - ult )) -lt 604800 ] && exit 0
+    sleep 60; mkdir -p "$STATO"; pulisci vero > "$STATO/ultima-pulizia.log" 2>&1 ;;
+  ""|--report)
+    out="$(dove_report)/pulizia-report-$(date +%Y%m%d-%H%M).txt"
+    echo "Analizzo il disco (su LinuxRunner puo' volerci qualche minuto)..."
+    report | tee "$out"
+    echo
+    echo "Report salvato in: $out"
+    case "$out" in */LinuxRunnerShared/*|*/Shared/*) echo "Lo trovi anche nell'app File: In questo iPhone > LinuxRunner > Shared";; esac
+    echo "Mandamelo e decidiamo cosa togliere. Per la parte sicura: pulizia --sicura" ;;
+  *) sed -n '2,9p' "$0" | sed 's/^# \{0,1\}//' ;;
+esac

@@ -22,6 +22,9 @@ jobs:
           /usr/bin/python3 -m py_compile touchpad/touchpad.py
           sh -n install.sh
           sh -n unavolta/unavolta
+          sh -n pulizia/pulizia
+      - name: Test Pulizia
+        run: sh tests/test_pulizia.sh
       - name: Test UnaVolta
         run: sh tests/test_unavolta.sh
       - name: Test motore X11

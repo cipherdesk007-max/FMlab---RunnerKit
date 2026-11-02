@@ -1,6 +1,6 @@
 #!/bin/sh
 # RunnerKit - installa o aggiorna gli strumenti per Debian su LinuxRunner.
-# Strumenti: TouchPad, UnaVolta
+# Strumenti: TouchPad, UnaVolta, Pulizia
 # Uso:  curl -fsSL https://raw.githubusercontent.com/cipherdesk007-max/mia/main/install.sh | sh
 set -e
 REPO="https://raw.githubusercontent.com/cipherdesk007-max/mia/main"
@@ -21,6 +21,11 @@ echo ">> Scarico UnaVolta..."
 curl -fsSL "$REPO/unavolta/unavolta" -o /tmp/unavolta
 sh -n /tmp/unavolta
 $SUDO install -m 755 /tmp/unavolta /usr/local/bin/unavolta
+
+echo ">> Scarico Pulizia..."
+curl -fsSL "$REPO/pulizia/pulizia" -o /tmp/pulizia
+sh -n /tmp/pulizia
+$SUDO install -m 755 /tmp/pulizia /usr/local/bin/pulizia
 
 mkdir -p "$HOME/.local/share/applications"
 cat > "$HOME/.local/share/applications/touchpad.desktop" <<'EOF'
@@ -64,4 +69,5 @@ echo ">> TouchPad v$V installato."
 echo "   Aprilo: icona sul desktop, Applications -> TouchPad, oppure scrivi 'touchpad' (anche dal Terminal dell'app)"
 echo "   Si apre da solo a ogni avvio del desktop (disattivabile nelle impostazioni)."
 echo ">> UnaVolta: ogni programma si apre una volta sola anche con tocchi ripetuti."
+echo ">> Pulizia: scrivi 'pulizia' per il report, 'pulizia --sicura' per pulire."
 echo "   Per aggiornare in futuro: rilancia lo stesso comando curl."

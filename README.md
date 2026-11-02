@@ -7,6 +7,7 @@ Tutto quello che serve installare sul Debian di LinuxRunner sta qui, con un coma
 |---|---|---|
 | [TouchPad](#touchpad) | 2.4.0 | Mouse, tasto destro e tastiera italiana touch, fluttuanti sul desktop |
 | [UnaVolta](#unavolta) | 1.0.0 | Tocchi ripetuti su un'icona aprono il programma una volta sola; se è già aperto lo porta davanti |
+| [Pulizia](#pulizia) | 1.0.0 | Agente di pulizia del disco: report di cosa occupa spazio, pulizia sicura, automatica a settimana |
 | *prossimi strumenti* | | |
 
 > Pensato per i limiti di LinuxRunner: niente kernel né compositing, CPU emulata.
@@ -69,6 +70,19 @@ echo xterm >> ~/.config/unavolta/escludi   # un programma che vuoi poter aprire 
 ```
 
 Dopo `--applica` / `--ripristina` riavvia il desktop (Stop Desktop → Open Desktop).
+
+## Pulizia
+
+Agente di pulizia del disco. **Non tocca mai i file personali** (Desktop, documenti, Shared, progetti).
+
+| Comando | Cosa fa |
+|---|---|
+| `pulizia` | **Report**: disco, RAM, processi pesanti, cosa si può cancellare, pacchetti inutili e più grandi, cartelle e file più grandi. Lo salva in `Shared`, quindi lo vedi nell'app **File** dell'iPhone (In questo iPhone → LinuxRunner → Shared) e puoi mandarlo |
+| `pulizia --prova` | Mostra cosa cancellerebbe la pulizia sicura, senza cancellare |
+| `pulizia --sicura` | Cancella solo ciò che si ricrea da solo: cache di apt, cache dei programmi, cestino, log vecchi, temporanei con più di 3 giorni, dump di crash |
+| `pulizia --auto-on` / `--auto-off` | Pulizia sicura automatica all'avvio del desktop, al massimo una volta a settimana |
+
+Tutto il resto (pacchetti grandi, `apt autoremove`, file enormi) lo decidi tu guardando il report.
 
 ### Versioni e test
 

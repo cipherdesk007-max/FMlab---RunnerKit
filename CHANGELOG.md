@@ -3,6 +3,11 @@
 Formato: [versione] - data. Le versioni seguono MAJOR.MINOR.PATCH
 (MAJOR = cambia il modo d'uso, MINOR = funzioni nuove, PATCH = correzioni).
 
+## Pulizia [1.0.0] - 2026-11-02
+- Nuovo strumento RunnerKit: report del disco salvato nella cartella condivisa con l'app File,
+  pulizia sicura (solo cache/cestino/log vecchi/temporanei/crash), modalità prova,
+  pulizia automatica settimanale. Test: i file personali non vengono mai cancellati.
+
 ## UnaVolta [1.0.0] - 2026-11-02
 - Nuovo strumento RunnerKit: tocchi ripetuti sulla stessa icona entro 4 s = un solo avvio
   (blocco atomico); se il programma è già aperto ne porta davanti la finestra (xdotool).
