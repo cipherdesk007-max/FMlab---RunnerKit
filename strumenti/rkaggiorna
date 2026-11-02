@@ -61,6 +61,6 @@ if curl -fsSL --retry 3 --max-time 120 "$REPO/install.sh?t=$T" -o "$INST" && sh 
   chiudi 20
 else
   echo
-  printf '  %s✘ Aggiornamento non riuscito: controlla la connessione e riprova.%s\n' "$(v 31)" "$(v 0)"
+  printf '  %s✘ Aggiornamento non riuscito: il motivo e'"'"' scritto sopra. RunnerKit e'"'"' rimasto com'"'"'era.%s\n' "$(v 31)" "$(v 0)"
   chiudi 20; exit 1
 fi

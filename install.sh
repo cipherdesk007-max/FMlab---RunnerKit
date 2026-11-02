@@ -50,8 +50,12 @@ FILES="VERSIONE touchpad/touchpad.py unavolta/unavolta runnerboost/runnerboost t
 pulizia/pulizia strumenti/rkcollaudo strumenti/rkbackup strumenti/rkitaliano strumenti/rkaggiorna strumenti/rkcentro strumenti/rkdisinstalla"
 for f in $FILES; do
   mkdir -p "$W/$(dirname "$f")"
-  curl -fsSL --retry 3 --retry-delay 2 --max-time 120 "$REPO/$f?t=$T" -o "$W/$f" ||
-    { echo "!! Download non riuscito ($f): controlla la connessione e riprova. Non ho cambiato niente."; exit 1; }
+  e=0; curl -fsS --location --retry 3 --retry-delay 2 --max-time 120 "$REPO/$f?t=$T" -o "$W/$f" 2>/dev/null || e=$?
+  if [ "$e" = 22 ]; then
+    echo "!! La versione nuova non e' ancora pubblicata (i test automatici stanno finendo): riprova tra 2-3 minuti. Non ho cambiato niente."; exit 1
+  elif [ "$e" != 0 ]; then
+    echo "!! Download non riuscito ($f): controlla la connessione e riprova. Non ho cambiato niente."; exit 1
+  fi
 done
 NUOVA=$(tr -d '[:space:]' < "$W/VERSIONE")
 case "$NUOVA" in
