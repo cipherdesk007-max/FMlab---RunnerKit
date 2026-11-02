@@ -1,11 +1,13 @@
 #!/bin/sh
-# Installa o aggiorna TouchPad su Debian (LinuxRunner).
+# RunnerKit - installa o aggiorna gli strumenti per Debian su LinuxRunner.
+# Strumenti: TouchPad
 # Uso:  curl -fsSL https://raw.githubusercontent.com/cipherdesk007-max/mia/main/install.sh | sh
 set -e
 REPO="https://raw.githubusercontent.com/cipherdesk007-max/mia/main"
 SUDO=""
 [ "$(id -u)" -ne 0 ] && command -v sudo >/dev/null && SUDO="sudo"
 
+echo "== RunnerKit =="
 echo ">> Pacchetti (python3-tk, python3-xlib, xcompmgr)..."
 $SUDO apt-get install -y python3-tk python3-xlib xcompmgr >/dev/null 2>&1 || {
   $SUDO apt-get update && $SUDO apt-get install -y python3-tk python3-xlib xcompmgr; }

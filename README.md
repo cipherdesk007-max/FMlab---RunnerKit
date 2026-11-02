@@ -1,6 +1,15 @@
-# mia
+# RunnerKit 📱🐧
 
-Strumenti per il Linux (Debian) che gira in **LinuxRunner** sull'iPhone.
+**Il kit per usare Linux sull'iPhone con LinuxRunner.**
+Tutto quello che serve installare sul Debian di LinuxRunner sta qui, con un comando solo.
+
+| Strumento | Versione | A cosa serve |
+|---|---|---|
+| [TouchPad](#touchpad) | 2.2.0 | Mouse, tasto destro e tastiera italiana touch, fluttuanti sul desktop |
+| *prossimi strumenti* | | |
+
+> Pensato per i limiti di LinuxRunner: niente kernel né compositing, CPU emulata.
+> Per questo gli strumenti evitano processi esterni e grafica pesante.
 
 ## TouchPad
 
@@ -29,7 +38,11 @@ Poi aprilo dall'**icona sul desktop**, da **Applications → TouchPad** oppure s
 | **⚙** | Tema, dimensione S/M/L, opacità, velocità del mirino. |
 
 Barra in alto: **⠿** sposta la finestra · **—** riduce · **×** chiude.
-La trasparenza richiede `xcompmgr` (avviato in automatico dal menu); se rallenta: `pkill xcompmgr`.
+La finestra resta sempre dentro lo schermo.
+
+**Trasparenza:** funziona solo se lo schermo ha il *compositing*. TouchPad prova ad avviare
+`xcompmgr` da solo e in **⚙** ti dice se è disponibile. Su LinuxRunner di solito non lo è:
+in quel caso usa **Auto-riduci** (10 s / 30 s), che lascia visibile solo la barra quando non lo tocchi.
 
 ### Versioni e test
 

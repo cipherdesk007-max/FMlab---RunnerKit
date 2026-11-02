@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 """TouchPad 2 - mouse + tastiera fluttuante per LinuxRunner.
 Parla direttamente con X11 (XTEST): nessun processo esterno per tocco."""
-__version__ = "2.1.0"
+__version__ = "2.2.0"
 
 import glob
 import json
+import shutil
+import time
 import os
 import subprocess
 import sys
@@ -120,6 +122,14 @@ class X11:
             xtest.fake_input(self.d, X.KeyRelease, m)
         self.d.sync()
 
+    def compositing(self):
+        """True se un compositing manager e' attivo (serve per la trasparenza)."""
+        owner = self.d.get_selection_owner(self.d.intern_atom("_NET_WM_CM_S0"))
+        return getattr(owner, "id", owner) not in (0, None)
+
+    def has_composite(self):
+        return self.d.has_extension("Composite")
+
     def swap(self, on):
         m = list(self.d.get_pointer_mapping())
         if len(m) >= 3:
@@ -138,7 +148,7 @@ class App:
         c = self.cfg
         c.setdefault("theme", "scuro"); c.setdefault("size", "M")
         c.setdefault("alpha", 0.8); c.setdefault("speed", 1.8)
-        c.setdefault("page", "Mouse")
+        c.setdefault("page", "Mouse"); c.setdefault("autohide", 0)
         self.x = X11()
         r = self.root = tk.Tk()
         r.title("TouchPad")
@@ -155,7 +165,12 @@ class App:
         self._marker()
         self.build()
         r.geometry(c.get("geo", f"+{self.sw - 460}+{self.sh - 360}"))
-        self._alpha()
+        self.trasp = None  # None = da verificare, True/False
+        self._check_comp(first=True)
+        self.last_touch = time.time()
+        r.bind_all("<ButtonPress>", self._touched, add="+")
+        r.after(100, self._clamp)
+        r.after(2000, self._autohide_loop)
         self.say(f"TouchPad v{__version__}")
 
     # ---------- costruzione ----------
@@ -175,7 +190,7 @@ class App:
         g.pack(side="left")
         g.bind("<ButtonPress-1>", self._grab)
         g.bind("<B1-Motion>", self._drag_win)
-        g.bind("<ButtonRelease-1>", lambda e: self.save())
+        g.bind("<ButtonRelease-1>", lambda e: (self._clamp(), self.save()))
         self.tabs = {}
         for name in ("Mouse", "Tastiera", "Tasti", "⚙"):
             b = self.btn(bar, name, lambda n=name: self.show(n), bg=self.T("bg"))
@@ -190,6 +205,7 @@ class App:
         self.status.pack(fill="x")
         self.pages = {}
         self.page = None
+        self.cfg_btn = None
         self.show(self.cfg["page"])
 
     def btn(self, parent, text, cmd=None, bg=None, w=None):
@@ -216,6 +232,8 @@ class App:
         return out
 
     def show(self, name):
+        if self.mini:
+            self.toggle_mini()
         if name == self.page:
             return
         if self.page:
@@ -230,6 +248,7 @@ class App:
         self.page = name
         if name != "⚙":
             self.cfg["page"] = name
+        self.root.after_idle(self._clamp)
 
     # ---------- pagina Mouse ----------
     def page_mouse(self, f):
@@ -359,12 +378,43 @@ class App:
                 [("Opacità −", lambda: self._alpha(-0.15)),
                  ("Opacità +", lambda: self._alpha(0.15))],
                 [("Vel −", lambda: self.speed(-0.4)), ("Vel +", lambda: self.speed(0.4)),
-                 ("Mirino ◎", self.center)]]
-        b = self.grid_rows(f, rows)
+                 ("Mirino ◎", self.center)],
+                [("Auto-riduci", None)] +
+                [(lab, lambda v=v: self.set_autohide(v))
+                 for lab, v in (("Off", 0), ("10 s", 10), ("30 s", 30))]]
+        b = self.cfg_btn = self.grid_rows(f, rows)
         b[self.cfg["theme"]].config(bg=self.T("acc"))
         b["Dim " + self.cfg["size"]].config(bg=self.T("acc"))
-        tk.Label(f, text="Le scelte restano salvate.", bg=self.T("bg"),
-                 fg=self.T("dim"), font=("DejaVu Sans", max(8, self.font - 2))).pack(pady=4)
+        b["Auto-riduci"].config(bg=self.T("bg"), state="disabled",
+                                disabledforeground=self.T("fg"))
+        if self.trasp is False:
+            for k in ("Opacità −", "Opacità +"):
+                b[k].config(state="disabled", disabledforeground=self.T("dim"))
+        self.cfg_info = tk.Label(f, text="", bg=self.T("bg"), fg=self.T("fg"),
+                                 justify="left", anchor="w",
+                                 font=("DejaVu Sans", max(9, self.font - 1)))
+        self.cfg_info.pack(fill="x", pady=(6, 2), padx=4)
+        self._cfg_refresh()
+
+    def _cfg_refresh(self):
+        b = getattr(self, "cfg_btn", None)
+        try:
+            if not b or not self.cfg_info.winfo_exists():
+                return
+        except tk.TclError:
+            return
+        for lab, v in (("Off", 0), ("10 s", 10), ("30 s", 30)):
+            b[lab].config(bg=self.T("acc") if self.cfg["autohide"] == v else self.T("key"))
+        if self.trasp:
+            t = f"Opacità: {int(self.cfg['alpha'] * 100)}%"
+        elif self.trasp is None:
+            t = "Opacità: verifica in corso..."
+        else:
+            t = "Opacità: non disponibile su questo schermo\n(manca il compositing). Usa Auto-riduci."
+        ah = self.cfg["autohide"]
+        self.cfg_info.config(text=f"{t}\nVelocità mirino: {self.cfg['speed']}\n"
+                                  f"Auto-riduci: {'spento' if not ah else f'dopo {ah} s'}\n"
+                                  f"Tema: {self.cfg['theme']} · Dimensione: {self.cfg['size']}")
 
     # ---------- mirino e touchpad ----------
     def _marker(self):
@@ -449,6 +499,7 @@ class App:
         self.cfg["speed"] = max(0.6, min(5.0, round(self.cfg["speed"] + d, 1)))
         self.say(f"velocità {self.cfg['speed']}")
         self.save()
+        self._cfg_refresh()
 
     # ---------- finestra ----------
     def _grab(self, e):
@@ -462,12 +513,54 @@ class App:
         a = self.cfg["alpha"] = max(0.3, min(1.0, round(self.cfg["alpha"] + d, 2)))
         for w in (self.root, self.mk):
             try:
-                w.attributes("-alpha", a)
+                w.attributes("-alpha", a if self.trasp else 1.0)
             except tk.TclError:
                 pass
         if d:
-            self.say(f"opacità {int(a * 100)}%")
+            self.say(f"opacità {int(a * 100)}%" if self.trasp
+                     else "opacità non disponibile qui")
             self.save()
+        self._cfg_refresh()
+
+    def _check_comp(self, first=False):
+        """La trasparenza funziona solo con un compositing manager.
+        LinuxRunner di solito non ce l'ha: provo ad avviare xcompmgr, poi verifico."""
+        if self.x.compositing():
+            self.trasp = True
+        elif first and self.x.has_composite() and shutil.which("xcompmgr"):
+            subprocess.Popen(["xcompmgr"], stdout=subprocess.DEVNULL,
+                             stderr=subprocess.DEVNULL, start_new_session=True)
+            self.root.after(1500, self._check_comp)
+            return
+        else:
+            self.trasp = False
+        self._alpha()
+
+    def _touched(self, e=None):
+        self.last_touch = time.time()
+
+    def set_autohide(self, v):
+        self.cfg["autohide"] = v
+        self.save()
+        self._cfg_refresh()
+        self.say("auto-riduci " + (f"dopo {v} s" if v else "spento"))
+
+    def _autohide_loop(self):
+        ah = self.cfg.get("autohide", 0)
+        if ah and not self.mini and time.time() - self.last_touch > ah:
+            self.toggle_mini()
+        self.root.after(2000, self._autohide_loop)
+
+    def _clamp(self):
+        """Tiene la finestra dentro lo schermo (le pagine larghe uscivano a destra)."""
+        r = self.root
+        r.update_idletasks()
+        w, h = r.winfo_reqwidth(), r.winfo_reqheight()
+        x, y = r.winfo_x(), r.winfo_y()
+        nx = max(0, min(x, self.sw - w))
+        ny = max(0, min(y, self.sh - h))
+        if (nx, ny) != (x, y):
+            r.geometry(f"+{nx}+{ny}")
 
     def toggle_mini(self):
         self.mini = not self.mini
@@ -477,6 +570,8 @@ class App:
         else:
             self.holder.pack(fill="both", padx=5, pady=(0, 5))
             self.status.pack(fill="x")
+            self.last_touch = time.time()
+            self.root.after_idle(self._clamp)
 
     def say(self, t):
         self.status.config(text=t)

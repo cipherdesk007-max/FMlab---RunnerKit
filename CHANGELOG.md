@@ -1,7 +1,20 @@
-# Changelog
+# Changelog — RunnerKit
 
 Formato: [versione] - data. Le versioni seguono MAJOR.MINOR.PATCH
 (MAJOR = cambia il modo d'uso, MINOR = funzioni nuove, PATCH = correzioni).
+
+## [2.2.0] - 2026-11-02
+### Nuovo
+- **Auto-riduci** (⚙ → Off / 10 s / 30 s): se non lo tocchi resta solo la barra;
+  toccando una scheda si riapre. Alternativa alla trasparenza su LinuxRunner.
+- **⚙ mostra i valori** in chiaro: opacità, velocità, auto-riduci, tema, dimensione.
+### Corretto
+- Le pagine Tastiera e Tasti uscivano dal bordo destro dello schermo (× non visibile):
+  ora la finestra viene sempre riportata dentro lo schermo.
+- Opacità: su LinuxRunner non ha effetto perché manca il compositing. TouchPad ora lo rileva,
+  prova ad avviare `xcompmgr` e, se non è disponibile, lo scrive e disattiva i pulsanti.
+### Progetto
+- Il repository diventa **RunnerKit**, il contenitore di tutti gli strumenti per LinuxRunner.
 
 ## [2.1.0] - 2026-11-02
 ### Nuovo

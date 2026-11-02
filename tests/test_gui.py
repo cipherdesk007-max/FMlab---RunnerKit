@@ -34,6 +34,24 @@ def main():
         app._stop_rep()
     assert app.shift == 0 and not app.ctrl, "modificatori non azzerati"
 
+    # la finestra deve restare dentro lo schermo su ogni pagina
+    app.root.geometry(f"+{app.sw - 50}+{app.sh - 50}")
+    for page in ("Tasti", "Tastiera", "⚙", "Mouse"):
+        app.show(page)
+        app._clamp()
+        app.root.update()
+        r = app.root
+        assert r.winfo_x() + r.winfo_reqwidth() <= app.sw, f"{page} esce a destra"
+        assert r.winfo_y() + r.winfo_reqheight() <= app.sh, f"{page} esce in basso"
+    print("trasparenza disponibile:", app.trasp)
+    app.set_autohide(10)
+    app.last_touch -= 60
+    app._autohide_loop()
+    assert app.mini, "auto-riduci non ha ridotto"
+    app.show("Mouse")
+    assert not app.mini, "toccare una scheda deve riaprire"
+    app.set_autohide(0)
+
     app.show("Mouse")
     app.toggle_lock()
     app.toggle_lock()
