@@ -178,7 +178,12 @@ for i in range($n): s+=i*i'")
   echo "$(date '+%Y-%m-%d %H:%M');$etichetta;$py;$av;$gz;$sh2;$so;$tot" >> "$STORICO"
   if [ -n "$prec" ]; then
     pt=$(echo "$prec" | cut -d';' -f8); pe=$(echo "$prec" | cut -d';' -f2)
-    awk -v a="$pt" -v b="$tot" -v e="$pe" 'BEGIN{ if(a>0){ d=(a-b)*100/a; if(d>=0) printf "  -> %.0f%% piu'"'"' veloce rispetto a \"%s\"\n", d, e; else printf "  -> %.0f%% piu'"'"' lento rispetto a \"%s\"\n", -d, e } }'
+    pt=$(echo "$pt" | tr -cd '0-9')
+    if [ -n "$pt" ] && [ "$pt" -gt 0 ]; then
+      d=$(( (pt - tot) * 100 / pt ))
+      if [ "$d" -ge 0 ]; then echo "  -> ${d}% piu' veloce rispetto a \"$pe\""
+      else echo "  -> $(( -d ))% piu' lento rispetto a \"$pe\""; fi
+    fi
     echo "     (differenze sotto il 5% sono rumore: ripeti il test per conferma)"
   fi
 }
