@@ -74,6 +74,22 @@ def main():
     app.set_autostart(False)
     assert not os.path.exists(touchpad.AUTOSTART), "avvio automatico non rimosso"
 
+    # l'avvio automatico ("ping") non deve riaprire un TouchPad ridotto
+    app.toggle_mini()
+    app.root.update()
+    assert touchpad._gia_aperto(b"ping")
+    for _ in range(20):
+        app.root.update()
+    assert app.mini, "il ping dell'avvio automatico ha riaperto TouchPad"
+    # i pallini nascosti per errore tornano da soli
+    app.dock[2][0].withdraw()
+    app._sempre_sopra()
+    app.root.update()
+    assert app.dock[2][0].winfo_viewable(), "pallino sparito non ripristinato"
+    assert app.cfg.get("mini") is True, "stato ridotto non salvato"
+    app.toggle_mini()
+    app.root.update()
+
     app.set_autohide(10)
     app.last_touch -= 60
     app._autohide_loop()

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """TouchPad 2 - mouse + tastiera fluttuante per LinuxRunner.
 Parla direttamente con X11 (XTEST): nessun processo esterno per tocco."""
-__version__ = "2.5.0"
+__version__ = "2.5.1"
 
 import glob
 import json
@@ -38,13 +38,13 @@ def _stacca_dal_terminale():
 SOCK = f"/tmp/touchpad-{os.getuid()}.sock"
 
 
-def _gia_aperto():
-    """Se TouchPad e' gia' aperto gli chiede di riaprirsi (dal pallino) ed esce."""
+def _gia_aperto(messaggio=b"show"):
+    """Se TouchPad e' gia' aperto glielo dice ed esce. "show" = riapriti, "ping" = solo controllo."""
     try:
         c = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         c.settimeout(1)
         c.connect(SOCK)
-        c.sendall(b"show")
+        c.sendall(messaggio)
         c.close()
         return True
     except OSError:
@@ -53,7 +53,10 @@ def _gia_aperto():
 
 _trova_display()
 if __name__ == "__main__":
-    if _gia_aperto():
+    if "--avvio" in sys.argv:  # avvio automatico: se c'e' gia', non toccarlo
+        if _gia_aperto(b"ping"):
+            sys.exit(0)
+    elif _gia_aperto():
         print("TouchPad era gia' aperto: l'ho riaperto sul desktop.")
         sys.exit(0)
     _stacca_dal_terminale()
@@ -69,7 +72,7 @@ AUTOSTART_TXT = """[Desktop Entry]
 Type=Application
 Name=TouchPad
 Comment=Avvia TouchPad con il desktop (RunnerKit)
-Exec=sh -c "sleep 3; [ -f ~/.config/runnerboost/no-compositing ] || pgrep -x xcompmgr >/dev/null || xcompmgr & exec touchpad"
+Exec=sh -c "sleep 3; [ -f ~/.config/runnerboost/no-compositing ] || pgrep -x xcompmgr >/dev/null || xcompmgr & exec touchpad --avvio"
 X-GNOME-Autostart-enabled=true
 X-XFCE-Autostart-Override=true
 Hidden=false
@@ -203,6 +206,11 @@ class App:
         self.last_touch = time.time()
         r.bind_all("<ButtonPress>", self._touched, add="+")
         r.after(100, self._clamp)
+        if c.get("mini"):  # era ridotto: riparte come colonna di pallini
+            c["mini"] = False
+            r.after(400, self.toggle_mini)
+        r.after(1500, self._sempre_sopra)
+        r.report_callback_exception = self._errore
         r.after(2000, self._autohide_loop)
         self.bubble = None   # pallino principale (apre TouchPad)
         self.dock = []       # colonna di pallini: (finestra, canvas, simbolo, azione)
@@ -596,6 +604,32 @@ class App:
             self.say(f"errore: {ex}")
         self._cfg_refresh()
 
+    def _sempre_sopra(self):
+        """Openbox mette sopra ogni finestra nuova: ogni 1,5 s riporto davanti TouchPad.
+        Se i pallini sono stati nascosti per errore, li rimostro."""
+        try:
+            if self.mini:
+                for b, *_ in self.dock:
+                    if not b.winfo_viewable():
+                        b.deiconify()
+                    b.lift()
+            elif self.root.winfo_viewable():
+                self.root.lift()
+                self.mk.lift()
+        except tk.TclError:
+            pass
+        self.root.after(1500, self._sempre_sopra)
+
+    def _errore(self, tipo, valore, tb):
+        """Un errore in un pulsante non deve far sparire niente: lo scrivo nel log e vado avanti."""
+        import traceback
+        try:
+            with open(os.path.expanduser("~/.touchpad.log"), "a") as f:
+                f.write(time.strftime("%Y-%m-%d %H:%M:%S ") + "".join(
+                    traceback.format_exception(tipo, valore, tb)))
+        except OSError:
+            pass
+
     def _touched(self, e=None):
         self.last_touch = time.time()
 
@@ -630,6 +664,7 @@ class App:
         """— (o Auto-riduci) riduce TouchPad a una colonna di pallini sul lato dello schermo.
         Pallino ⌨: torna dov'era. Gli altri: chiudi finestra, pulizia, boost, terminale."""
         self.mini = not self.mini
+        self.cfg["mini"] = self.mini
         if self.mini:
             self.save()  # posizione e pagina da ritrovare alla riapertura
             self._stop_rep()
@@ -854,9 +889,11 @@ class App:
     def _on_sock(self, *_):
         try:
             c, _ = self.sock.accept()
-            c.recv(16)
+            msg = c.recv(16)
             c.close()
         except OSError:
+            return
+        if msg != b"show":
             return
         if self.mini:
             self.toggle_mini()

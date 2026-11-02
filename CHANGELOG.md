@@ -3,6 +3,15 @@
 Formato: [versione] - data. Le versioni seguono MAJOR.MINOR.PATCH
 (MAJOR = cambia il modo d'uso, MINOR = funzioni nuove, PATCH = correzioni).
 
+## TouchPad [2.5.1] - 2026-11-02
+### Corretto
+- **I pallini sparivano e tornava la tastiera:** l'avvio automatico lanciava un secondo TouchPad che
+  "riapriva" quello già ridotto. Ora l'avvio automatico (`touchpad --avvio`) non tocca uno già aperto.
+- **I pallini finivano sotto le altre finestre:** ogni 1,5 s vengono riportati davanti, e se erano
+  stati nascosti per errore ricompaiono.
+- Dopo un riavvio del desktop TouchPad riparte come l'avevi lasciato (ridotto = pallini).
+- Gli errori interni non fanno sparire nulla: finiscono in `~/.touchpad.log`.
+
 ## TouchPad [2.5.0] - 2026-11-02
 ### Nuovo
 - **Colonna di pallini** sul lato dello schermo quando è ridotto: ⌨ riapri, ✕ chiudi finestra
