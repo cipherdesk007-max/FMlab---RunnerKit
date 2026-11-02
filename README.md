@@ -98,12 +98,15 @@ Terminali, gestori di file ed editor di testo invece si aprono sempre, perché l
 ## Pulizia
 
 Non tocca **mai** i file personali (Desktop, documenti, Shared, progetti).
+Foto, video, l'aggiornamento di iOS scaricato e le altre app non sono raggiungibili da Linux: iOS chiude ogni app
+nella sua cartella (lo dice anche la documentazione di LinuxRunner). Il report spiega dove liberarli sul telefono.
 
 | Comando | Cosa fa |
 |---|---|
 | `pulizia` | Report: disco, RAM, cosa si può cancellare, pacchetti inutili e più grandi, cartelle e file più grandi. Lo salva in Shared, quindi lo vedi dall'app **File** |
 | `pulizia --sicura` | Cancella solo ciò che si ricrea da solo: cache di apt e dei programmi chiusi (quella di Firefox aperto resta), cestino, log vecchi, file temporanei con più di 3 giorni (mai quelli dei programmi in funzione), dump di crash |
 | `pulizia --sicura --solo apt,cache` | Pulisce solo le categorie indicate |
+| (anche in `--sicura`) | Sessioni vecchie del desktop di LinuxRunner (l'app ne crea una a ogni avvio e non le cancella) e report di RunnerKit con più di 30 giorni |
 | `pulizia --auto-on` / `--auto-off` | Pulizia automatica all'avvio del desktop, al massimo una volta a settimana |
 
 ## RunnerBoost

@@ -9,7 +9,7 @@
 #   pulizia --sicura --solo apt,cache   pulisce solo le categorie indicate
 #   pulizia --autoremove toglie i pacchetti Debian non piu' necessari
 # I file personali (documenti, Desktop, Shared, progetti) non vengono MAI cancellati.
-VERSIONE="1.2.0"
+VERSIONE="1.3.0"
 R="${PULIZIA_ROOT:-}"          # prefisso per i test
 H="${PULIZIA_HOME:-$HOME}"
 # sicurezza: senza una home vera non si cancella niente (eviterebbe percorsi come /.cache)
@@ -33,6 +33,8 @@ cestino|Cestino|$H/.local/share/Trash/files/* $H/.local/share/Trash/info/*
 log|Log vecchi e compressi|$R/var/log/*.gz $R/var/log/*.[0-9] $R/var/log/*/*.gz $R/var/log/*/*.[0-9]
 tmp|File temporanei piu' vecchi di 3 giorni|TMPVECCHI
 crash|Dump di crash|$R/var/crash/* $H/core $H/core.[0-9]*
+sessioni|Sessioni vecchie del desktop di LinuxRunner (log e statistiche)|SESSIONI
+report|Report vecchi di RunnerKit nella cartella Shared (piu' di 30 giorni)|REPORT
 EOF
 }
 
@@ -44,6 +46,30 @@ tmp_vecchi() {
     ! -name 'dbus-*' ! -name 'lr-*' ! -name 'linuxrunner*' ! -name 'mesa*' \
     ! -name "$(basename "${LR_MESA_METAL_STATS_DIR:-/nessuno}")" 2>/dev/null
 }
+# Sessioni del desktop: LinuxRunner crea una cartella session-<id> a ogni avvio del desktop e non la
+# cancella mai (GUIViewController.m). Si tolgono solo quelle vecchie di piu' di un giorno, mai quella
+# in uso, mai una usata da un processo vivo.
+SESSIONI_DIR="${PULIZIA_SESSIONI:-${LR_GUI_SESSION_DIR:+$(dirname "$LR_GUI_SESSION_DIR")}}"
+[ -n "$SESSIONI_DIR" ] || SESSIONI_DIR="$R/home/mobile/Downloads/.linuxrunner/gui"
+sessioni_vecchie() {
+  [ -d "$SESSIONI_DIR" ] || return 0
+  vive=$(cat /proc/[0-9]*/cmdline 2>/dev/null | tr '\0' '\n' | grep -o 'session-[0-9a-f-]\{36\}' | sort -u)
+  find "$SESSIONI_DIR" -mindepth 1 -maxdepth 1 -type d -name 'session-*' -mtime +0 2>/dev/null | while read -r d; do
+    n=$(basename "$d")
+    case "$n" in session-[0-9a-f]*-*-*-*-*) ;; *) continue ;; esac
+    [ "$d" = "${LR_GUI_SESSION_DIR:-}" ] && continue
+    printf '%s\n' "$vive" | grep -qx "$n" && continue
+    echo "$d"
+  done
+}
+# report fatti da RunnerKit stesso (pulizia, collaudo, runnerboost) nella cartella dell'app File
+report_vecchi() {
+  for d in "$R/mnt/LinuxRunnerShared" "$H/Shared"; do
+    [ -d "$d" ] || continue
+    find "$d" -maxdepth 1 -type f \( -name 'pulizia-report-*.txt' -o -name 'runnerkit-collaudo-*.txt' -o -name 'runnerboost-report-*.txt' \) -mtime +30 2>/dev/null
+  done
+}
+
 # cache dei programmi aperti (es. Firefox): non si toccano mentre girano
 cache_libere() {
   for c in "$H"/.cache/*; do
@@ -61,6 +87,8 @@ cache_libere() {
 espandi() {  # stampa i percorsi esistenti di una categoria
   if [ "$1" = TMPVECCHI ]; then tmp_vecchi; return; fi
   if [ "$1" = CACHE ]; then cache_libere; return; fi
+  if [ "$1" = SESSIONI ]; then sessioni_vecchie; return; fi
+  if [ "$1" = REPORT ]; then report_vecchi; return; fi
   for p in $1; do [ -e "$p" ] && echo "$p"; done
 }
 
@@ -118,6 +146,12 @@ report() {
   echo "--- FILE PIU' GRANDI DI 50 MB ---"
   find "$R/" -xdev -type f -size +50M ! -path '*/proc/*' ! -path '*/sys/*' 2>/dev/null |
     head -40 | while read -r f; do printf '  %7.0f MB  %s\n' "$(( $(kb "$f") / 1024 ))" "$f"; done
+  echo
+  echo "--- SPAZIO DELL'IPHONE (fuori da Linux) ---"
+  echo "  Linux in LinuxRunner vede solo la cartella dell'app (regola di iOS): foto, video, file degli"
+  echo "  aggiornamenti di iOS e altre app si liberano dal telefono:"
+  echo "  Impostazioni > Generali > Spazio iPhone (aggiornamento iOS scaricato: Elimina; app inutilizzate: Rimuovi app)"
+  echo "  Foto > Album > Eliminati di recente > Elimina tutto ; LinuxRunner: togli le distribuzioni che non usi"
   echo
   echo "--- PULIZIA AUTOMATICA ---"
   if [ -f "$AUTOSTART" ]; then echo "  attiva (max 1 volta a settimana)"; else echo "  spenta (accendi con: pulizia --auto-on)"; fi

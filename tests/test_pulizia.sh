@@ -43,6 +43,24 @@ head -c 100000 /dev/zero > "$R/var/cache/apt/archives/a.deb"; head -c 100000 /de
 "$P" --sicura --solo cache >/dev/null
 [ -e "$R/var/cache/apt/archives/a.deb" ] && [ ! -e "$H/.cache/b.bin" ] || { echo "FALLITO: --solo"; exit 1; }
 echo "ok: --json e --solo"
+# sessioni vecchie di LinuxRunner: via le vecchie, mai quella in uso, le recenti o quelle di processi vivi
+S="$T/gui"; export PULIZIA_SESSIONI="$S"
+vecchia=session-11111111-2222-3333-4444-555555555555; inuso=session-aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee
+recente=session-99999999-8888-7777-6666-555555555555; viva=session-12121212-3434-5656-7878-909090909090
+mkdir -p "$S/$vecchia" "$S/$inuso" "$S/$recente" "$S/$viva" "$S/desktop"
+echo log > "$S/$vecchia/display.log"
+touch -d '5 days ago' "$S/$vecchia" "$S/$inuso" "$S/$viva" "$S/desktop"
+sh -c 'sleep 30' "$S/$viva" & VIVA=$!
+sleep 1; LR_GUI_SESSION_DIR="$S/$inuso" "$P" --sicura --solo sessioni >/dev/null
+kill $VIVA 2>/dev/null || true
+[ ! -e "$S/$vecchia" ] || { echo "FALLITO: sessione vecchia rimasta"; exit 1; }
+for d in "$inuso" "$recente" "$viva" desktop; do [ -e "$S/$d" ] || { echo "FALLITO: cancellata $d"; exit 1; }; done
+# report vecchi di RunnerKit in Shared
+echo r > "$H/Shared/pulizia-report-20250101-1000.txt"; touch -d '60 days ago' "$H/Shared/pulizia-report-20250101-1000.txt"
+echo r > "$H/Shared/pulizia-report-nuovo.txt"
+"$P" --sicura --solo report >/dev/null
+[ ! -e "$H/Shared/pulizia-report-20250101-1000.txt" ] && [ -e "$H/Shared/pulizia-report-nuovo.txt" ] && [ -e "$H/Shared/foto.jpg" ] || { echo "FALLITO: report"; exit 1; }
+echo "ok: sessioni vecchie di LinuxRunner e report vecchi"
 
 out=$("$P")
 echo "$out" | grep -q "REPORT PULIZIA"

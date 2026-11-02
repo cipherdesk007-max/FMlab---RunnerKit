@@ -13,6 +13,9 @@ lxpanel e pcmanfm direttamente e **non legge mai `~/.config/autostart`**. Quindi
 - **Ogni "Open Desktop"** (anche tornando al desktop già aperto) TouchPad si rimette subito come colonna di
   pallini sul lato: se ne accorge dal registro del visore di LinuxRunner (display.log della sessione).
 - TouchPad avviato così prende l'ambiente del desktop (GPU Metal compresa) per i programmi che apre.
+- **Pulizia 1.3**: toglie le **sessioni vecchie del desktop** che LinuxRunner crea a ogni avvio e non cancella mai
+  (mai quella in uso né quelle di programmi aperti) e i report vecchi di RunnerKit nella cartella Shared; il report
+  spiega come liberare lo spazio dell'iPhone che Linux non può toccare (foto, aggiornamento iOS, altre app).
 - TouchPad e Centro aperti dal Terminal dell'app trovano lo schermo giusto: prima potevano scegliere il socket
   di una sessione vecchia (nel report ce n'erano 15 in /tmp/.X11-unix).
 
