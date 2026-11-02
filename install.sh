@@ -1,57 +1,82 @@
 #!/bin/sh
-# RunnerKit - installa o aggiorna gli strumenti per Debian su LinuxRunner.
-# Strumenti: TouchPad, UnaVolta, Pulizia, RunnerBoost, Terminale, Collaudo, Backup, Italiano
-# Uso:  curl -fsSL https://raw.githubusercontent.com/cipherdesk007-max/mia/main/install.sh | sh
+# FMlab - RunnerKit - installa o aggiorna gli strumenti per Debian su LinuxRunner.
+# Strumenti: TouchPad, Centro, UnaVolta, Pulizia, RunnerBoost, Terminale, Collaudo, Backup, Italiano, Aggiorna, Disinstalla
+# Uso:  curl -fsSL https://raw.githubusercontent.com/cipherdesk007-max/FMlab---RunnerKit/stabile/install.sh | sh
 set -e
-REPO="https://raw.githubusercontent.com/cipherdesk007-max/mia/main"
+REPO="${RK_REPO:-https://raw.githubusercontent.com/cipherdesk007-max/FMlab---RunnerKit/stabile}"
 T="${RK_T:-$(date +%s)}"   # parametro anti-cache: scarica sempre i file appena pubblicati
 SUDO=""
 [ "$(id -u)" -ne 0 ] && command -v sudo >/dev/null && SUDO="sudo"
 
 echo "== FMlab - RunnerKit =="
+# un solo installatore alla volta (due tocchi su ⟳, icona + terminale...)
+LOCK=/tmp/runnerkit-installa.lock
+if ! mkdir "$LOCK" 2>/dev/null; then
+  if [ -n "$(find "$LOCK" -maxdepth 0 -mmin -15 2>/dev/null)" ]; then
+    echo "!! Un aggiornamento di RunnerKit e' gia' in corso: aspetta che finisca."; exit 1
+  fi
+  rm -rf "$LOCK"; mkdir "$LOCK"   # blocco rimasto da un'installazione interrotta
+fi
+W=$(mktemp -d)
+trap 'rm -rf "$W" "$LOCK"' EXIT
+trap 'exit 1' INT TERM HUP
+
+# spazio: con il telefono quasi pieno apt e i download si rompono a meta'
+LIBERO=$(df -Pk / 2>/dev/null | awk 'NR==2{print $4}')
+if [ -n "$LIBERO" ] && [ "$LIBERO" -lt 51200 ]; then
+  echo "!! Spazio quasi finito (meno di 50 MB liberi): libera spazio sull'iPhone o usa 'pulizia --sicura', poi riprova."
+  exit 1
+fi
+
 # pacchetti: apt solo se ne manca qualcuno (apt su LinuxRunner e' pesante: niente lavoro inutile)
 PACCHETTI="python3-tk python3-xlib xcompmgr xdotool shared-mime-info desktop-file-utils bash-completion mesa-utils x11-utils"
 MANCANO=""
 for p in $PACCHETTI; do dpkg -s "$p" >/dev/null 2>&1 || MANCANO="$MANCANO $p"; done
-if [ -n "$MANCANO" ]; then
+if [ -n "$MANCANO" ] && [ "${RK_SALTA_APT:-0}" = 1 ]; then
+  echo ">> (prova) salto apt, mancherebbero:$MANCANO"
+elif [ -n "$MANCANO" ]; then
   echo ">> Installo i pacchetti mancanti:$MANCANO"
   $SUDO dpkg --configure -a >/dev/null 2>&1 || true   # completa eventuali installazioni interrotte
-  $SUDO apt-get install -y $MANCANO >/dev/null 2>&1 || { $SUDO apt-get update && $SUDO apt-get install -y $MANCANO; }
+  $SUDO apt-get install -y $MANCANO >/dev/null 2>&1 || { $SUDO apt-get update && $SUDO apt-get install -y $MANCANO; } ||
+    { echo "!! Non riesco a installare i pacchetti Debian (rete o apt occupato): riprova tra poco. RunnerKit non e' stato cambiato."; exit 1; }
 else
   echo ">> Pacchetti gia' presenti"
 fi
 
-echo ">> Scarico TouchPad..."
-curl -fsSL "$REPO/touchpad/touchpad.py?t=$T" -o /tmp/touchpad.py
-python3 -m py_compile /tmp/touchpad.py
-$SUDO install -m 755 /tmp/touchpad.py /usr/local/bin/touchpad
-
-echo ">> Scarico UnaVolta..."
-curl -fsSL "$REPO/unavolta/unavolta?t=$T" -o /tmp/unavolta
-sh -n /tmp/unavolta
-$SUDO install -m 755 /tmp/unavolta /usr/local/bin/unavolta
-
-echo ">> Scarico RunnerBoost e Terminale..."
-curl -fsSL "$REPO/runnerboost/runnerboost?t=$T" -o /tmp/runnerboost
-curl -fsSL "$REPO/terminale/terminale.sh?t=$T" -o /tmp/terminale.sh
-curl -fsSL "$REPO/terminale/rkterminale?t=$T" -o /tmp/rkterminale
-sh -n /tmp/runnerboost && bash -n /tmp/terminale.sh && sh -n /tmp/rkterminale
-$SUDO install -m 755 /tmp/runnerboost /usr/local/bin/runnerboost
-$SUDO install -m 755 /tmp/rkterminale /usr/local/bin/rkterminale
-$SUDO mkdir -p /usr/local/share/runnerkit
-$SUDO install -m 644 /tmp/terminale.sh /usr/local/share/runnerkit/terminale.sh
-
-echo ">> Scarico Centro, Collaudo, Backup, Italiano, Aggiorna..."
-for t in rkcollaudo rkbackup rkitaliano rkaggiorna rkcentro; do
-  curl -fsSL "$REPO/strumenti/$t?t=$T" -o "/tmp/$t" || continue
-  case "$(head -1 "/tmp/$t")" in *python*) python3 -m py_compile "/tmp/$t" ;; *) bash -n "/tmp/$t" ;; esac &&
-    $SUDO install -m 755 "/tmp/$t" "/usr/local/bin/$t"
+# 1) scarico TUTTO in una cartella temporanea e controllo ogni file.
+#    Si installa solo se e' tutto a posto: una rete che cade a meta' non lascia mai il kit mezzo vecchio e mezzo nuovo.
+echo ">> Scarico i file..."
+FILES="VERSIONE touchpad/touchpad.py unavolta/unavolta runnerboost/runnerboost terminale/terminale.sh terminale/rkterminale
+pulizia/pulizia strumenti/rkcollaudo strumenti/rkbackup strumenti/rkitaliano strumenti/rkaggiorna strumenti/rkcentro strumenti/rkdisinstalla"
+for f in $FILES; do
+  mkdir -p "$W/$(dirname "$f")"
+  curl -fsSL --retry 3 --retry-delay 2 --max-time 120 "$REPO/$f?t=$T" -o "$W/$f" ||
+    { echo "!! Download non riuscito ($f): controlla la connessione e riprova. Non ho cambiato niente."; exit 1; }
 done
+NUOVA=$(tr -d '[:space:]' < "$W/VERSIONE")
+case "$NUOVA" in
+  [0-9][0-9][0-9][0-9].[0-9][0-9].[0-9][0-9]-[0-9]*) ;;
+  *) echo "!! Risposta strana da GitHub (rete con pagina di accesso?). Non ho cambiato niente."; exit 1 ;;
+esac
+for f in $FILES; do
+  [ "$f" = VERSIONE ] && continue
+  case "$(head -1 "$W/$f")" in
+    *python*) python3 -m py_compile "$W/$f" ;;
+    *bash*) bash -n "$W/$f" ;;
+    *) case "$f" in *.sh) bash -n "$W/$f" ;; *) sh -n "$W/$f" ;; esac ;;
+  esac 2>/dev/null || { echo "!! File rovinato ($f). Non ho cambiato niente: riprova tra qualche minuto."; exit 1; }
+done
+find "$W" -name '__pycache__' -prune -exec rm -rf {} + 2>/dev/null
 
-echo ">> Scarico Pulizia..."
-curl -fsSL "$REPO/pulizia/pulizia?t=$T" -o /tmp/pulizia
-sh -n /tmp/pulizia
-$SUDO install -m 755 /tmp/pulizia /usr/local/bin/pulizia
+# 2) installo (copie veloci: il passaggio rischioso, il download, e' gia' finito)
+echo ">> Installo FMlab - RunnerKit $NUOVA..."
+$SUDO mkdir -p /usr/local/share/runnerkit
+$SUDO install -m 755 "$W/touchpad/touchpad.py" /usr/local/bin/touchpad
+for f in unavolta/unavolta runnerboost/runnerboost terminale/rkterminale pulizia/pulizia \
+         strumenti/rkcollaudo strumenti/rkbackup strumenti/rkitaliano strumenti/rkaggiorna strumenti/rkcentro strumenti/rkdisinstalla; do
+  $SUDO install -m 755 "$W/$f" "/usr/local/bin/$(basename "$f")"
+done
+$SUDO install -m 644 "$W/terminale/terminale.sh" /usr/local/share/runnerkit/terminale.sh
 
 mkdir -p "$HOME/.local/share/applications"
 cat > "$HOME/.local/share/applications/touchpad.desktop" <<'EOF'
@@ -130,8 +155,7 @@ for D in "$HOME/Desktop" "$HOME/Scrivania"; do
 done
 
 # versione del kit (TouchPad la confronta con GitHub e accende il pallino ⟳ se ce n'e' una nuova)
-$SUDO mkdir -p /usr/local/share/runnerkit
-curl -fsSL "$REPO/VERSIONE?t=$T" 2>/dev/null | $SUDO tee /usr/local/share/runnerkit/versione >/dev/null
+echo "$NUOVA" | $SUDO tee /usr/local/share/runnerkit/versione >/dev/null
 
 # TouchPad gia' aperto: lo riavvio, cosi' la versione nuova e' subito attiva
 if pgrep -f /usr/local/bin/touchpad >/dev/null 2>&1; then
@@ -139,7 +163,6 @@ if pgrep -f /usr/local/bin/touchpad >/dev/null 2>&1; then
   (nohup /usr/local/bin/touchpad --avvio >/dev/null 2>&1 &)
   RIAVVIATO=" (riavviato)"
 fi
-$SUDO mkdir -p /usr/local/share/runnerkit
 date '+%Y-%m-%d %H:%M' | $SUDO tee /usr/local/share/runnerkit/installato >/dev/null
 
 echo ""
@@ -150,7 +173,7 @@ echo "   Pulizia     $(/usr/local/bin/pulizia --versione | cut -d' ' -f2)"
 echo "   RunnerBoost $(/usr/local/bin/runnerboost --versione | cut -d' ' -f2)"
 echo "   Terminale   $(/usr/local/bin/rkterminale --versione)"
 echo "   Centro      $(grep -m1 '__version__' /usr/local/bin/rkcentro 2>/dev/null | cut -d'"' -f2)  (icona sul desktop, pallini ♻ e ⚡)"
-echo "   Collaudo, Backup, Italiano: rk collaudo · rk backup · rk italiano"
+echo "   Collaudo, Backup, Italiano: rk collaudo · rk backup · rk italiano · togliere tutto: rk disinstalla"
 echo ""
 echo "   Comandi: scrivi 'rk' in un terminale nuovo."
 echo "   Aggiornare in futuro: pallino ⟳ di TouchPad (diventa arancione quando c'e' una novita'),"

@@ -1,12 +1,12 @@
 #!/bin/sh
-# RunnerKit Backup - salva impostazioni, script e file scelti nella cartella dell'app File.
+# FMlab - RunnerKit Backup - salva impostazioni, script e file scelti nella cartella dell'app File.
 #   rkbackup                   crea un backup (rk backup)
 #   rkbackup --elenco          mostra i backup
 #   rkbackup --ripristina [F]  ripristina l'ultimo backup (o il file F); prima ne fa uno di sicurezza
 #   rkbackup --pacchetti [F]   reinstalla i pacchetti Debian elencati nel backup
 #   rkbackup --aggiungi PERCORSO   aggiunge una cartella/file da salvare sempre
 # Si tengono gli ultimi 5 backup.
-VERSIONE="1.0.0"
+VERSIONE="1.1.0"
 H="${RKB_HOME:-$HOME}"
 CONF="$H/.config/runnerkit"
 EXTRA="$CONF/backup-extra"
@@ -19,10 +19,16 @@ DIR="$SH/RunnerKit-backup"
 BASE=".config/touchpad.json .config/runnerboost .config/pulizia .config/unavolta .config/runnerkit
 .config/autostart .config/gtk-3.0 .config/gtk-4.0 .config/libfm .config/pcmanfm .config/pcmanfm-qt
 .bashrc .profile .bash_history Desktop Scrivania Documenti Documents Script script bin .local/bin
-.local/share/applications .ssh .gitconfig"
+.local/share/applications .ssh/config .ssh/known_hosts .ssh/authorized_keys .gitconfig"
+# Le chiavi SSH private NON si salvano: la cartella dell'app File e' leggibile da altre app e finisce
+# nei backup dell'iPhone. Solo chi lo chiede esplicitamente: RKB_CHIAVI=1 rkbackup
 
 lista() {
   for p in $BASE; do [ -e "$H/$p" ] && echo "$p"; done
+  for p in "$H"/.ssh/*.pub; do [ -f "$p" ] && echo "${p#"$H"/}"; done
+  if [ "${RKB_CHIAVI:-0}" = 1 ]; then
+    for p in "$H"/.ssh/id_*; do [ -f "$p" ] && case "$p" in *.pub) ;; *) echo "${p#"$H"/}";; esac; done
+  fi
   [ -f "$EXTRA" ] && while IFS= read -r p; do
     p=${p#"$H"/}; [ -n "$p" ] && [ -e "$H/$p" ] && echo "$p"
   done < "$EXTRA"
@@ -32,6 +38,7 @@ crea() {
   mkdir -p "$DIR"
   bf="$DIR/backup-$(date +%Y%m%d-%H%M%S)${1:+-$1}.tar.gz"
   tmp=$(mktemp -d)
+  umask 077   # il backup lo legge solo il suo proprietario
   dpkg --get-selections > "$tmp/pacchetti-debian.txt" 2>/dev/null
   echo "RunnerKit backup $(date '+%Y-%m-%d %H:%M') — $(lista | wc -l) elementi" > "$tmp/LEGGIMI.txt"
   lista > "$tmp/elenco.txt"

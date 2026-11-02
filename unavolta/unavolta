@@ -1,23 +1,34 @@
 #!/bin/sh
-# UnaVolta (RunnerKit) - apre ogni programma una volta sola.
+# UnaVolta (FMlab - RunnerKit) - apre ogni programma una volta sola.
 #  - tocchi ripetuti sulla stessa icona entro 4 secondi = un solo avvio
 #  - se il programma e' gia' aperto, porta davanti la sua finestra
 # Uso:  unavolta <comando> [argomenti]     (lo mettono da soli i lanciatori)
 #       unavolta --applica                 (aggiunge UnaVolta a icone e menu)
 #       unavolta --ripristina              (toglie UnaVolta da icone e menu)
 #       unavolta --versione
-VERSIONE="1.2.0"
+VERSIONE="1.3.0"
 ATTESA="${UNAVOLTA_SECONDI:-4}"
 SYS_APPS="${UNAVOLTA_SYS_DIR:-/usr/share/applications}"
 USR_APPS="$HOME/.local/share/applications"
 CONF="$HOME/.config/unavolta"
 MARK="X-UnaVolta"
 LOG="/tmp/unavolta-$(id -u).log"
+# programmi pensati per piu' finestre: si aprono sempre (un secondo terminale, una seconda cartella).
+# pcmanfm in particolare e' anche il desktop: senza questa regola l'icona "File" non aprirebbe nulla.
+MULTI="x-terminal-emulator xterm lxterminal qterminal xfce4-terminal mate-terminal gnome-terminal konsole
+terminator tilix sakura urxvt rxvt st alacritty kitty pcmanfm pcmanfm-qt thunar nautilus caja nemo dolphin
+mousepad leafpad featherpad gedit kate xed pluma geany"
 log() { echo "$(date '+%H:%M:%S') $*" >> "$LOG" 2>/dev/null; }
 
 applica() {
   mkdir -p "$USR_APPS"
   n=0
+  # copie fatte in passato: se il programma e' stato tolto la copia va via, se e' stato aggiornato si rifa'
+  for f in "$USR_APPS"/*.desktop; do
+    [ -f "$f" ] && grep -q "^$MARK=copia" "$f" || continue
+    src="$SYS_APPS/$(basename "$f")"
+    if [ ! -f "$src" ] || [ "$src" -nt "$f" ]; then rm -f "$f"; fi
+  done
   for f in "$SYS_APPS"/*.desktop "$USR_APPS"/*.desktop "$HOME"/Desktop/*.desktop "$HOME"/Scrivania/*.desktop; do
     [ -f "$f" ] || continue
     grep -q "^$MARK=" "$f" && continue
@@ -67,6 +78,10 @@ if [ "$1" = env ]; then
 fi
 nome=$(basename "$1" | tr -c 'A-Za-z0-9._\n-' '_')
 
+# programmi a piu' finestre: sempre aperti, solo l'anti-tocco-doppio sotto vale anche per loro
+multi=0
+for m in $MULTI; do [ "$nome" = "$m" ] && multi=1 && break; done
+
 # programmi esclusi (uno per riga in ~/.config/unavolta/escludi): si aprono sempre
 if [ -f "$CONF/escludi" ] && grep -qx "$nome" "$CONF/escludi"; then
   exec "$@"
@@ -84,7 +99,8 @@ echo "$ora" > "$lock/t"
 
 # 2) gia' in esecuzione? NON ne apro un altro (su LinuxRunner programmi come Firefox
 #    impiegano decine di secondi a mostrare la finestra). Se la finestra c'e', la porto davanti.
-pids=$(pgrep -x "$(echo "$nome" | cut -c1-15)" 2>/dev/null)
+pids=""
+[ "$multi" = 1 ] || pids=$(pgrep -u "$(id -u)" -x "$(echo "$nome" | cut -c1-15)" 2>/dev/null)
 if [ -n "$pids" ]; then
   if command -v xdotool >/dev/null 2>&1; then
     for pid in $pids; do

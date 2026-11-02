@@ -2,10 +2,12 @@
 # Caricato da ~/.bashrc. Tutto e' scritto in bash puro, leggendo /proc: niente programmi
 # lanciati a ogni prompt, perche' su LinuxRunner ogni processo costa.
 case $- in *i*) ;; *) return ;; esac
-RK_TERM_VERSIONE="1.3.3"
+RK_TERM_VERSIONE="1.4.0"
 [ -r "$HOME/.config/runnerkit/terminale" ] && . "$HOME/.config/runnerkit/terminale"   # RK_FISSO=0/1
 # lingua scelta con "rk italiano"
-if [ -r "$HOME/.config/runnerkit/lingua" ]; then export LANG="$(cat "$HOME/.config/runnerkit/lingua")" LANGUAGE=it:en; fi
+if [ -r "$HOME/.config/runnerkit/lingua" ]; then
+  LANG="$(cat "$HOME/.config/runnerkit/lingua")"; LANGUAGE="${LANG%%_*}:en"; export LANG LANGUAGE
+fi
 
 # ---------- storia comandi ----------
 HISTSIZE=20000; HISTFILESIZE=40000
@@ -77,18 +79,20 @@ rkinfo() {
 
 # ---------- monitor dal vivo ----------
 rktop() {
-  local used total pct load
-  trap 'printf "\033[?25h"; return' INT
+  local used total pct load _rk_via=0
+  trap '_rk_via=1' INT          # Ctrl+C esce dal monitor (la trap si toglie all'uscita)
   printf '\033[?25l'
-  while :; do
+  while (( ! _rk_via )); do
     read -r used total pct <<< "$(_rk_ram)"
     read -r load _ < /proc/loadavg
     printf '\033[H\033[2J%sRunnerKit monitor%s  (Ctrl+C per uscire)\n\n' "$(_rk_n '1;35')" "$(_rk_n 0)"
     printf '  RAM    %s  %s/%s MB\n' "$(_rk_barra "$pct" 30)" "$used" "$total"
     printf '  Carico %s\n\n' "$load"
     ps -eo pid,rss,pcpu,comm --sort=-rss 2>/dev/null | awk 'NR==1{printf "  %6s %8s %6s  %s\n","PID","RAM MB","CPU%","PROGRAMMA"; next} NR<=12 {printf "  %6s %8.0f %6s  %s\n",$1,$2/1024,$3,$4}'
-    sleep 3
+    sleep 3 || break
   done
+  trap - INT
+  printf '\033[?25h\n'
 }
 
 # ---------- prompt: utente, cartella, ramo git, esito e durata del comando ----------
@@ -139,7 +143,12 @@ _rk_fisso() {
   return 0
 }
 _rk_prompt_tutto() { local e=$?; _rk_fisso; (exit $e); _rk_prompt; }
-PROMPT_COMMAND=_rk_prompt_tutto
+# PROMPT_COMMAND di altri programmi (es. venv, direnv) restano: il nostro si aggiunge
+case ";${PROMPT_COMMAND:-};" in *";_rk_prompt_tutto;"*) ;; *) PROMPT_COMMAND="_rk_prompt_tutto${PROMPT_COMMAND:+;$PROMPT_COMMAND}" ;; esac
+# all'uscita dal terminale si libera l'area di scorrimento (chi apre dopo trova lo schermo normale)
+trap '[[ -t 1 ]] && printf "\033[r"' EXIT
+# telefono ruotato / finestra ridimensionata: la barra si rimette subito al suo posto
+trap '_rk_fisso' WINCH
 
 # ---------- scorciatoie ----------
 alias ll='ls -lh' la='ls -lAh' l='ls -CF'
@@ -184,6 +193,7 @@ rk() {  # comando unico di RunnerKit: rk, rk aggiorna, rk versioni, rk gpu, ...
     pulisci) pulizia --sicura ;;
     log) unavolta --log; echo; tail -20 ~/.touchpad.log 2>/dev/null ;;
     collaudo) rkcollaudo ;;
+    disinstalla) shift; rkdisinstalla "$@" ;;
     centro) (rkcentro "${2:-sistema}" >/dev/null 2>&1 &) ;;
     backup) shift; rkbackup "$@" ;;
     ripristina) shift; rkbackup --ripristina "$@" ;;
@@ -217,6 +227,7 @@ rk() {  # comando unico di RunnerKit: rk, rk aggiorna, rk versioni, rk gpu, ...
   rk copia TESTO · rk incolla  appunti condivisi con l'iPhone (anche: comando | rk copia)
   rk italiano [off]    Linux in italiano
   rk fisso on|off      barra di stato fissa in cima al terminale
+  rk disinstalla       toglie RunnerKit e rimette tutto come prima
   clear (o Ctrl+L)     pulisce lo schermo, la barra resta
 EOF
       ;;

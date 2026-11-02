@@ -19,11 +19,15 @@ Debian desktop. Install with one command, update with one tap.
 In Debian's terminal (inside LinuxRunner):
 
 ```sh
-apt install -y curl && curl -fsSL https://raw.githubusercontent.com/cipherdesk007-max/mia/main/install.sh | sh
+apt install -y curl && curl -fsSL https://raw.githubusercontent.com/cipherdesk007-max/FMlab---RunnerKit/stabile/install.sh | sh
 ```
 
 Only needed **once**. After that it updates itself with no commands: tap the **⟳** bubble (it turns
 **orange** when a new version is out, checked every 6 hours), the **Aggiorna RunnerKit** desktop icon, or `rk aggiorna`.
+
+Updates come from the **`stabile`** (stable) branch, which only receives versions that passed every automated test.
+If the network drops mid-update, RunnerKit stays as it was (download everything, verify, then install).
+To remove everything and restore the system: `rk disinstalla`.
 
 Tested on **iPhone 15 Pro Max, iOS 27.2, LinuxRunner 1.1.0 (build 900), Debian 13**, LinuxRunner
 desktop (Openbox) at 960×540 with the Metal GPU enabled.
@@ -34,7 +38,7 @@ desktop (Openbox) at 960×540 with the Metal GPU enabled.
 |---|---|
 | **TouchPad** | Trackpad with a cursor, right click, Italian/US keyboard, special keys, and a bubble dock on the screen edge |
 | **Centro** (Center) | System (live RAM/CPU/disk gauges), disk cleaning with one tap or by category, performance profiles, processes |
-| **UnaVolta** ("once") | Repeated taps on an icon open the program only once; if it's already open, its window is raised |
+| **UnaVolta** ("once") | Repeated taps on an icon open the program only once; if it's already open, its window is raised. Terminals, file managers and text editors always open a new window |
 | **Pulizia** (cleaning) | Safe disk cleaning, reports, optional weekly auto-clean |
 | **RunnerBoost** | Speed diagnosis, Metal GPU check (% of draws on Metal), repeatable benchmark with history, profiles |
 | **Terminale** | Status bar pinned at the top, colored prompt, single `rk` command, clipboard shared with iPhone |
@@ -66,18 +70,22 @@ on Metal. First result on a 15 Pro Max: **glxgears at 68.7 FPS** at 960×540.
 |---|---|
 | `rk centro` | Open the Center window |
 | `rk collaudo` | Test everything on the real phone and save a report to Shared (visible in the Files app) |
-| `rk backup` / `rk ripristina` | Back up / restore settings, desktop, scripts and the package list (keeps 5, safety copy before restore) |
-| `pulizia --sicura` | Clean only what regenerates itself: apt cache, app caches, trash, old logs, temp files older than 3 days |
+| `rk backup` / `rk ripristina` | Back up / restore settings, desktop, scripts, SSH config and the package list (keeps 5, safety copy before restore). Private SSH keys are left out because the Files-app folder is visible to other apps (`RKB_CHIAVI=1 rk backup` to include them) |
+| `pulizia --sicura` | Clean only what regenerates itself: apt cache, caches of closed apps (a running Firefox keeps its cache), trash, old logs, temp files older than 3 days (never those of running programs) |
 | `runnerboost` | Diagnosis with recommendations ordered by impact |
 | `rk copia TEXT` · `cmd \| rk copia` · `rk incolla` | iPhone clipboard via LinuxRunner's `/dev/clipboard` |
 | `rk italiano` / `rk italiano off` | Italian locale for Debian, programs (via UnaVolta), terminal and Firefox |
+| `rk disinstalla [--tutto]` | Uninstall RunnerKit and undo its changes (icons, autostart, terminal, UnaVolta, profile, locale). `--tutto` also removes settings; backups stay |
 
 ## Quality
 
 Every change is tested by **GitHub Actions** on a virtual display: key/click engine, TouchPad and Center
 windows, bubbles, single instance, clipboard, UnaVolta, cleaning, backup/restore, locale, terminal bar in a
 pseudo-terminal, GPU check. Test screenshots update themselves in
-[`screenshots/ultima-versione/`](screenshots/ultima-versione/). History: [CHANGELOG.md](CHANGELOG.md).
+[`screenshots/ultima-versione/`](screenshots/ultima-versione/). A **full installer test** runs like on the phone:
+install, "already up to date", a corrupted file or a Wi-Fi login page instead of the version (nothing may change),
+uninstall. Only when everything passes is the version copied to the **`stabile`** branch that phones install from.
+History: [CHANGELOG.md](CHANGELOG.md).
 
 ## Credits
 
@@ -87,3 +95,4 @@ pseudo-terminal, GPU check. Test screenshots update themselves in
 - Debian, Mesa, Openbox, Tk and every open-source project the desktop relies on.
 
 FMlab - RunnerKit is an independent FMlab project, not affiliated with LinuxRunner.
+License: [MIT](LICENSE).

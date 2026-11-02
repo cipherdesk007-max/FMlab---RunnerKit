@@ -9,9 +9,11 @@
 #   pulizia --sicura --solo apt,cache   pulisce solo le categorie indicate
 #   pulizia --autoremove toglie i pacchetti Debian non piu' necessari
 # I file personali (documenti, Desktop, Shared, progetti) non vengono MAI cancellati.
-VERSIONE="1.1.0"
+VERSIONE="1.2.0"
 R="${PULIZIA_ROOT:-}"          # prefisso per i test
 H="${PULIZIA_HOME:-$HOME}"
+# sicurezza: senza una home vera non si cancella niente (eviterebbe percorsi come /.cache)
+case "$H" in ""|/) echo "pulizia: HOME non valida ('$H'), mi fermo." >&2; exit 1 ;; esac
 STATO="$H/.config/pulizia"
 AUTOSTART="$H/.config/autostart/pulizia.desktop"
 SUDO=""
@@ -26,7 +28,7 @@ spazio_libero() { df -Pk "${R:-/}" 2>/dev/null | awk 'NR==2{print $4}'; }
 sicure() {
   cat <<EOF
 apt|Pacchetti .deb gia' installati (cache di apt)|$R/var/cache/apt/archives/*.deb $R/var/cache/apt/archives/partial/*
-cache|Cache dei programmi (miniature, browser, shader, pip...)|$H/.cache/*
+cache|Cache dei programmi chiusi (miniature, browser, pip...)|CACHE
 cestino|Cestino|$H/.local/share/Trash/files/* $H/.local/share/Trash/info/*
 log|Log vecchi e compressi|$R/var/log/*.gz $R/var/log/*.[0-9] $R/var/log/*/*.gz $R/var/log/*/*.[0-9]
 tmp|File temporanei piu' vecchi di 3 giorni|TMPVECCHI
@@ -34,10 +36,31 @@ crash|Dump di crash|$R/var/crash/* $H/core $H/core.[0-9]*
 EOF
 }
 
-tmp_vecchi() { find "$R/tmp" "$R/var/tmp" -xdev -mindepth 1 -maxdepth 1 -mtime +3 ! -name '.*' ! -name 'touchpad-*' ! -name 'unavolta-*' 2>/dev/null; }
+# /tmp: solo file e cartelle vecchi; mai socket, cartelle di sistema o di programmi in funzione
+tmp_vecchi() {
+  find "$R/tmp" "$R/var/tmp" -xdev -mindepth 1 -maxdepth 1 -mtime +3 ! -type s ! -name '.*' \
+    ! -name 'touchpad-*' ! -name 'unavolta-*' ! -name 'rkcentro-*' ! -name 'runnerkit-*' \
+    ! -name 'tmux-*' ! -name 'ssh-*' ! -name 'systemd-*' ! -name 'pulse-*' ! -name 'runtime-*' \
+    ! -name 'dbus-*' ! -name 'lr-*' ! -name 'linuxrunner*' ! -name 'mesa*' \
+    ! -name "$(basename "${LR_MESA_METAL_STATS_DIR:-/nessuno}")" 2>/dev/null
+}
+# cache dei programmi aperti (es. Firefox): non si toccano mentre girano
+cache_libere() {
+  for c in "$H"/.cache/*; do
+    [ -e "$c" ] || continue
+    n=$(basename "$c")
+    case "$n" in
+      mozilla|firefox*) pgrep -u "$(id -u)" -f 'firefox' >/dev/null 2>&1 && continue ;;
+      chromium|google-chrome) pgrep -u "$(id -u)" -f 'chrom' >/dev/null 2>&1 && continue ;;
+      fontconfig|mesa_shader_cache*) continue ;;   # si ricreano ma e' lento su LinuxRunner: si tengono
+    esac
+    echo "$c"
+  done
+}
 
 espandi() {  # stampa i percorsi esistenti di una categoria
   if [ "$1" = TMPVECCHI ]; then tmp_vecchi; return; fi
+  if [ "$1" = CACHE ]; then cache_libere; return; fi
   for p in $1; do [ -e "$p" ] && echo "$p"; done
 }
 

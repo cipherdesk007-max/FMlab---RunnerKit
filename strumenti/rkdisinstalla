@@ -1,0 +1,67 @@
+#!/bin/sh
+# FMlab - RunnerKit Disinstalla - toglie RunnerKit e rimette il sistema come prima.
+#   rkdisinstalla           chiede conferma, toglie programmi, icone, avvio automatico e modifiche
+#   rkdisinstalla --si      senza domande
+#   rkdisinstalla --tutto   toglie anche le impostazioni salvate (~/.config/runnerkit, touchpad.json...)
+# I backup nella cartella dell'app File e i pacchetti Debian (python3-tk, xdotool...) restano.
+VERSIONE="1.0.0"
+P="${RKD_PREFIX:-}"          # prefisso per i test
+H="${RKD_HOME:-$HOME}"
+SUDO=""
+[ "$(id -u)" -ne 0 ] && command -v sudo >/dev/null && SUDO="sudo"
+SI=0; TUTTO=0
+for a in "$@"; do case "$a" in --si) SI=1;; --tutto) TUTTO=1;; --versione) echo "RunnerKit Disinstalla $VERSIONE"; exit 0;;
+  -h|--aiuto) sed -n '2,6p' "$0" | sed 's/^# \{0,1\}//'; exit 0;; esac; done
+
+if [ "$SI" != 1 ]; then
+  if [ -t 0 ]; then
+    printf 'Tolgo FMlab - RunnerKit da questo Linux? [s/N] '; read -r r
+    case "$r" in s|S|si|Si|sì) ;; *) echo "Annullato."; exit 0;; esac
+  else
+    echo "Per togliere RunnerKit senza domande: rkdisinstalla --si"; exit 1
+  fi
+fi
+
+echo "== Disinstallo FMlab - RunnerKit =="
+B="$P/usr/local/bin"
+# 1) prima si annullano le modifiche fatte agli altri programmi (servono gli strumenti ancora presenti)
+[ -x "$B/unavolta" ] && HOME="$H" "$B/unavolta" --ripristina
+[ -x "$B/runnerboost" ] && [ -f "$H/.config/runnerboost/profilo" ] && HOME="$H" "$B/runnerboost" --profilo normale >/dev/null 2>&1 && echo "Profilo RunnerBoost: rimesso normale"
+[ -x "$B/rkitaliano" ] && [ -f "$H/.config/runnerkit/lingua" ] && HOME="$H" "$B/rkitaliano" --off >/dev/null 2>&1 && echo "Lingua: tolta l'impostazione di RunnerKit"
+[ -x "$B/pulizia" ] && HOME="$H" PULIZIA_HOME="$H" "$B/pulizia" --auto-off >/dev/null 2>&1
+if [ -f "$H/.bashrc" ]; then
+  sed -i '/# RunnerKit Terminale inizio/,/# RunnerKit Terminale fine/d' "$H/.bashrc" && echo "Terminale: tolto da ~/.bashrc"
+fi
+
+# 2) chiudo TouchPad e il Centro
+pkill -f "$B/touchpad" 2>/dev/null
+pkill -f "$B/rkcentro" 2>/dev/null
+
+# 3) icone, menu, avvio automatico
+for f in touchpad.desktop runnerkit-centro.desktop runnerkit-aggiorna.desktop; do
+  rm -f "$H/.local/share/applications/$f" "$H/Desktop/$f" "$H/Scrivania/$f"
+done
+rm -f "$H/.config/autostart/touchpad.desktop" "$H/.config/autostart/pulizia.desktop"
+command -v update-desktop-database >/dev/null && update-desktop-database "$H/.local/share/applications" >/dev/null 2>&1
+echo "Icone e avvio automatico: tolti"
+
+# 4) programmi
+for t in touchpad unavolta pulizia runnerboost rkterminale rkcollaudo rkbackup rkitaliano rkaggiorna rkcentro; do
+  $SUDO rm -f "$B/$t"
+done
+$SUDO rm -rf "$P/usr/local/share/runnerkit"
+rm -f /tmp/touchpad-"$(id -u)".sock /tmp/rkcentro-"$(id -u)".sock 2>/dev/null
+echo "Programmi: tolti"
+
+# 5) impostazioni (solo con --tutto)
+if [ "$TUTTO" = 1 ]; then
+  rm -rf "$H/.config/runnerkit" "$H/.config/runnerboost" "$H/.config/pulizia" "$H/.config/unavolta" \
+         "$H/.config/touchpad.json" "$H/.touchpad.log"
+  echo "Impostazioni: tolte"
+else
+  echo "Impostazioni lasciate (per toglierle: rkdisinstalla --tutto)"
+fi
+
+$SUDO rm -f "$B/rkdisinstalla"
+echo "== FMlab - RunnerKit disinstallato. Apri un terminale nuovo; per il desktop: Stop Desktop -> Open Desktop =="
+echo "   Per reinstallarlo: il comando di installazione sulla pagina GitHub di FMlab - RunnerKit."

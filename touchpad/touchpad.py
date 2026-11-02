@@ -5,6 +5,7 @@ __version__ = "2.9.1"
 
 import glob
 import json
+import re
 import shutil
 import socket
 import time
@@ -69,7 +70,7 @@ from Xlib.ext import xtest  # noqa: E402
 CFG = os.path.expanduser("~/.config/touchpad.json")
 CLIP = os.environ.get("TP_CLIPBOARD", "/dev/clipboard")
 URL_VERSIONE = os.environ.get("TP_VERSIONE_URL",
-                              "https://raw.githubusercontent.com/cipherdesk007-max/mia/main/VERSIONE")
+                              "https://raw.githubusercontent.com/cipherdesk007-max/FMlab---RunnerKit/stabile/VERSIONE")
 VERSIONE_LOCALE = os.environ.get("TP_VERSIONE_LOCALE", "/usr/local/share/runnerkit/versione")  # appunti dell'iPhone (dispositivo di LinuxRunner)
 AUTOSTART = os.path.expanduser("~/.config/autostart/touchpad.desktop")
 AUTOSTART_TXT = """[Desktop Entry]
@@ -708,7 +709,7 @@ class App:
             return
         remota = (self._vproc.stdout.read() or "").strip()
         locale = self._versione_locale()
-        if remota and len(remota) < 40 and remota != locale:
+        if self._versione_valida(remota) and remota != locale:
             prima = self._nuova
             self._nuova = remota
             if self.mini and self.dock:
@@ -747,8 +748,13 @@ class App:
         else:
             self._aggiorna_avvia()
 
+    @staticmethod
+    def _versione_valida(v):
+        """Solo AAAA.MM.GG-N: una rete con pagina di accesso (hotel, treno) risponde con HTML."""
+        return bool(re.fullmatch(r"\d{4}\.\d{2}\.\d{2}-\d+", v or ""))
+
     def _aggiorna_decidi(self, remota):
-        if not remota or len(remota) > 40:
+        if not self._versione_valida(remota):
             return "offline"
         return "aggiornato" if remota == self._versione_locale() else "nuova"
 

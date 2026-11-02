@@ -16,13 +16,17 @@ Si installa con un comando e poi si aggiorna con un tocco.
 Nel terminale di Debian (in LinuxRunner):
 
 ```sh
-apt install -y curl && curl -fsSL https://raw.githubusercontent.com/cipherdesk007-max/mia/main/install.sh | sh
+apt install -y curl && curl -fsSL https://raw.githubusercontent.com/cipherdesk007-max/FMlab---RunnerKit/stabile/install.sh | sh
 ```
 
 Serve **solo la prima volta**. Poi si aggiorna da solo, senza comandi:
 - pallino **⟳** di TouchPad, che **diventa arancione** quando c'è una novità (controllo ogni 6 ore);
 - icona **Aggiorna RunnerKit** sul desktop;
 - `rk aggiorna` nel terminale.
+
+Gli aggiornamenti arrivano dal ramo **`stabile`**: ci finisce solo una versione che ha superato tutti i test
+automatici. Se la rete cade a metà, RunnerKit resta com'era (scarica tutto, controlla, poi installa).
+Per togliere tutto e rimettere il sistema come prima: `rk disinstalla`.
 
 Provato su **iPhone 15 Pro Max, iOS 27.2, LinuxRunner 1.1.0 (build 900), Debian 13**, con desktop
 LinuxRunner (Openbox) a 960×540 e GPU Metal attiva.
@@ -88,6 +92,7 @@ Legge tutto direttamente dal sistema, senza lanciare programmi per misurare, e a
 Sul telefono un tocco "sporco" vale due o tre clic. UnaVolta sta davanti a icone, menu e barra:
 più tocchi entro 4 secondi producono **un solo avvio**. Se il programma è già aperto, anche se lento a comparire
 come Firefox, UnaVolta **porta davanti la sua finestra** invece di aprirne un'altra.
+Terminali, gestori di file ed editor di testo invece si aprono sempre, perché lì una seconda finestra serve.
 `unavolta --log` mostra cosa è successo, `unavolta --ripristina` lo toglie.
 
 ## Pulizia
@@ -97,7 +102,7 @@ Non tocca **mai** i file personali (Desktop, documenti, Shared, progetti).
 | Comando | Cosa fa |
 |---|---|
 | `pulizia` | Report: disco, RAM, cosa si può cancellare, pacchetti inutili e più grandi, cartelle e file più grandi. Lo salva in Shared, quindi lo vedi dall'app **File** |
-| `pulizia --sicura` | Cancella solo ciò che si ricrea da solo: cache di apt e dei programmi, cestino, log vecchi, file temporanei con più di 3 giorni, dump di crash |
+| `pulizia --sicura` | Cancella solo ciò che si ricrea da solo: cache di apt e dei programmi chiusi (quella di Firefox aperto resta), cestino, log vecchi, file temporanei con più di 3 giorni (mai quelli dei programmi in funzione), dump di crash |
 | `pulizia --sicura --solo apt,cache` | Pulisce solo le categorie indicate |
 | `pulizia --auto-on` / `--auto-off` | Pulizia automatica all'avvio del desktop, al massimo una volta a settimana |
 
@@ -122,22 +127,26 @@ per scelta di LinuxRunner. Primo risultato su 15 Pro Max: **glxgears a 68,7 FPS*
 - Prompt a colori: utente, cartella, ramo git, ✘ se l'ultimo comando fallisce, ⏱ se dura più di 3 s
 - Storia dei comandi lunga, senza doppioni, con data e ora
 - Comando unico **`rk`**: `rk centro`, `rk info`, `rk top`, `rk gpu`, `rk boost`, `rk pulizia`, `rk pulisci`,
-  `rk log`, `rk collaudo`, `rk backup`, `rk ripristina`, `rk italiano`, `rk copia`, `rk incolla`, `rk aggiorna`, `rk versioni`
+  `rk log`, `rk collaudo`, `rk backup`, `rk ripristina`, `rk italiano`, `rk copia`, `rk incolla`, `rk aggiorna`, `rk versioni`, `rk disinstalla`
 
 ## Collaudo, Backup, Italiano, Appunti
 
 | Comando | Cosa fa |
 |---|---|
 | `rk collaudo` | Prova ogni strumento sul telefono vero (GPU, XTEST, TouchPad, UnaVolta con 4 tocchi, icone, pulizia, spazio, backup) e salva un report in Shared |
-| `rk backup` / `rk ripristina` | Impostazioni, desktop, script, chiavi ed elenco dei pacchetti in `Shared/RunnerKit-backup` (ultimi 5). Prima di ripristinare fa una copia di sicurezza |
+| `rk backup` / `rk ripristina` | Impostazioni, desktop, script, configurazione SSH ed elenco dei pacchetti in `Shared/RunnerKit-backup` (ultimi 5). Le chiavi SSH private restano fuori, perché la cartella dell'app File è visibile ad altre app (per includerle: `RKB_CHIAVI=1 rk backup`). Prima di ripristinare fa una copia di sicurezza |
 | `rk italiano` / `rk italiano off` | Lingua italiana per Debian, per i programmi aperti da icone e menu (tramite UnaVolta), per il terminale e per Firefox |
 | `rk copia TESTO` · `comando \| rk copia` · `rk incolla` | Appunti condivisi con l'iPhone, tramite il dispositivo `/dev/clipboard` di LinuxRunner |
+| `rk disinstalla [--tutto]` | Toglie RunnerKit e annulla le sue modifiche (icone, avvio automatico, terminale, UnaVolta, profilo, lingua). Con `--tutto` toglie anche le impostazioni; i backup restano |
 
 ## Qualità e verifiche
 
 - Ogni modifica viene provata da **GitHub Actions** su uno schermo virtuale: motore di tasti e clic, finestre
   di TouchPad e del Centro, pallini, istanza unica, appunti, UnaVolta, Pulizia, backup e ripristino,
   italiano, barra del terminale in un pseudo-terminale, prova GPU.
+- **Prova completa dell'installatore** come sul telefono: installazione, "già aggiornato", un file rovinato o una
+  pagina di accesso Wi-Fi al posto della versione (non deve cambiare niente), disinstallazione.
+- Solo se tutto passa, la versione viene copiata sul ramo **`stabile`**, da cui installano e si aggiornano i telefoni.
 - Gli screenshot dei test si aggiornano da soli in [`screenshots/ultima-versione/`](screenshots/ultima-versione/);
   le foto dal telefono sono in [`screenshots/telefono/`](screenshots/telefono/).
 - Storico delle versioni: [CHANGELOG.md](CHANGELOG.md) · versione del kit: [VERSIONE](VERSIONE).
@@ -150,12 +159,13 @@ per scelta di LinuxRunner. Primo risultato su 15 Pro Max: **glxgears a 68,7 FPS*
 - Debian, Mesa, Openbox, Tk e tutti i progetti open source su cui poggia il desktop.
 
 FMlab - RunnerKit è un progetto indipendente di FMlab e non è affiliato a LinuxRunner.
+Licenza: [MIT](LICENSE).
 
 ## Struttura
 
 ```
 install.sh        installatore/aggiornatore     VERSIONE     versione del kit
-touchpad/         TouchPad                      strumenti/   Centro, Collaudo, Backup, Italiano, Aggiorna
+touchpad/         TouchPad                      strumenti/   Centro, Collaudo, Backup, Italiano, Aggiorna, Disinstalla
 unavolta/         UnaVolta                      pulizia/     Pulizia
 runnerboost/      RunnerBoost                   terminale/   Terminale
 tests/            test automatici               screenshots/ foto dal telefono e dai test

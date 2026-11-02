@@ -3,6 +3,32 @@
 Formato: [versione] - data. Le versioni seguono MAJOR.MINOR.PATCH
 (MAJOR = cambia il modo d'uso, MINOR = funzioni nuove, PATCH = correzioni).
 
+## FMlab - RunnerKit 2026.11.02-13 - versione finale (revisione completa)
+**Aggiornamenti a prova di errore**
+- Nuovo ramo `stabile`: i telefoni installano e si aggiornano solo da una versione che ha superato tutti i test.
+- L'installatore scarica tutto, controlla ogni file e solo dopo installa: una rete che cade a metà o una
+  pagina di accesso Wi-Fi non lasciano più il kit mezzo vecchio e mezzo nuovo.
+- Un solo aggiornamento alla volta (due tocchi su ⟳ non ne aprono due), controllo dello spazio libero,
+  ripetizione automatica dei download, messaggi chiari se apt non riesce.
+- `rkaggiorna` scarica l'installatore intero prima di eseguirlo; TouchPad accetta solo versioni vere (AAAA.MM.GG-N).
+- Repo spostato su `FMlab---RunnerKit` (i vecchi indirizzi vengono reindirizzati da GitHub).
+
+**Nuovo: `rk disinstalla`** — toglie RunnerKit e annulla tutte le sue modifiche; `--tutto` anche le impostazioni.
+
+**Sicurezza e dati**
+- Backup: le chiavi SSH private non finiscono più nella cartella dell'app File (solo con `RKB_CHIAVI=1`); file leggibili solo dal proprietario.
+- Pulizia: non tocca la cache di Firefox mentre è aperto, né socket e cartelle di programmi in funzione in /tmp;
+  tiene le cache lente da ricreare (font, shader); si ferma se la home non è valida.
+
+**Correzioni**
+- UnaVolta: terminali, gestori di file ed editor si aprono sempre (prima l'icona "File" poteva non aprire nulla
+  perché pcmanfm è anche il desktop); guarda solo i propri processi; le copie dei lanciatori seguono gli
+  aggiornamenti di Debian e spariscono con i programmi tolti.
+- Terminale 1.4.0: dopo `rk top` Ctrl+C torna normale; la barra si rimette a posto quando ruoti il telefono;
+  all'uscita lo schermo torna normale; convive con altri PROMPT_COMMAND; lingua corretta anche non italiana.
+- Test nuovi: prova completa dell'installatore (installa, già aggiornato, file rovinato, pagina HTML, disinstalla).
+- Licenza MIT.
+
 ## FMlab - RunnerKit 2026.11.02-12
 - Il progetto si chiama **FMlab - RunnerKit**: titolo della pagina GitHub (italiano e inglese),
   installatore, aggiornamento, collaudo, finestra del Centro, schermata e barra del terminale.

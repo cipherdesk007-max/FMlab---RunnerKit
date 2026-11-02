@@ -2,11 +2,17 @@ name: test
 
 on:
   push:
+    branches: [main]
   pull_request:
   workflow_dispatch:
 
 permissions:
   contents: write
+
+# un push nuovo annulla il giro vecchio: "stabile" non torna mai indietro a una versione precedente
+concurrency:
+  group: test-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   touchpad:
@@ -21,6 +27,7 @@ jobs:
         run: |
           /usr/bin/python3 -m py_compile touchpad/touchpad.py
           sh -n install.sh
+          ! git ls-files | grep -q __pycache__
           sh -n unavolta/unavolta
           sh -n pulizia/pulizia
           for f in strumenti/*; do case "$(head -1 "$f")" in *python*) /usr/bin/python3 -m py_compile "$f";; *bash*) bash -n "$f";; *) sh -n "$f";; esac; done
@@ -38,6 +45,8 @@ jobs:
         run: sh tests/test_pulizia.sh
       - name: Test UnaVolta
         run: sh tests/test_unavolta.sh
+      - name: Test installatore completo (installa, aggiorna, file rovinato, disinstalla)
+        run: sh tests/test_installa.sh
       - name: Test motore X11
         run: xvfb-run -a -s "-screen 0 1280x720x24" /usr/bin/python3 tests/test_x11.py
       - name: Test Centro RunnerKit + screenshot
@@ -59,4 +68,7 @@ jobs:
           git config user.email "github-actions@users.noreply.github.com"
           git add -f screenshots/ultima-versione
           git diff --cached --quiet || git commit -m "Screenshot automatici dei test [skip ci]"
-          git push
+          git push || echo "screenshot non pubblicati (main e' andato avanti): li pubblica il prossimo giro"
+      - name: Promuovi a "stabile" (i telefoni installano e si aggiornano solo da qui)
+        if: success() && github.ref == 'refs/heads/main'
+        run: git push --force origin ${{ github.sha }}:refs/heads/stabile
