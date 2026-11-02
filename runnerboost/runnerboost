@@ -1,0 +1,176 @@
+#!/bin/sh
+# RunnerBoost (RunnerKit) - far rendere al massimo LinuxRunner senza stressare il telefono.
+#   runnerboost                     diagnosi + consigli (cosa frena il sistema e cosa cambiare)
+#   runnerboost --test [etichetta]  test di velocita' ripetibile, confronto con il precedente
+#   runnerboost --storico           tutti i test fatti
+#   runnerboost --profilo veloce    meno lavoro inutile = piu' veloce e meno calore
+#   runnerboost --profilo bilanciato  come veloce ma tiene la trasparenza (compositing)
+#   runnerboost --profilo normale   rimette tutto come prima
+#   runnerboost --report            diagnosi + ultimo test in un file da mandare (cartella Shared)
+VERSIONE="1.0.0"
+H="${RB_HOME:-$HOME}"
+CONF="$H/.config/runnerboost"
+STORICO="$CONF/storico.csv"
+GIRI="${RB_GIRI:-3}"
+SCALA="${RB_SCALA:-1}"          # 1 = test completo; nei test automatici si riduce
+mkdir -p "$CONF"
+
+c() { printf '\033[%sm' "$1"; }
+ok() { printf '  %s✔%s %s\n' "$(c 32)" "$(c 0)" "$*"; }
+no() { printf '  %s✘%s %s\n' "$(c 31)" "$(c 0)" "$*"; }
+info() { printf '  %s•%s %s\n' "$(c 36)" "$(c 0)" "$*"; }
+titolo() { printf '\n%s%s%s\n' "$(c '1;34')" "$*" "$(c 0)"; }
+
+# ---------------- diagnosi ----------------
+diagnosi() {
+  printf '%sRunnerBoost %s — diagnosi%s  (%s)\n' "$(c '1;35')" "$VERSIONE" "$(c 0)" "$(date '+%Y-%m-%d %H:%M')"
+  CONSIGLI=""
+  titolo "Processore"
+  info "core visti da Linux: $(nproc 2>/dev/null || echo ?)"
+  if [ -r /proc/ish/jit ]; then
+    j=$(grep -m1 -i 'mode' /proc/ish/jit 2>/dev/null)
+    case "$j" in *JIT*|*jit*) case "$j" in *off*|*gadget*) no "JIT spento ($j)"; CONSIGLI="$CONSIGLI|JIT: Settings > Advanced > Developer Mode > Execution Engine > Attach with StikDebug (sperimentale)";; *) ok "JIT attivo ($j)";; esac;;
+      *) info "JIT: $j";; esac
+  else
+    no "JIT non disponibile in questa versione di LinuxRunner (serve la 1.1.0, build 900)"
+    CONSIGLI="$CONSIGLI|Aggiorna LinuxRunner alla 1.1.0 (build 900): GPU Metal completa + JIT"
+  fi
+  titolo "Grafica"
+  if command -v glxinfo >/dev/null 2>&1 && [ -n "$DISPLAY" ]; then
+    r=$(glxinfo -B 2>/dev/null | grep -m1 'OpenGL renderer' | cut -d: -f2-)
+    case "$r" in
+      *llvmpipe*|*softpipe*|*Software*) no "rendering software:$r"; CONSIGLI="$CONSIGLI|GPU: LinuxRunner Settings > Graphics > Renderer > Metal, poi chiudi e riapri l'app";;
+      "") info "renderer non rilevato";;
+      *) ok "GPU:$r";;
+    esac
+  else
+    info "renderer: installa 'mesa-utils' e lancia dal desktop per vederlo"
+  fi
+  if pgrep -x xcompmgr >/dev/null 2>&1; then info "compositing (trasparenza) ACCESO: costa un po' di CPU"; else info "compositing spento"; fi
+  titolo "Memoria"
+  awk '/MemTotal/{t=$2} /MemAvailable/{a=$2} END{ if(t){u=t-a; printf "  • RAM: %d MB usati su %d MB (%d%%)\n", u/1024, t/1024, u*100/t; if(u*100/t>85) print "  ! RAM quasi piena"} }' /proc/meminfo 2>/dev/null
+  echo "  • i processi piu' pesanti:"
+  ps -eo rss,comm --sort=-rss 2>/dev/null | awk 'NR>1 && NR<=6 {printf "      %5.0f MB  %s\n", $1/1024, $2}'
+  titolo "Disco"
+  libero=$(df -Pk / 2>/dev/null | awk 'NR==2{print $4}')
+  if [ -n "$libero" ]; then
+    gb=$(awk -v k="$libero" 'BEGIN{printf "%.1f", k/1048576}')
+    if [ "$libero" -lt 10485760 ]; then no "spazio libero: $gb GB (consigliati almeno 10 GB)"; CONSIGLI="$CONSIGLI|Spazio: lancia 'pulizia' e libera spazio anche sull'iPhone (foto/video)"
+    else ok "spazio libero: $gb GB"; fi
+  fi
+  titolo "Avvio"
+  n=$(ls "$H"/.config/autostart/*.desktop 2>/dev/null | wc -l)
+  info "programmi che partono col desktop: $n ($(ls "$H"/.config/autostart/ 2>/dev/null | tr '\n' ' '))"
+  p=$(cat "$CONF/profilo" 2>/dev/null || echo normale)
+  info "profilo RunnerBoost: $p"
+  [ "$p" = normale ] && CONSIGLI="$CONSIGLI|Profilo: runnerboost --profilo veloce (meno animazioni, Firefox piu' leggero)"
+  titolo "Consigli, in ordine di effetto"
+  if [ -z "$CONSIGLI" ]; then ok "niente da migliorare: misura con runnerboost --test"
+  else echo "$CONSIGLI" | tr '|' '\n' | sed '/^$/d' | awk '{printf "  %d. %s\n", NR, $0}'; fi
+  echo
+  echo "  Dopo ogni modifica: runnerboost --test \"cosa ho cambiato\"  (confronto automatico)"
+}
+
+# ---------------- test di velocita' ----------------
+ms() { date +%s%3N; }
+mediana() { tr ' ' '\n' | sed '/^$/d' | sort -n | awk '{a[NR]=$1} END{print a[int((NR+1)/2)]}'; }
+misura() {  # $1 nome, resto comando: stampa la mediana in ms su $GIRI giri
+  nome="$1"; shift; tempi=""
+  i=0; while [ $i -lt "$GIRI" ]; do
+    t0=$(ms); sh -c "$*" >/dev/null 2>&1; t1=$(ms)
+    tempi="$tempi $((t1 - t0))"; i=$((i + 1))
+  done
+  echo "$tempi" | mediana
+}
+
+test_velocita() {
+  etichetta="${1:-senza etichetta}"
+  f="/tmp/runnerboost-dati"
+  [ -f "$f" ] || head -c $((4000000 * SCALA)) /dev/urandom > "$f" 2>/dev/null
+  n=$((200000 * SCALA))
+  printf '%sRunnerBoost — test di velocita'"'"'%s (%s giri, mediana; piu'"'"' basso = meglio)\n' "$(c '1;35')" "$(c 0)" "$GIRI"
+  echo "  attendi: su LinuxRunner richiede circa 1-3 minuti..."
+  py=$(misura python "python3 -c 's=0
+for i in range($n): s+=i*i'")
+  printf '  %-26s %6s ms\n' "calcolo Python" "$py"
+  av=$(misura avvio "for i in 1 2 3 4 5; do /bin/true; done; python3 -c pass")
+  printf '  %-26s %6s ms\n' "avvio programmi" "$av"
+  gz=$(misura gzip "gzip -1 -c $f")
+  printf '  %-26s %6s ms\n' "compressione" "$gz"
+  sh2=$(misura sha "sha256sum $f")
+  printf '  %-26s %6s ms\n' "crittografia (sha256)" "$sh2"
+  so=$(misura sort "seq $n | sort -rn")
+  printf '  %-26s %6s ms\n' "ordinamento" "$so"
+  tot=$((py + av + gz + sh2 + so))
+  printf '  %s%-26s %6s ms%s\n' "$(c 1)" "TOTALE" "$tot" "$(c 0)"
+  [ -f "$STORICO" ] || echo "data;etichetta;python;avvio;gzip;sha256;sort;totale" > "$STORICO"
+  prec=$(tail -n +2 "$STORICO" | tail -1)
+  echo "$(date '+%Y-%m-%d %H:%M');$etichetta;$py;$av;$gz;$sh2;$so;$tot" >> "$STORICO"
+  if [ -n "$prec" ]; then
+    pt=$(echo "$prec" | cut -d';' -f8); pe=$(echo "$prec" | cut -d';' -f2)
+    awk -v a="$pt" -v b="$tot" -v e="$pe" 'BEGIN{ if(a>0){ d=(a-b)*100/a; if(d>=0) printf "  -> %.0f%% piu'"'"' veloce rispetto a \"%s\"\n", d, e; else printf "  -> %.0f%% piu'"'"' lento rispetto a \"%s\"\n", -d, e } }'
+    echo "     (differenze sotto il 5% sono rumore: ripeti il test per conferma)"
+  fi
+}
+
+# ---------------- profili ----------------
+ff_prefs() {  # $1 = blocco di righe user_pref da mettere, vuoto = togli
+  for prof in "$H"/.mozilla/firefox*/*.default* "$H"/.mozilla/firefox-esr/*.default*; do
+    [ -d "$prof" ] || continue
+    u="$prof/user.js"; touch "$u"
+    sed -i '/\/\/ RunnerBoost inizio/,/\/\/ RunnerBoost fine/d' "$u"
+    [ -n "$1" ] && printf '// RunnerBoost inizio\n%s\n// RunnerBoost fine\n' "$1" >> "$u"
+  done
+}
+gtk_anim() {  # $1 = 0 spente, 1 accese
+  for v in gtk-3.0 gtk-4.0; do
+    f="$H/.config/$v/settings.ini"; mkdir -p "$(dirname "$f")"; touch "$f"
+    grep -q '^\[Settings\]' "$f" || echo '[Settings]' >> "$f"
+    sed -i '/^gtk-enable-animations=/d' "$f"
+    sed -i "/^\[Settings\]/a gtk-enable-animations=$1" "$f"
+  done
+}
+FF_LEGGERO='user_pref("dom.ipc.processCount", 2);
+user_pref("general.smoothScroll", false);
+user_pref("toolkit.cosmeticAnimations.enabled", false);
+user_pref("browser.sessionstore.interval", 60000);
+user_pref("browser.tabs.unloadOnLowMemory", true);
+user_pref("media.autoplay.default", 5);'
+
+profilo() {
+  case "$1" in
+    veloce)
+      touch "$CONF/no-compositing"; pkill -x xcompmgr 2>/dev/null
+      gtk_anim 0; ff_prefs "$FF_LEGGERO" ;;
+    bilanciato)
+      rm -f "$CONF/no-compositing"
+      gtk_anim 0; ff_prefs "$FF_LEGGERO" ;;
+    normale)
+      rm -f "$CONF/no-compositing"
+      gtk_anim 1; ff_prefs "" ;;
+    *) echo "profili: veloce | bilanciato | normale"; exit 1 ;;
+  esac
+  echo "$1" > "$CONF/profilo"
+  echo "Profilo '$1' applicato."
+  case "$1" in
+    veloce) echo "  - trasparenza spenta (TouchPad resta opaco), animazioni spente, Firefox piu' leggero";;
+    bilanciato) echo "  - animazioni spente, Firefox piu' leggero, trasparenza mantenuta";;
+    normale) echo "  - tutto come prima";;
+  esac
+  echo "  Riavvia il desktop (Stop Desktop -> Open Desktop) e misura: runnerboost --test \"profilo $1\""
+}
+
+dove() { for d in /mnt/LinuxRunnerShared "$H/Shared"; do [ -d "$d" ] && [ -w "$d" ] && { echo "$d"; return; }; done; echo "$H"; }
+
+case "$1" in
+  --versione) echo "RunnerBoost $VERSIONE" ;;
+  --test) shift; test_velocita "$*" ;;
+  --storico) column -t -s';' "$STORICO" 2>/dev/null || cat "$STORICO" 2>/dev/null || echo "nessun test ancora: runnerboost --test" ;;
+  --profilo) profilo "$2" ;;
+  --report)
+    out="$(dove)/runnerboost-report-$(date +%Y%m%d-%H%M).txt"
+    { diagnosi; echo; echo "--- STORICO TEST ---"; cat "$STORICO" 2>/dev/null; } | sed 's/\x1b\[[0-9;]*m//g' > "$out"
+    echo "Report salvato in: $out  (app File > In questo iPhone > LinuxRunner > Shared)" ;;
+  ""|--diagnosi) diagnosi ;;
+  *) sed -n '2,10p' "$0" | sed 's/^# \{0,1\}//' ;;
+esac

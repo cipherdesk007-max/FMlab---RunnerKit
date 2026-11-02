@@ -6,12 +6,14 @@
 #       unavolta --applica                 (aggiunge UnaVolta a icone e menu)
 #       unavolta --ripristina              (toglie UnaVolta da icone e menu)
 #       unavolta --versione
-VERSIONE="1.0.0"
+VERSIONE="1.1.0"
 ATTESA="${UNAVOLTA_SECONDI:-4}"
 SYS_APPS="${UNAVOLTA_SYS_DIR:-/usr/share/applications}"
 USR_APPS="$HOME/.local/share/applications"
 CONF="$HOME/.config/unavolta"
 MARK="X-UnaVolta"
+LOG="/tmp/unavolta-$(id -u).log"
+log() { echo "$(date '+%H:%M:%S') $*" >> "$LOG" 2>/dev/null; }
 
 applica() {
   mkdir -p "$USR_APPS"
@@ -54,6 +56,7 @@ case "$1" in
   --applica) applica; exit 0 ;;
   --ripristina) ripristina; exit 0 ;;
   --versione) echo "UnaVolta $VERSIONE"; exit 0 ;;
+  --log) cat "$LOG" 2>/dev/null || echo "(registro vuoto: nessun avvio passato da UnaVolta)"; exit 0 ;;
   "") echo "uso: unavolta <comando>"; exit 1 ;;
 esac
 
@@ -74,21 +77,29 @@ lock="/tmp/unavolta-$(id -u)-$nome"
 ora=$(date +%s)
 if ! mkdir "$lock" 2>/dev/null; then
   prima=$(cat "$lock/t" 2>/dev/null || echo 0)
-  [ $((ora - prima)) -lt "$ATTESA" ] && exit 0      # avvio gia' in corso: ignoro il tocco
+  [ $((ora - prima)) -lt "$ATTESA" ] && { log "$nome: tocco ripetuto ignorato"; exit 0; }
   rm -rf "$lock"; mkdir "$lock" 2>/dev/null || exit 0
 fi
 echo "$ora" > "$lock/t"
 
-# 2) gia' aperto? porto davanti la sua finestra invece di aprirne un'altra
-if command -v xdotool >/dev/null 2>&1; then
-  for pid in $(pgrep -x "$(echo "$nome" | cut -c1-15)" 2>/dev/null); do
-    wid=$(xdotool search --onlyvisible --pid "$pid" 2>/dev/null | tail -1)
-    if [ -n "$wid" ]; then
-      xdotool windowactivate "$wid" 2>/dev/null || xdotool windowraise "$wid" 2>/dev/null
-      exit 0
-    fi
-  done
+# 2) gia' in esecuzione? NON ne apro un altro (su LinuxRunner programmi come Firefox
+#    impiegano decine di secondi a mostrare la finestra). Se la finestra c'e', la porto davanti.
+pids=$(pgrep -x "$(echo "$nome" | cut -c1-15)" 2>/dev/null)
+if [ -n "$pids" ]; then
+  if command -v xdotool >/dev/null 2>&1; then
+    for pid in $pids; do
+      wid=$(xdotool search --onlyvisible --pid "$pid" 2>/dev/null | tail -1)
+      if [ -n "$wid" ]; then
+        xdotool windowactivate "$wid" 2>/dev/null || xdotool windowraise "$wid" 2>/dev/null
+        log "$nome: gia' aperto, porto davanti la finestra $wid"
+        exit 0
+      fi
+    done
+  fi
+  log "$nome: gia' in avvio (pid $pids), non ne apro un altro"
+  exit 0
 fi
+log "$nome: avvio -> $*"
 
 # 3) avvio normale, staccato dal lanciatore
 if command -v setsid >/dev/null 2>&1; then

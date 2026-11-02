@@ -23,6 +23,10 @@ jobs:
           sh -n install.sh
           sh -n unavolta/unavolta
           sh -n pulizia/pulizia
+          sh -n runnerboost/runnerboost
+          bash -n terminale/terminale.sh
+      - name: Test RunnerBoost + Terminale
+        run: sh tests/test_boost_terminale.sh
       - name: Test Pulizia
         run: sh tests/test_pulizia.sh
       - name: Test UnaVolta

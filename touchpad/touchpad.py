@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """TouchPad 2 - mouse + tastiera fluttuante per LinuxRunner.
 Parla direttamente con X11 (XTEST): nessun processo esterno per tocco."""
-__version__ = "2.4.0"
+__version__ = "2.4.1"
 
 import glob
 import json
@@ -69,7 +69,7 @@ AUTOSTART_TXT = """[Desktop Entry]
 Type=Application
 Name=TouchPad
 Comment=Avvia TouchPad con il desktop (RunnerKit)
-Exec=sh -c "sleep 3; pgrep -x xcompmgr >/dev/null || xcompmgr & exec touchpad"
+Exec=sh -c "sleep 3; [ -f ~/.config/runnerboost/no-compositing ] || pgrep -x xcompmgr >/dev/null || xcompmgr & exec touchpad"
 X-GNOME-Autostart-enabled=true
 X-XFCE-Autostart-Override=true
 Hidden=false
@@ -567,6 +567,8 @@ class App:
         LinuxRunner di solito non ce l'ha: provo ad avviare xcompmgr, poi verifico."""
         if self.x.compositing():
             self.trasp = True
+        elif os.path.exists(os.path.expanduser("~/.config/runnerboost/no-compositing")):
+            self.trasp = False  # profilo "veloce" di RunnerBoost: niente xcompmgr
         elif first and self.x.has_composite() and shutil.which("xcompmgr"):
             subprocess.Popen(["xcompmgr"], stdout=subprocess.DEVNULL,
                              stderr=subprocess.DEVNULL, start_new_session=True)

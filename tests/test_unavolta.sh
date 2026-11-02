@@ -13,9 +13,16 @@ cp /bin/sleep "$T/uvtestsleep"
 for i in 1 2 3 4 5; do "$UV" "$T/uvtestsleep" 30; done
 sleep 1
 n=$(pgrep -c -x uvtestsleep || true)
-pkill -x uvtestsleep || true
 [ "$n" = 1 ] || { echo "FALLITO: avviati $n processi invece di 1"; exit 1; }
 echo "ok: 5 tocchi -> 1 avvio"
+# programma lento (ancora senza finestra) e tocco dopo la finestra anti-doppio: non deve raddoppiare
+UNAVOLTA_SECONDI=0 "$UV" "$T/uvtestsleep" 30
+sleep 1
+n=$(pgrep -c -x uvtestsleep || true)
+pkill -x uvtestsleep || true
+[ "$n" = 1 ] || { echo "FALLITO: programma lento riaperto ($n processi)"; exit 1; }
+"$UV" --log | grep -q "non ne apro un altro"
+echo "ok: programma lento non viene riaperto"
 
 # 2) --applica modifica i lanciatori, --ripristina li riporta com'erano
 printf '[Desktop Entry]\nName=Prova\nExec=prova %%u\nType=Application\n' > "$UNAVOLTA_SYS_DIR/prova.desktop"

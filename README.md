@@ -5,9 +5,11 @@ Tutto quello che serve installare sul Debian di LinuxRunner sta qui, con un coma
 
 | Strumento | Versione | A cosa serve |
 |---|---|---|
-| [TouchPad](#touchpad) | 2.4.0 | Mouse, tasto destro e tastiera italiana touch, fluttuanti sul desktop |
-| [UnaVolta](#unavolta) | 1.0.0 | Tocchi ripetuti su un'icona aprono il programma una volta sola; se è già aperto lo porta davanti |
+| [TouchPad](#touchpad) | 2.4.1 | Mouse, tasto destro e tastiera italiana touch, fluttuanti sul desktop |
+| [UnaVolta](#unavolta) | 1.1.0 | Tocchi ripetuti su un'icona aprono il programma una volta sola; se è già aperto lo porta davanti |
 | [Pulizia](#pulizia) | 1.0.0 | Agente di pulizia del disco: report di cosa occupa spazio, pulizia sicura, automatica a settimana |
+| [RunnerBoost](#runnerboost) | 1.0.0 | Diagnosi della velocità, test ripetibile con storico, profili veloce / bilanciato / normale |
+| [Terminale](#terminale) | 1.0.0 | Prompt a colori con ramo git, esito e durata dei comandi, statistiche, monitor dal vivo, scorciatoie |
 | *prossimi strumenti* | | |
 
 > Pensato per i limiti di LinuxRunner: niente kernel né compositing, CPU emulata.
@@ -83,6 +85,38 @@ Agente di pulizia del disco. **Non tocca mai i file personali** (Desktop, docume
 | `pulizia --auto-on` / `--auto-off` | Pulizia sicura automatica all'avvio del desktop, al massimo una volta a settimana |
 
 Tutto il resto (pacchetti grandi, `apt autoremove`, file enormi) lo decidi tu guardando il report.
+
+## RunnerBoost
+
+Far rendere al massimo LinuxRunner senza stressare il telefono (iOS rallenta da solo se si scalda:
+il telefono non si rompe, ma i numeri peggiorano).
+
+| Comando | Cosa fa |
+|---|---|
+| `runnerboost` | Diagnosi: JIT, GPU o rendering software, compositing, RAM, disco, programmi all'avvio. Chiude con i **consigli in ordine di effetto** |
+| `runnerboost --test "etichetta"` | Test ripetibile (calcolo Python, avvio programmi, compressione, sha256, ordinamento; 3 giri, mediana). Confronta col test precedente |
+| `runnerboost --storico` | Tutti i test fatti |
+| `runnerboost --profilo veloce` | Niente trasparenza, niente animazioni GTK, Firefox più leggero |
+| `runnerboost --profilo bilanciato` | Come veloce ma tiene la trasparenza |
+| `runnerboost --profilo normale` | Rimette tutto com'era |
+| `runnerboost --report` | Diagnosi + storico in un file nella cartella Shared, da mandare |
+
+Le modifiche più grosse sono nell'app LinuxRunner, non in Linux: **aggiornare alla 1.1.0 (build 900)**,
+**Graphics → Metal**, e (sperimentale) **JIT con StikDebug**. La diagnosi te lo segnala.
+
+Metodo: un `--test` prima, una modifica alla volta, un `--test` dopo. Differenze sotto il 5% sono rumore.
+
+## Terminale
+
+Attivato dall'installatore (si spegne con `rkterminale --off`). Scritto in bash puro che legge `/proc`:
+non lancia programmi a ogni prompt, quindi non rallenta.
+
+- **Schermata iniziale**: RAM e disco con barre colorate, da quanto è acceso, carico, processi, stato JIT
+- **Prompt**: utente (rosso se root), cartella, ramo git, ✘ e codice se l'ultimo comando fallisce, ⏱ durata se supera 3 s
+- **Storia comandi** lunga, senza doppioni, con data e ora; completamento automatico
+- `rk` elenco comandi · `rkinfo` statistiche · `rktop` monitor dal vivo
+- `aiphone FILE` copia nella cartella dell'app File · `dalliphone` apre quella cartella
+- `aggiorna`, `installa`, `cerca`, `rimuovi`, `estrai`, `mkcd`, `spazio`, `memoria`, `rkaggiorna`
 
 ### Versioni e test
 

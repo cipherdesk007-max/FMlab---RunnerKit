@@ -1,0 +1,17 @@
+#!/bin/sh
+# Attiva/disattiva il Terminale RunnerKit in ~/.bashrc
+#   rkterminale --on | --off | --versione
+F=/usr/local/share/runnerkit/terminale.sh
+RC="$HOME/.bashrc"
+case "$1" in
+  --on|"")
+    touch "$RC"
+    sed -i '/# RunnerKit Terminale inizio/,/# RunnerKit Terminale fine/d' "$RC"
+    printf '# RunnerKit Terminale inizio\n[ -r %s ] && . %s\n# RunnerKit Terminale fine\n' "$F" "$F" >> "$RC"
+    echo "Terminale RunnerKit attivo: apri un nuovo terminale (o scrivi: exec bash)." ;;
+  --off)
+    sed -i '/# RunnerKit Terminale inizio/,/# RunnerKit Terminale fine/d' "$RC" 2>/dev/null
+    echo "Terminale RunnerKit spento (si torna al prompt normale nel prossimo terminale)." ;;
+  --versione) grep -m1 RK_TERM_VERSIONE= "$F" | cut -d'"' -f2 ;;
+  *) echo "uso: rkterminale --on | --off" ;;
+esac

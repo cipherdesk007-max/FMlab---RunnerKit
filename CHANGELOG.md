@@ -3,6 +3,17 @@
 Formato: [versione] - data. Le versioni seguono MAJOR.MINOR.PATCH
 (MAJOR = cambia il modo d'uso, MINOR = funzioni nuove, PATCH = correzioni).
 
+## RunnerKit - aggiornamento completo 2026-11-02
+- **RunnerBoost 1.0.0** (nuovo): diagnosi con consigli, test di velocità con storico e confronto,
+  profili veloce / bilanciato / normale (reversibili), report da mandare.
+- **Terminale 1.0.0** (nuovo): prompt a colori con git/esito/durata, statistiche iniziali, `rktop`,
+  storia comandi migliorata, scorciatoie e passaggio file verso l'app File (`aiphone`).
+- **UnaVolta 1.1.0**: un programma lento ad aprirsi (Firefox su LinuxRunner) non viene più aperto due volte:
+  se è già in esecuzione non se ne avvia un altro, anche senza finestra. Registro: `unavolta --log`.
+- **TouchPad 2.4.1**: rispetta il profilo "veloce" (non riaccende la trasparenza).
+- **Installatore**: installa tutti e 5 gli strumenti, aggiorna i tipi di file (icone .desktop che si
+  aprono subito), stampa le versioni installate.
+
 ## Pulizia [1.0.0] - 2026-11-02
 - Nuovo strumento RunnerKit: report del disco salvato nella cartella condivisa con l'app File,
   pulizia sicura (solo cache/cestino/log vecchi/temporanei/crash), modalità prova,
