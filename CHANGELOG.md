@@ -3,6 +3,23 @@
 Formato: [versione] - data. Le versioni seguono MAJOR.MINOR.PATCH
 (MAJOR = cambia il modo d'uso, MINOR = funzioni nuove, PATCH = correzioni).
 
+## RunnerKit 2026.11.02-5 - aggiornamento con un tocco
+- **Pallino ⟳** nella colonna di TouchPad (2.8.0), icona **Aggiorna RunnerKit** sul desktop e pulsante in ⚙:
+  aggiornano senza scrivere comandi (`rkaggiorna` apre da solo un terminale con l'avanzamento).
+- **Controllo automatico** ogni 6 ore: se su GitHub c'è una versione nuova (file `VERSIONE`) il pallino ⟳
+  diventa arancione e compare un avviso.
+- Il kit ha un numero di versione unico (`VERSIONE`), mostrato dall'installatore e da `rk versioni`.
+
+## RunnerKit - aggiornamento completo 2026-11-02 (pomeriggio)
+- **Nuovi**: `rk collaudo` (report di prova sul telefono), `rk backup` / `rk ripristina` (con copia di
+  sicurezza, rotazione 5, elenco pacchetti), `rk italiano` (lingua passata ai programmi via UnaVolta,
+  terminale e Firefox, perché il desktop di LinuxRunner non legge la lingua di Debian).
+- **Appunti condivisi con l'iPhone** tramite `/dev/clipboard` di LinuxRunner: `rk copia` / `rk incolla`;
+  TouchPad 2.7.0 con pulsanti → iPhone / Incolla iPhone e copia automatica Linux → iPhone.
+- **Terminale 1.3.0: barra di stato fissa in cima** (area di scorrimento sotto, ridisegnata a ogni
+  prompt: resta dopo clear); `rk fisso on|off`.
+- **UnaVolta 1.2.0**: passa la lingua scelta ai programmi.
+
 ## Terminale [1.2.0] + installatore - 2026-11-02
 - **La schermata RunnerKit resta in alto**: `clear` e Ctrl+L puliscono lo schermo e la rimettono subito.
 - **Comando unico `rk`**: `rk info`, `rk top`, `rk gpu`, `rk boost`, `rk pulizia`, `rk pulisci`, `rk log`,

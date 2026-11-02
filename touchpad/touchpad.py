@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """TouchPad 2 - mouse + tastiera fluttuante per LinuxRunner.
 Parla direttamente con X11 (XTEST): nessun processo esterno per tocco."""
-__version__ = "2.6.0"
+__version__ = "2.8.0"
 
 import glob
 import json
@@ -67,6 +67,10 @@ from Xlib import X, XK, display  # noqa: E402
 from Xlib.ext import xtest  # noqa: E402
 
 CFG = os.path.expanduser("~/.config/touchpad.json")
+CLIP = os.environ.get("TP_CLIPBOARD", "/dev/clipboard")
+URL_VERSIONE = os.environ.get("TP_VERSIONE_URL",
+                              "https://raw.githubusercontent.com/cipherdesk007-max/mia/main/VERSIONE")
+VERSIONE_LOCALE = os.environ.get("TP_VERSIONE_LOCALE", "/usr/local/share/runnerkit/versione")  # appunti dell'iPhone (dispositivo di LinuxRunner)
 AUTOSTART = os.path.expanduser("~/.config/autostart/touchpad.desktop")
 AUTOSTART_TXT = """[Desktop Entry]
 Type=Application
@@ -181,7 +185,7 @@ class App:
         c = self.cfg
         c.setdefault("theme", "scuro"); c.setdefault("size", "M")
         c.setdefault("alpha", 0.8); c.setdefault("speed", 1.8)
-        c.setdefault("page", "Mouse"); c.setdefault("autohide", 60)
+        c.setdefault("page", "Mouse"); c.setdefault("autohide", 60); c.setdefault("appunti", True)
         if c.get("cfgver", 1) < 2:  # dalla 2.5: si riduce da solo quando non lo usi
             c["autohide"] = 60
             c["cfgver"] = 2
@@ -210,6 +214,10 @@ class App:
             c["mini"] = False
             r.after(400, self.toggle_mini)
         r.after(1500, self._sempre_sopra)
+        self._clip_ultimo = None
+        self._nuova = None   # versione nuova disponibile (stringa) o None
+        r.after(20000, self._controlla_aggiornamenti)
+        r.after(2000, self._appunti_loop)
         r.report_callback_exception = self._errore
         r.after(2000, self._autohide_loop)
         self.bubble = None   # pallino principale (apre TouchPad)
@@ -405,6 +413,8 @@ class App:
              k("Annulla", "ctrl+z"), k("Rifai", "ctrl+y")],
             [k("Tutto", "ctrl+a"), k("Salva", "ctrl+s"), k("Trova", "ctrl+f"),
              k("Alt⇥", "alt+Tab"), k("Super", "Super_L")],
+            [("→ iPhone", self.copia_su_iphone), ("Incolla iPhone", lambda: self.incolla_da_iphone(False)),
+             ("Incolla iPhone term", lambda: self.incolla_da_iphone(True))],
             [k("Copia term", "ctrl+shift+c"), k("Incolla term", "ctrl+shift+v"),
              k("Stop ^C", "ctrl+c"), k("Chiudi", "alt+F4")],
             [k(f"F{i}", f"F{i}") for i in range(1, 7)],
@@ -428,11 +438,14 @@ class App:
                 [(lab, lambda v=v: self.set_autohide(v))
                  for lab, v in (("Off", 0), ("30 s", 30), ("1 min", 60), ("2 min", 120))],
                 [("Avvio col desktop", None), ("Sì", lambda: self.set_autostart(True)),
-                 ("No", lambda: self.set_autostart(False))]]
+                 ("No", lambda: self.set_autostart(False))],
+                [("Copia → iPhone auto", None), ("On", lambda: self.set_appunti(True)),
+                 ("Off", lambda: self.set_appunti(False))],
+                [("⟳ Aggiorna RunnerKit", self.aggiorna)]]
         b = self.cfg_btn = self.grid_rows(f, rows)
         b[self.cfg["theme"]].config(bg=self.T("acc"))
         b["Dim " + self.cfg["size"]].config(bg=self.T("acc"))
-        for k in ("Auto-riduci", "Avvio col desktop"):
+        for k in ("Auto-riduci", "Avvio col desktop", "Copia → iPhone auto"):
             b[k].config(bg=self.T("bg"), state="disabled", disabledforeground=self.T("fg"))
         if self.trasp is False:
             for k in ("Opacità −", "Opacità +"):
@@ -464,6 +477,8 @@ class App:
         auto = os.path.exists(AUTOSTART)
         b["Sì"].config(bg=self.T("acc") if auto else self.T("key"))
         b["No"].config(bg=self.T("key") if auto else self.T("acc"))
+        b["On"].config(bg=self.T("acc") if self.cfg["appunti"] else self.T("key"))
+        b["Off"].config(bg=self.T("key") if self.cfg["appunti"] else self.T("acc"))
         if self.trasp:
             t = f"Opacità: {int(self.cfg['alpha'] * 100)}%"
         elif self.trasp is None:
@@ -648,6 +663,121 @@ class App:
         except OSError:
             pass
 
+    # ---------- aggiornamenti ----------
+    def _versione_locale(self):
+        try:
+            with open(VERSIONE_LOCALE) as f:
+                return f.read().strip()
+        except OSError:
+            return ""
+
+    def _controlla_aggiornamenti(self):
+        """Ogni 6 ore chiede a GitHub la versione di RunnerKit (pochi byte, in sottofondo)."""
+        if shutil.which("curl"):
+            try:
+                self._vproc = subprocess.Popen(["curl", "-fsS", "--max-time", "15", URL_VERSIONE],
+                                               stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True)
+                self.root.after(1000, self._aggiornamenti_attendi)
+            except OSError:
+                pass
+        self.root.after(6 * 3600 * 1000, self._controlla_aggiornamenti)
+
+    def _aggiornamenti_attendi(self):
+        if self._vproc.poll() is None:
+            self.root.after(1000, self._aggiornamenti_attendi)
+            return
+        remota = (self._vproc.stdout.read() or "").strip()
+        locale = self._versione_locale()
+        if remota and len(remota) < 40 and remota != locale:
+            prima = self._nuova
+            self._nuova = remota
+            if self.mini and self.dock:
+                self._show_bubble()
+            if prima != remota:
+                self.say(f"aggiornamento RunnerKit disponibile ({remota}): tocca ⟳")
+                if self.mini:
+                    self._toast("Aggiornamento RunnerKit\ndisponibile: tocca ⟳", 8)
+
+    def aggiorna(self):
+        """⟳: apre un terminale che scarica e installa l'ultima versione di RunnerKit."""
+        cmd = shutil.which("rkaggiorna")
+        if not cmd:
+            self._toast("rkaggiorna mancante:\nrilancia l'installatore") if self.mini else self.say("rkaggiorna mancante")
+            return
+        subprocess.Popen([cmd], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+        self._nuova = None
+        if self.mini:
+            self._toast("Aggiornamento in corso...\nTouchPad si riavvia da solo", 5)
+        else:
+            self.say("aggiornamento in corso: TouchPad si riavvia da solo")
+
+    # ---------- appunti condivisi con l'iPhone ----------
+    def _clip_ok(self, scrittura=True):
+        return os.path.exists(CLIP) and os.access(CLIP, os.W_OK if scrittura else os.R_OK)
+
+    def _appunti_loop(self):
+        """Ogni testo copiato in Linux finisce anche negli appunti dell'iPhone (solo in scrittura:
+        leggere gli appunti di iOS di continuo farebbe comparire l'avviso "Incolla da..." di iOS)."""
+        try:
+            if self.cfg.get("appunti", True) and self._clip_ok():
+                try:
+                    t = self.root.clipboard_get()
+                except tk.TclError:
+                    t = None
+                if t and t != self._clip_ultimo and len(t) < 200000:
+                    self._clip_ultimo = t
+                    with open(CLIP, "w") as f:
+                        f.write(t)
+        except OSError:
+            pass
+        self.root.after(1500, self._appunti_loop)
+
+    def set_appunti(self, on):
+        self.cfg["appunti"] = on
+        self.save()
+        self._cfg_refresh()
+        self.say("copia automatica verso iPhone " + ("accesa" if on else "spenta"))
+
+    def copia_su_iphone(self):
+        """→ iPhone: copia (Ctrl+C) quello che hai selezionato e lo manda agli appunti dell'iPhone."""
+        self.x.key("c", ["Control_L"])
+        self.root.after(300, self._copia_fine)
+
+    def _copia_fine(self):
+        try:
+            t = self.root.clipboard_get()
+        except tk.TclError:
+            t = ""
+        if not t:
+            self.say("niente da copiare: seleziona prima del testo")
+            return
+        if not self._clip_ok():
+            self.say("appunti dell'iPhone non raggiungibili")
+            return
+        with open(CLIP, "w") as f:
+            f.write(t)
+        self._clip_ultimo = t
+        self.say(f"copiato su iPhone ({len(t)} caratteri)")
+
+    def incolla_da_iphone(self, terminale):
+        """Incolla iPhone: prende gli appunti dell'iPhone e li incolla dove scrivi."""
+        if not self._clip_ok(False):
+            self.say("appunti dell'iPhone non raggiungibili")
+            return
+        try:
+            with open(CLIP) as f:
+                t = f.read()
+        except OSError:
+            t = ""
+        if not t:
+            self.say("appunti dell'iPhone vuoti")
+            return
+        self.root.clipboard_clear()
+        self.root.clipboard_append(t)
+        self._clip_ultimo = t  # non rimandarlo indietro
+        self.x.key("v", ["Control_L", "Shift_L"] if terminale else ["Control_L"])
+        self.say(f"incollato da iPhone ({len(t)} caratteri)")
+
     def _touched(self, e=None):
         self.last_touch = time.time()
 
@@ -675,7 +805,8 @@ class App:
             r.geometry(f"+{nx}+{ny}")
 
     # ---------- colonna di pallini ----------
-    DOCK = (("⌨", "apri"), ("✕", "chiudi"), ("♻", "pulizia"), ("⚡", "boost"), (">_", "term"))
+    DOCK = (("⌨", "apri"), ("✕", "chiudi"), ("♻", "pulizia"), ("⚡", "boost"), (">_", "term"),
+            ("⟳", "aggiorna"))
     S, G = 48, 10   # diametro pallino, spazio tra pallini
 
     def toggle_mini(self):
@@ -732,6 +863,8 @@ class App:
             cv.delete("all")
             cv.config(bg=self.T("bg"))
             fill = self.T("acc") if act == "apri" else self.T("key")
+            if act == "aggiorna" and self._nuova:
+                fill = "#f59f00"  # arancione: c'e' un aggiornamento
             cv.create_oval(1, 1, S - 2, S - 2, fill=fill, outline=self.T("fg"), width=2)
             cv.create_text(S // 2, S // 2, text=sym, fill="white" if act == "apri" else self.T("fg"),
                            font=("DejaVu Sans", 16 if len(sym) == 1 else 12, "bold"))
@@ -783,7 +916,7 @@ class App:
         if self._bmoved <= 8:  # tocco
             {"apri": self.toggle_mini, "chiudi": self.chiudi_finestra,
              "pulizia": self.pulizia_rapida, "boost": lambda: self._in_terminale("runnerboost"),
-             "term": lambda: self._in_terminale(None)}[act]()
+             "term": lambda: self._in_terminale(None), "aggiorna": self.aggiorna}[act]()
             return
         S, n = self.S, len(self.DOCK)  # trascinata: si aggancia al lato piu' vicino
         x = 6 if self.bubble.winfo_x() + S // 2 < self.sw // 2 else self.sw - S - 6

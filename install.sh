@@ -1,6 +1,6 @@
 #!/bin/sh
 # RunnerKit - installa o aggiorna gli strumenti per Debian su LinuxRunner.
-# Strumenti: TouchPad, UnaVolta, Pulizia, RunnerBoost, Terminale
+# Strumenti: TouchPad, UnaVolta, Pulizia, RunnerBoost, Terminale, Collaudo, Backup, Italiano
 # Uso:  curl -fsSL https://raw.githubusercontent.com/cipherdesk007-max/mia/main/install.sh | sh
 set -e
 REPO="https://raw.githubusercontent.com/cipherdesk007-max/mia/main"
@@ -31,6 +31,11 @@ $SUDO install -m 755 /tmp/runnerboost /usr/local/bin/runnerboost
 $SUDO install -m 755 /tmp/rkterminale /usr/local/bin/rkterminale
 $SUDO mkdir -p /usr/local/share/runnerkit
 $SUDO install -m 644 /tmp/terminale.sh /usr/local/share/runnerkit/terminale.sh
+
+echo ">> Scarico Collaudo, Backup, Italiano, Aggiorna..."
+for t in rkcollaudo rkbackup rkitaliano rkaggiorna; do
+  curl -fsSL "$REPO/strumenti/$t" -o "/tmp/$t" && sh -n "/tmp/$t" && $SUDO install -m 755 "/tmp/$t" "/usr/local/bin/$t"
+done
 
 echo ">> Scarico Pulizia..."
 curl -fsSL "$REPO/pulizia/pulizia" -o /tmp/pulizia
@@ -81,6 +86,24 @@ command -v update-desktop-database >/dev/null && update-desktop-database "$HOME/
 # Terminale RunnerKit (si spegne con: rkterminale --off)
 [ "${RUNNERKIT_NO_TERMINALE:-0}" = "1" ] || /usr/local/bin/rkterminale --on >/dev/null
 
+# icona "Aggiorna RunnerKit" (desktop e menu)
+cat > "$HOME/.local/share/applications/runnerkit-aggiorna.desktop" <<'EOF'
+[Desktop Entry]
+Type=Application
+Name=Aggiorna RunnerKit
+Comment=Scarica e installa l'ultima versione di RunnerKit
+Exec=rkaggiorna
+Icon=system-software-update
+Categories=Utility;
+EOF
+for D in "$HOME/Desktop" "$HOME/Scrivania"; do
+  [ -d "$D" ] && cp "$HOME/.local/share/applications/runnerkit-aggiorna.desktop" "$D/" && chmod +x "$D/runnerkit-aggiorna.desktop"
+done
+
+# versione del kit (TouchPad la confronta con GitHub e accende il pallino ⟳ se ce n'e' una nuova)
+$SUDO mkdir -p /usr/local/share/runnerkit
+curl -fsSL "$REPO/VERSIONE" 2>/dev/null | $SUDO tee /usr/local/share/runnerkit/versione >/dev/null
+
 # TouchPad gia' aperto: lo riavvio, cosi' la versione nuova e' subito attiva
 if pgrep -f /usr/local/bin/touchpad >/dev/null 2>&1; then
   pkill -f /usr/local/bin/touchpad 2>/dev/null; sleep 1
@@ -91,11 +114,14 @@ $SUDO mkdir -p /usr/local/share/runnerkit
 date '+%Y-%m-%d %H:%M' | $SUDO tee /usr/local/share/runnerkit/installato >/dev/null
 
 echo ""
-echo "== RunnerKit installato =="
+echo "== RunnerKit $(cat /usr/local/share/runnerkit/versione 2>/dev/null) installato =="
 echo "   TouchPad    $(grep -m1 '__version__' /usr/local/bin/touchpad | cut -d'"' -f2)${RIAVVIATO:-}"
 echo "   UnaVolta    $(/usr/local/bin/unavolta --versione | cut -d' ' -f2)"
 echo "   Pulizia     $(/usr/local/bin/pulizia --versione | cut -d' ' -f2)"
 echo "   RunnerBoost $(/usr/local/bin/runnerboost --versione | cut -d' ' -f2)"
 echo "   Terminale   $(/usr/local/bin/rkterminale --versione)"
+echo "   Collaudo, Backup, Italiano: rk collaudo · rk backup · rk italiano"
 echo ""
-echo "   Comandi: scrivi 'rk' in un terminale nuovo. Aggiornare in futuro: rk aggiorna"
+echo "   Comandi: scrivi 'rk' in un terminale nuovo."
+echo "   Aggiornare in futuro: pallino ⟳ di TouchPad (diventa arancione quando c'e' una novita'),"
+echo "   icona 'Aggiorna RunnerKit' sul desktop, oppure: rk aggiorna"

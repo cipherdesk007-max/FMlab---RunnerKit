@@ -9,6 +9,12 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, "..", "touchpad"))
 os.environ["HOME"] = "/tmp/tp-home"  # config pulita
+os.environ["TP_CLIPBOARD"] = "/tmp/tp-clipboard"
+open("/tmp/tp-ver-remota", "w").write("9999.01.01-1\n")
+open("/tmp/tp-ver-locale", "w").write("2026.11.02-1\n")
+os.environ["TP_VERSIONE_URL"] = "file:///tmp/tp-ver-remota"
+os.environ["TP_VERSIONE_LOCALE"] = "/tmp/tp-ver-locale"
+open("/tmp/tp-clipboard", "w").close()
 import touchpad  # noqa: E402
 
 OUT = os.path.join(HERE, "..", "screenshots", "ci")
@@ -50,10 +56,10 @@ def main():
     app.toggle_mini()
     app.root.update()
     assert app.bubble.winfo_viewable() and not app.root.winfo_viewable(), "pallino non mostrato"
-    assert len(app.dock) == 5, "attesi 5 pallini"
+    assert len(app.dock) == 6, "attesi 6 pallini"
     xs = {b.winfo_x() for b, *_ in app.dock}
     ys = [b.winfo_y() for b, *_ in app.dock]
-    assert len(xs) == 1 and ys == sorted(ys) and len(set(ys)) == 5, f"pallini non in colonna: {xs} {ys}"
+    assert len(xs) == 1 and ys == sorted(ys) and len(set(ys)) == 6, f"pallini non in colonna: {xs} {ys}"
     app._toast("prova messaggio")
     app.root.update()
     shot(app, "pallino")
@@ -96,7 +102,7 @@ def main():
         assert app._mia(bb.winfo_id()) and app._mia(int(bb.wm_frame(), 16)), "pallino non riconosciuto come mio"
     app.dock[0][0].destroy(); app.dock[1][0].destroy()      # simula pallini distrutti
     app._sempre_sopra(); app.root.update()
-    assert len(app.dock) == 5 and all(bb.winfo_viewable() for bb, *_ in app.dock), "colonna non ricostruita"
+    assert len(app.dock) == 6 and all(bb.winfo_viewable() for bb, *_ in app.dock), "colonna non ricostruita"
     app.toggle_mini(); app.root.update()
 
     # ✕ non deve mai chiudere desktop o barra
@@ -111,6 +117,27 @@ def main():
     assert app._protetta(fw), "una barra (DOCK) deve essere protetta"
     assert app._protetta(app.x.d.screen().root), "lo sfondo deve essere protetto"
     finto.destroy()
+
+    # appunti condivisi: copia automatica Linux -> iPhone (file finto al posto di /dev/clipboard)
+    app.root.clipboard_clear(); app.root.clipboard_append("ciao iPhone")
+    app._appunti_loop(); app.root.update()
+    assert open(touchpad.CLIP).read() == "ciao iPhone", "copia verso iPhone non riuscita"
+    with open(touchpad.CLIP, "w") as f:
+        f.write("dall'iPhone")
+    app.incolla_da_iphone(False); app.root.update()
+    assert app.root.clipboard_get() == "dall'iPhone", "incolla da iPhone non riuscito"
+
+    # controllo aggiornamenti: versione remota diversa -> pallino ⟳ arancione
+    import time as _t
+    app._controlla_aggiornamenti()
+    for _ in range(60):
+        app.root.update(); _t.sleep(0.1)
+        if app._nuova:
+            break
+    assert app._nuova == "9999.01.01-1", f"aggiornamento non rilevato: {app._nuova}"
+    app.toggle_mini(); app.root.update()
+    shot(app, "pallino-aggiornamento")
+    app.toggle_mini(); app.root.update()
 
     app.set_autohide(10)
     app.last_touch -= 60

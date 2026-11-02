@@ -1,0 +1,76 @@
+#!/bin/sh
+# RunnerKit Backup - salva impostazioni, script e file scelti nella cartella dell'app File.
+#   rkbackup                   crea un backup (rk backup)
+#   rkbackup --elenco          mostra i backup
+#   rkbackup --ripristina [F]  ripristina l'ultimo backup (o il file F); prima ne fa uno di sicurezza
+#   rkbackup --pacchetti [F]   reinstalla i pacchetti Debian elencati nel backup
+#   rkbackup --aggiungi PERCORSO   aggiunge una cartella/file da salvare sempre
+# Si tengono gli ultimi 5 backup.
+VERSIONE="1.0.0"
+H="${RKB_HOME:-$HOME}"
+CONF="$H/.config/runnerkit"
+EXTRA="$CONF/backup-extra"
+TIENI=5
+for SH in "${RKB_SHARED:-}" /mnt/LinuxRunnerShared "$H/Shared"; do [ -n "$SH" ] && [ -d "$SH" ] && [ -w "$SH" ] && break; SH=""; done
+[ -n "$SH" ] || SH="$H"
+DIR="$SH/RunnerKit-backup"
+
+# cosa si salva (relativo alla home)
+BASE=".config/touchpad.json .config/runnerboost .config/pulizia .config/unavolta .config/runnerkit
+.config/autostart .config/gtk-3.0 .config/gtk-4.0 .config/libfm .config/pcmanfm .config/pcmanfm-qt
+.bashrc .profile .bash_history Desktop Scrivania Documenti Documents Script script bin .local/bin
+.local/share/applications .ssh .gitconfig"
+
+lista() {
+  for p in $BASE; do [ -e "$H/$p" ] && echo "$p"; done
+  [ -f "$EXTRA" ] && while IFS= read -r p; do
+    p=${p#"$H"/}; [ -n "$p" ] && [ -e "$H/$p" ] && echo "$p"
+  done < "$EXTRA"
+}
+
+crea() {
+  mkdir -p "$DIR"
+  bf="$DIR/backup-$(date +%Y%m%d-%H%M%S)${1:+-$1}.tar.gz"
+  tmp=$(mktemp -d)
+  dpkg --get-selections > "$tmp/pacchetti-debian.txt" 2>/dev/null
+  echo "RunnerKit backup $(date '+%Y-%m-%d %H:%M') — $(lista | wc -l) elementi" > "$tmp/LEGGIMI.txt"
+  lista > "$tmp/elenco.txt"
+  if tar --exclude='*/.cache/*' --exclude='*/cache/*' -czf "$bf" -C "$H" $(lista) \
+       -C "$tmp" pacchetti-debian.txt LEGGIMI.txt elenco.txt 2>/dev/null; then
+    rm -rf "$tmp"
+    echo "Backup creato: $bf ($(du -h "$bf" | cut -f1))"
+    case "$bf" in */LinuxRunnerShared/*|*/Shared/*) echo "Nell'app File: In questo iPhone > LinuxRunner > Shared > RunnerKit-backup";; esac
+    ls -t "$DIR"/backup-*.tar.gz 2>/dev/null | tail -n +$((TIENI + 1)) | while read -r v; do rm -f "$v"; done
+  else
+    rm -rf "$tmp" "$bf"; echo "Backup NON riuscito"; return 1
+  fi
+}
+
+ultimo() { ls -t "$DIR"/backup-*.tar.gz 2>/dev/null | grep -v sicurezza | head -1; }
+
+case "$1" in
+  --versione) echo "RunnerKit Backup $VERSIONE" ;;
+  --elenco)
+    ls -lht "$DIR"/backup-*.tar.gz 2>/dev/null | awk '{print "  "$5"  "$NF}' || true
+    [ -n "$(ls "$DIR"/backup-*.tar.gz 2>/dev/null)" ] || echo "  nessun backup in $DIR" ;;
+  --aggiungi)
+    shift; mkdir -p "$CONF"
+    for p in "$@"; do a=$(cd "$(dirname "$p")" 2>/dev/null && pwd)/$(basename "$p")
+      case "$a" in "$H"/*) ;; *) echo "solo cartelle dentro la home ($H): $p"; continue;; esac
+      [ -e "$a" ] && { echo "$a" >> "$EXTRA"; echo "aggiunto: $a"; } || echo "non esiste: $p"; done ;;
+  --ripristina)
+    f="${2:-$(ultimo)}"
+    [ -f "$f" ] || { echo "Nessun backup trovato (rk backup per crearne uno)."; exit 1; }
+    echo "Ripristino da: $f"
+    if [ "$3" != "--si" ] && [ -t 0 ]; then printf 'I file attuali verranno sostituiti (prima salvo una copia di sicurezza). Continuo? [s/N] '; read -r r; case "$r" in s|S|si|Si|sì) ;; *) echo "Annullato."; exit 0;; esac; fi
+    crea sicurezza >/dev/null && echo "Copia di sicurezza fatta."
+    tar -xzf "$f" -C "$H" --exclude=pacchetti-debian.txt --exclude=LEGGIMI.txt --exclude=elenco.txt && \
+      echo "Ripristinato. Riavvia il desktop (Stop Desktop -> Open Desktop). Pacchetti: rk backup --pacchetti" ;;
+  --pacchetti)
+    f="${2:-$(ultimo)}"; [ -f "$f" ] || { echo "Nessun backup."; exit 1; }
+    tmp=$(mktemp -d); tar -xzf "$f" -C "$tmp" pacchetti-debian.txt 2>/dev/null || { echo "Elenco pacchetti assente."; exit 1; }
+    echo "Reinstallo $(grep -c install "$tmp/pacchetti-debian.txt") pacchetti..."
+    dpkg --set-selections < "$tmp/pacchetti-debian.txt" && apt-get -y dselect-upgrade; rm -rf "$tmp" ;;
+  ""|--crea) crea ;;
+  *) sed -n '2,9p' "$0" | sed 's/^# \{0,1\}//' ;;
+esac

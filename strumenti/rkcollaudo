@@ -1,0 +1,101 @@
+#!/bin/sh
+# RunnerKit Collaudo - prova ogni strumento sul telefono vero e salva un report da mandare.
+#   rkcollaudo            (o: rk collaudo)
+VERSIONE="1.0.0"
+PASS=0; FAIL=0; AVV=0
+OUT=""
+riga() { OUT="$OUT
+$1"; printf '%s\n' "$1"; }
+ok()   { PASS=$((PASS + 1)); riga "  [OK]     $*"; }
+ko()   { FAIL=$((FAIL + 1)); riga "  [ERRORE] $*"; }
+avv()  { AVV=$((AVV + 1));   riga "  [AVVISO] $*"; }
+sez()  { riga ""; riga "== $* =="; }
+
+riga "RunnerKit Collaudo $VERSIONE — $(date '+%Y-%m-%d %H:%M')"
+
+sez "LinuxRunner"
+[ -r /etc/os-release ] && riga "  sistema: $(. /etc/os-release; echo "$PRETTY_NAME")"
+if [ -r /proc/ish/jit ]; then ok "LinuxRunner 1.1.0 o successiva (JIT: $(grep -m1 -i mode /proc/ish/jit 2>/dev/null))"
+else avv "LinuxRunner vecchio (manca /proc/ish/jit): aggiorna alla 1.1.0"; fi
+[ -c /dev/linuxrunner-gpu ] && ok "GPU Metal disponibile" || avv "GPU Metal assente (Settings > Graphics > Renderer)"
+case "${LR_GUI_GPU_ACTIVE:-}" in
+  mesa-metal-resident) ok "programmi del desktop sulla GPU (Metal)";;
+  "") avv "stato GPU non visibile: lancia il collaudo dal terminale del desktop (pallino >_)";;
+  *) avv "programmi del desktop in: $LR_GUI_GPU_ACTIVE";;
+esac
+[ -e /dev/clipboard ] && ok "appunti dell'iPhone raggiungibili (/dev/clipboard)" || avv "/dev/clipboard assente: appunti condivisi non disponibili"
+
+sez "Strumenti installati"
+for t in touchpad unavolta pulizia runnerboost rkterminale rkbackup rkitaliano rkaggiorna; do
+  command -v "$t" >/dev/null 2>&1 && ok "$t presente" || ko "$t mancante (rilancia: rk aggiorna)"
+done
+[ -r /usr/local/share/runnerkit/installato ] && riga "  installato il: $(cat /usr/local/share/runnerkit/installato)"
+
+sez "Schermo e desktop"
+if [ -n "$DISPLAY" ] && command -v xdpyinfo >/dev/null 2>&1 && xdpyinfo >/dev/null 2>&1; then
+  ok "desktop raggiungibile ($DISPLAY, $(xdpyinfo | awk '/dimensions:/{print $2; exit}'))"
+  ext=$(xdpyinfo -queryExtensions 2>/dev/null)
+  echo "$ext" | grep -q XTEST && ok "XTEST (mouse e tastiera finti di TouchPad)" || ko "manca XTEST: TouchPad non puo' cliccare"
+  echo "$ext" | grep -q SHAPE && ok "SHAPE (pallini rotondi)" || avv "manca SHAPE: pallini quadrati"
+  echo "$ext" | grep -q Composite && ok "Composite (trasparenza possibile)" || avv "manca Composite: niente trasparenza"
+else
+  avv "desktop non raggiungibile da qui: lancia dal terminale del desktop per le prove grafiche"
+fi
+pgrep -x xcompmgr >/dev/null 2>&1 && riga "  trasparenza: accesa" || riga "  trasparenza: spenta"
+
+sez "TouchPad"
+if pgrep -f /usr/local/bin/touchpad >/dev/null 2>&1; then
+  ok "TouchPad in esecuzione"
+  if python3 -c "import socket,os;s=socket.socket(socket.AF_UNIX);s.settimeout(1);s.connect('/tmp/touchpad-%d.sock'%os.getuid());s.sendall(b'ping')" 2>/dev/null; then
+    ok "TouchPad risponde (istanza unica)"
+  else ko "TouchPad non risponde al controllo"; fi
+else avv "TouchPad non aperto in questo momento"; fi
+[ -f "$HOME/.config/autostart/touchpad.desktop" ] && ok "avvio automatico col desktop" || avv "avvio automatico spento"
+if [ -s "$HOME/.touchpad.log" ]; then
+  n=$(grep -c "Traceback" "$HOME/.touchpad.log" 2>/dev/null)
+  [ "${n:-0}" -gt 0 ] && avv "$n errori nel registro di TouchPad (rk log)" || ok "registro di TouchPad senza errori"
+else ok "registro di TouchPad vuoto"; fi
+
+sez "UnaVolta (una sola apertura)"
+n=$(grep -l '^X-UnaVolta=' "$HOME"/.local/share/applications/*.desktop "$HOME"/Desktop/*.desktop 2>/dev/null | wc -l)
+[ "$n" -gt 0 ] && ok "attivo su $n lanciatori" || ko "nessun lanciatore protetto (unavolta --applica)"
+d=$(mktemp -d); cp /bin/sleep "$d/rkcollsleep" 2>/dev/null
+for i in 1 2 3 4; do unavolta "$d/rkcollsleep" 20 >/dev/null 2>&1; done; sleep 1
+c=$(pgrep -c -x rkcollsleep 2>/dev/null || echo 0); pkill -x rkcollsleep 2>/dev/null; rm -rf "$d"
+[ "$c" = 1 ] && ok "4 tocchi rapidi = 1 avvio" || ko "4 tocchi rapidi = $c avvii"
+
+sez "Icone del desktop"
+for f in "$HOME"/Desktop/*.desktop; do
+  [ -f "$f" ] || continue
+  if command -v gio >/dev/null 2>&1; then
+    tipo=$(gio info -a standard::content-type "$f" 2>/dev/null | awk '/content-type/{print $2}')
+    [ "$tipo" = application/x-desktop ] && ok "$(basename "$f"): riconosciuta" || ko "$(basename "$f"): vista come '$tipo' (finestra Execute File)"
+  fi
+done
+
+sez "Pulizia, RunnerBoost, Terminale"
+pulizia --prova >/dev/null 2>&1 && ok "pulizia --prova funziona" || ko "pulizia --prova non funziona"
+runnerboost >/dev/null 2>&1 && ok "runnerboost diagnosi funziona" || ko "runnerboost non funziona"
+grep -q "RunnerKit Terminale inizio" "$HOME/.bashrc" 2>/dev/null && ok "Terminale RunnerKit attivo" || avv "Terminale RunnerKit spento (rkterminale --on)"
+bash -n /usr/local/share/runnerkit/terminale.sh 2>/dev/null && ok "terminale.sh senza errori" || ko "terminale.sh con errori"
+[ -f "$HOME/.config/autostart/pulizia.desktop" ] && ok "pulizia automatica settimanale accesa" || avv "pulizia automatica spenta (pulizia --auto-on)"
+[ -f "$HOME/.config/runnerkit/lingua" ] && riga "  lingua: $(cat "$HOME/.config/runnerkit/lingua")" || riga "  lingua: predefinita"
+
+sez "Spazio e memoria"
+libero=$(df -Pk / 2>/dev/null | awk 'NR==2{print $4}')
+gb=$(awk -v k="${libero:-0}" 'BEGIN{printf "%.1f", k/1048576}')
+[ "${libero:-0}" -ge 10485760 ] && ok "spazio libero: $gb GB" || avv "spazio libero: $gb GB (consigliati 10 GB)"
+riga "  RAM: $(awk '/MemTotal/{t=$2} /MemAvailable/{a=$2} END{printf "%d/%d MB usati", (t-a)/1024, t/1024}' /proc/meminfo)"
+ls "${SHARED:-/mnt/LinuxRunnerShared}"/RunnerKit-backup/*.tar.gz >/dev/null 2>&1 && ok "esiste almeno un backup" || avv "nessun backup: rk backup"
+
+sez "Risultato"
+riga "  $PASS OK · $FAIL errori · $AVV avvisi"
+[ "$FAIL" = 0 ] && riga "  Tutto funzionante." || riga "  Ci sono errori: manda questo report."
+
+for d in /mnt/LinuxRunnerShared "$HOME/Shared" "$HOME"; do [ -d "$d" ] && [ -w "$d" ] && break; done
+f="$d/runnerkit-collaudo-$(date +%Y%m%d-%H%M).txt"
+printf '%s\n' "$OUT" > "$f"
+echo ""
+echo "Report salvato: $f"
+case "$f" in */LinuxRunnerShared/*|*/Shared/*) echo "Nell'app File: In questo iPhone > LinuxRunner > Shared";; esac
+[ "$FAIL" = 0 ]

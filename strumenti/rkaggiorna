@@ -1,0 +1,18 @@
+#!/bin/sh
+# RunnerKit Aggiorna - scarica e installa l'ultima versione di RunnerKit.
+# Da un'icona o da un pallino (senza terminale) apre da solo una finestra di terminale.
+URL="https://raw.githubusercontent.com/cipherdesk007-max/mia/main/install.sh"
+if [ ! -t 1 ] && [ -z "$RK_DENTRO" ] && [ -n "$DISPLAY" ]; then
+  for t in x-terminal-emulator xterm lxterminal qterminal xfce4-terminal; do
+    command -v "$t" >/dev/null 2>&1 && exec env RK_DENTRO=1 "$t" -e "$0"
+  done
+fi
+echo "== Aggiornamento RunnerKit =="
+if curl -fsSL "$URL" | sh; then
+  echo ""
+  echo "Aggiornato. Le finestre di terminale gia' aperte prendono la versione nuova con: exec bash"
+else
+  echo ""
+  echo "Aggiornamento NON riuscito: controlla la connessione e riprova."
+fi
+if [ -n "$RK_DENTRO" ]; then printf '\nInvio per chiudere '; read -r _; fi

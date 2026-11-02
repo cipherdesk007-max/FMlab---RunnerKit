@@ -6,7 +6,7 @@
 #       unavolta --applica                 (aggiunge UnaVolta a icone e menu)
 #       unavolta --ripristina              (toglie UnaVolta da icone e menu)
 #       unavolta --versione
-VERSIONE="1.1.0"
+VERSIONE="1.2.0"
 ATTESA="${UNAVOLTA_SECONDI:-4}"
 SYS_APPS="${UNAVOLTA_SYS_DIR:-/usr/share/applications}"
 USR_APPS="$HOME/.local/share/applications"
@@ -100,6 +100,10 @@ if [ -n "$pids" ]; then
   exit 0
 fi
 log "$nome: avvio -> $*"
+# lingua scelta con "rk italiano": il desktop di LinuxRunner non la passa ai programmi, lo fa UnaVolta
+if [ -r "$HOME/.config/runnerkit/lingua" ]; then
+  LANG=$(cat "$HOME/.config/runnerkit/lingua"); LANGUAGE=it:en; export LANG LANGUAGE; unset LC_ALL
+fi
 
 # 3) avvio normale, staccato dal lanciatore
 if command -v setsid >/dev/null 2>&1; then

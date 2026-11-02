@@ -5,11 +5,14 @@ Tutto quello che serve installare sul Debian di LinuxRunner sta qui, con un coma
 
 | Strumento | Versione | A cosa serve |
 |---|---|---|
-| [TouchPad](#touchpad) | 2.6.0 | Mouse, tasto destro e tastiera italiana touch, fluttuanti sul desktop |
-| [UnaVolta](#unavolta) | 1.1.0 | Tocchi ripetuti su un'icona aprono il programma una volta sola; se è già aperto lo porta davanti |
+| [TouchPad](#touchpad) | 2.8.0 | Mouse, tasto destro e tastiera italiana touch, fluttuanti sul desktop |
+| [UnaVolta](#unavolta) | 1.2.0 | Tocchi ripetuti su un'icona aprono il programma una volta sola; se è già aperto lo porta davanti |
 | [Pulizia](#pulizia) | 1.0.0 | Agente di pulizia del disco: report di cosa occupa spazio, pulizia sicura, automatica a settimana |
 | [RunnerBoost](#runnerboost) | 1.2.0 | Diagnosi della velocità, test ripetibile con storico, profili veloce / bilanciato / normale |
-| [Terminale](#terminale) | 1.2.0 | Prompt a colori con ramo git, esito e durata dei comandi, statistiche, monitor dal vivo, scorciatoie |
+| [Terminale](#terminale) | 1.3.0 | Prompt a colori con ramo git, esito e durata dei comandi, statistiche, monitor dal vivo, scorciatoie |
+| [Collaudo](#collaudo-backup-italiano-appunti) | 1.0.0 | `rk collaudo`: prova tutto sul telefono e salva un report |
+| [Backup](#collaudo-backup-italiano-appunti) | 1.0.0 | `rk backup` / `rk ripristina`: impostazioni e file nella cartella dell'app File |
+| [Italiano](#collaudo-backup-italiano-appunti) | 1.0.0 | `rk italiano`: Linux, programmi e Firefox in italiano |
 | *prossimi strumenti* | | |
 
 > Pensato per i limiti di LinuxRunner: niente kernel né compositing, CPU emulata.
@@ -29,6 +32,9 @@ Nel terminale **del desktop** (xterm):
 ```sh
 apt install -y curl && curl -fsSL https://raw.githubusercontent.com/cipherdesk007-max/mia/main/install.sh | sh
 ```
+
+**Aggiornare**: pallino **⟳** di TouchPad (arancione = novità disponibile), icona **Aggiorna RunnerKit**
+sul desktop, pulsante in ⚙, oppure `rk aggiorna`. Il comando qui sopra serve solo la prima volta.
 
 Poi aprilo dall'**icona sul desktop**, da **Applications → TouchPad** oppure scrivendo `touchpad` in qualsiasi terminale (anche il Terminal dell'app: si apre comunque sul desktop). Per aggiornare rilancia lo stesso comando.
 
@@ -57,6 +63,7 @@ TouchPad diventa una colonna di pallini rotondi sul lato dello schermo:
 | ♻ | Pulizia sicura in sottofondo, poi ti dice quanto ha liberato |
 | ⚡ | Apre RunnerBoost (diagnosi) in un terminale |
 | >_ | Apre il terminale |
+| ⟳ | Aggiorna RunnerKit. **Diventa arancione** quando su GitHub c'è una versione nuova (controllo ogni 6 ore) |
 
 Trascinando un pallino si sposta tutta la colonna, che si aggancia al lato più vicino.
 Se rilanci `touchpad` mentre è già aperto, riappare quello che c'è.
@@ -138,6 +145,27 @@ non lancia programmi a ogni prompt, quindi non rallenta.
 - `rk` comando unico: `rk info`, `rk top`, `rk gpu`, `rk boost`, `rk pulizia`, `rk pulisci`, `rk log`, `rk aggiorna`, `rk versioni`
 - `aiphone FILE` copia nella cartella dell'app File · `dalliphone` apre quella cartella
 - `aggiorna`, `installa`, `cerca`, `rimuovi`, `estrai`, `mkcd`, `spazio`, `memoria`, `rkaggiorna`
+
+## Collaudo, Backup, Italiano, Appunti
+
+| Comando | Cosa fa |
+|---|---|
+| `rk collaudo` | Prova ogni strumento sul telefono vero (GPU, XTEST, TouchPad, UnaVolta con 4 tocchi, icone, pulizia, spazio, backup) e salva il report in Shared, da mandare |
+| `rk backup` | Salva impostazioni RunnerKit, desktop, script, `.bashrc`, chiavi e l'elenco dei pacchetti in `Shared/RunnerKit-backup` (ultimi 5) |
+| `rk backup --aggiungi PERCORSO` | Aggiunge una cartella da salvare sempre |
+| `rk ripristina` | Ripristina l'ultimo backup (prima fa una copia di sicurezza). `rk backup --pacchetti` reinstalla i pacchetti |
+| `rk italiano` / `rk italiano off` | Lingua italiana: Debian, programmi aperti da icone e menu (tramite UnaVolta), terminale e Firefox |
+| `rk copia TESTO` / `comando \| rk copia` | Copia negli appunti dell'iPhone (dispositivo `/dev/clipboard` di LinuxRunner) |
+| `rk incolla` | Mostra gli appunti dell'iPhone |
+
+**Appunti in TouchPad** (pagina Tasti): **→ iPhone** copia la selezione negli appunti dell'iPhone,
+**Incolla iPhone** incolla dove scrivi (versione *term* per i terminali). In ⚙ "Copia → iPhone auto":
+tutto ciò che copi in Linux arriva da solo sull'iPhone. Non legge di continuo gli appunti di iOS, così
+iOS non mostra l'avviso "Incolla da...".
+
+**Barra fissa del terminale**: le prime due righe restano sempre in cima (RAM, disco, GPU, JIT,
+comandi) mentre i comandi scorrono sotto; torna da sola dopo `clear` o programmi a tutto schermo.
+`rk fisso off` la spegne.
 
 ### Versioni e test
 

@@ -2,7 +2,10 @@
 # Caricato da ~/.bashrc. Tutto e' scritto in bash puro, leggendo /proc: niente programmi
 # lanciati a ogni prompt, perche' su LinuxRunner ogni processo costa.
 case $- in *i*) ;; *) return ;; esac
-RK_TERM_VERSIONE="1.2.0"
+RK_TERM_VERSIONE="1.3.0"
+[ -r "$HOME/.config/runnerkit/terminale" ] && . "$HOME/.config/runnerkit/terminale"   # RK_FISSO=0/1
+# lingua scelta con "rk italiano"
+if [ -r "$HOME/.config/runnerkit/lingua" ]; then export LANG="$(cat "$HOME/.config/runnerkit/lingua")" LANGUAGE=it:en; fi
 
 # ---------- storia comandi ----------
 HISTSIZE=20000; HISTFILESIZE=40000
@@ -100,7 +103,39 @@ _rk_prompt() {
   local esito=""; (( e != 0 )) && esito="$(_c 31)✘$e "
   PS1="$esito$utente$(_c 0)@$(_c 36)\h $(_c '1;34')\w$(_c 33)$(_rk_git)$(_c 35)$dur$(_c 0)\n$(_c '1;35')❯$(_c 0) "
 }
-PROMPT_COMMAND=_rk_prompt
+# ---------- barra di stato fissa in cima ----------
+# Righe 1-2 riservate (area di scorrimento DECSTBM sotto): i comandi scorrono senza coprirla.
+# Si ridisegna a ogni prompt, quindi torna anche dopo clear, reset o programmi a tutto schermo.
+_rk_disco_t=0; _rk_disco=""
+_rk_riga1() {
+  local used total pct gpu="software" jit=""
+  read -r used total pct <<< "$(_rk_ram)"
+  if (( SECONDS - _rk_disco_t > 60 || _rk_disco_t == 0 )); then   # df al massimo una volta al minuto
+    _rk_disco=$(df -Pk / 2>/dev/null | awk 'NR==2{print $5}'); _rk_disco_t=$SECONDS
+  fi
+  case ${LR_GUI_GPU_ACTIVE:-} in mesa-metal-resident) gpu="Metal";; esac
+  [[ -z ${LR_GUI_GPU_ACTIVE:-} && -c /dev/linuxrunner-gpu ]] && gpu="Metal disp."
+  if [[ -r /proc/ish/jit ]]; then jit=$(grep -m1 -i mode /proc/ish/jit 2>/dev/null); jit=${jit##*: }; fi
+  printf '\033[1;45;97m RunnerKit \033[0;100;97m RAM %s %3d%% \033[0;100;97m│ Disco %s \033[0;100;97m│ GPU %s%s \033[0m' \
+    "$(_rk_barra_mini "$pct")" "$pct" "${_rk_disco:-?}" "$gpu" "${jit:+ │ JIT $jit}"
+}
+_rk_barra_mini() { local p=$1 f=$(( $1 * 8 / 100 )) i s=""; for (( i = 0; i < 8; i++ )); do (( i < f )) && s+="▮" || s+="▯"; done; printf '%s' "$s"; }
+_rk_riga2() { printf '\033[2m rk = comandi · rk collaudo · rk backup · rk copia/incolla (appunti iPhone) · rk fisso off\033[0m'; }
+_RK_H=2
+_rk_fisso() {
+  [[ ${RK_FISSO:-1} == 1 && -t 0 && -t 1 ]] || return 0
+  local rows=${LINES:-0} r c
+  (( rows >= 12 )) || return 0
+  # dove si trova il cursore (se il terminale non risponde, niente barra: nessun danno)
+  IFS='[;' read -s -t 0.3 -d R -p $'\033[6n' _ r c < /dev/tty 2>/dev/null || return 0
+  printf '\0337\033[%d;%dr' $((_RK_H + 1)) "$rows"
+  printf '\033[1;1H\033[2K%s\033[2;1H\033[2K%s' "$(_rk_riga1)" "$(_rk_riga2)"
+  printf '\0338'
+  (( ${r:-99} <= _RK_H )) && printf '\033[%d;1H' $((_RK_H + 1))
+  return 0
+}
+_rk_prompt_tutto() { local e=$?; _rk_fisso; (exit $e); _rk_prompt; }
+PROMPT_COMMAND=_rk_prompt_tutto
 
 # ---------- scorciatoie ----------
 alias ll='ls -lh' la='ls -lAh' l='ls -CF'
@@ -110,7 +145,7 @@ alias installa='apt install' cerca='apt search' rimuovi='apt remove'
 alias spazio='df -h /' memoria='free -h'
 alias boost='runnerboost' pulisci='pulizia'
 # aggiorna RunnerKit e ricarica subito il terminale con la versione nuova
-alias rkaggiorna='curl -fsSL https://raw.githubusercontent.com/cipherdesk007-max/mia/main/install.sh | sh && exec bash'
+rkaggiorna() { command rkaggiorna && exec bash; }
 mkcd() { mkdir -p "$1" && cd "$1"; }
 estrai() {  # estrae qualsiasi archivio
   case "$1" in
@@ -135,6 +170,7 @@ rk() {  # comando unico di RunnerKit: rk, rk aggiorna, rk versioni, rk gpu, ...
       printf '  Pulizia      %s\n' "$(pulizia --versione 2>/dev/null | cut -d' ' -f2)"
       printf '  RunnerBoost  %s\n' "$(runnerboost --versione 2>/dev/null | cut -d' ' -f2)"
       printf '  Terminale    %s\n' "$RK_TERM_VERSIONE"
+      if [[ -r /usr/local/share/runnerkit/versione ]]; then printf '  RunnerKit    %s\n' "$(cat /usr/local/share/runnerkit/versione)"; fi
       if [[ -r /usr/local/share/runnerkit/installato ]]; then printf '  installato   %s\n' "$(cat /usr/local/share/runnerkit/installato)"; fi ;;
     info) rkinfo ;;
     top) rktop ;;
@@ -143,6 +179,20 @@ rk() {  # comando unico di RunnerKit: rk, rk aggiorna, rk versioni, rk gpu, ...
     pulizia) pulizia ;;
     pulisci) pulizia --sicura ;;
     log) unavolta --log; echo; tail -20 ~/.touchpad.log 2>/dev/null ;;
+    collaudo) rkcollaudo ;;
+    backup) shift; rkbackup "$@" ;;
+    ripristina) shift; rkbackup --ripristina "$@" ;;
+    italiano) if [[ ${2:-} == off ]]; then rkitaliano --off; else rkitaliano --on; fi ;;
+    copia)  # verso gli appunti dell'iPhone: rk copia testo  |  rk copia < file  |  comando | rk copia
+      [[ -w /dev/clipboard ]] || { echo "appunti dell'iPhone non raggiungibili (/dev/clipboard)"; return 1; }
+      if (( $# > 1 )); then shift; if [[ -f $1 && $# == 1 ]]; then cat "$1" > /dev/clipboard; else printf '%s' "$*" > /dev/clipboard; fi
+      else cat > /dev/clipboard; fi
+      echo "Copiato negli appunti dell'iPhone." ;;
+    incolla) [[ -r /dev/clipboard ]] && { cat /dev/clipboard; echo; } || echo "appunti dell'iPhone non raggiungibili" ;;
+    fisso)
+      mkdir -p ~/.config/runnerkit
+      if [[ ${2:-on} == off ]]; then echo 'RK_FISSO=0' > ~/.config/runnerkit/terminale; RK_FISSO=0; printf '\033[r'; command clear; echo "Barra fissa spenta."
+      else echo 'RK_FISSO=1' > ~/.config/runnerkit/terminale; RK_FISSO=1; echo "Barra fissa accesa."; fi ;;
     *)
       printf '%sRunnerKit%s — comandi  (rk versioni · rk aggiorna)\n' "$(_rk_n '1;35')" "$(_rk_n 0)"
       cat <<'EOF'
@@ -156,14 +206,23 @@ rk() {  # comando unico di RunnerKit: rk, rk aggiorna, rk versioni, rk gpu, ...
   aiphone FILE         copia verso l'app File dell'iPhone · dalliphone apre la cartella
   aggiorna             aggiorna Debian · installa/cerca/rimuovi PACCHETTO
   estrai FILE · mkcd   estrae qualsiasi archivio · crea ed entra in una cartella
-  clear (o Ctrl+L)     pulisce lo schermo e rimette le statistiche in alto
+  rk collaudo          prova tutto sul telefono e salva un report da mandare
+  rk backup · rk ripristina   salva/ripristina impostazioni e file (cartella dell'app File)
+  rk copia TESTO · rk incolla  appunti condivisi con l'iPhone (anche: comando | rk copia)
+  rk italiano [off]    Linux in italiano
+  rk fisso on|off      barra di stato fissa in cima al terminale
+  clear (o Ctrl+L)     pulisce lo schermo, la barra resta
 EOF
       ;;
   esac
 }
 
 # clear e Ctrl+L puliscono lo schermo ma la schermata RunnerKit resta sempre in alto
-clear() { command clear; if [[ ${RK_BANNER:-1} = 1 ]]; then rkinfo; fi; }
+clear() {
+  command clear
+  if [[ ${RK_FISSO:-1} == 1 && -t 1 ]]; then printf '\033[%d;1H' $((_RK_H + 1))   # la barra si ridisegna al prompt
+  elif [[ ${RK_BANNER:-1} = 1 ]]; then rkinfo; fi
+}
 bind -x '"\C-l": clear' 2>/dev/null
 
 [[ ${RK_BANNER:-1} = 1 ]] && rkinfo

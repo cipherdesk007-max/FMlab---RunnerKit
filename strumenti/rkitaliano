@@ -1,0 +1,47 @@
+#!/bin/sh
+# RunnerKit Italiano - Linux in italiano (menu, programmi, Firefox, date).
+#   rkitaliano --on     (rk italiano)       attiva
+#   rkitaliano --off    (rk italiano off)   torna alla lingua predefinita
+# Come arriva ai programmi: il desktop di LinuxRunner non legge le impostazioni di lingua di
+# Debian, quindi RunnerKit la passa da se': UnaVolta (che apre i programmi da icone e menu),
+# il Terminale RunnerKit e un blocco nelle preferenze di Firefox.
+VERSIONE="1.0.0"
+H="${RKI_HOME:-$HOME}"
+LF="$H/.config/runnerkit/lingua"
+SUDO=""; [ "$(id -u)" -ne 0 ] && command -v sudo >/dev/null && SUDO="sudo"
+
+ff() {  # $1 = blocco user_pref o vuoto
+  for prof in "$H"/.mozilla/firefox*/*.default* "$H"/.mozilla/firefox-esr/*.default*; do
+    [ -d "$prof" ] || continue
+    u="$prof/user.js"; touch "$u"
+    sed -i '/\/\/ RunnerKit lingua inizio/,/\/\/ RunnerKit lingua fine/d' "$u"
+    [ -n "$1" ] && printf '// RunnerKit lingua inizio\n%s\n// RunnerKit lingua fine\n' "$1" >> "$u"
+  done
+}
+
+case "$1" in
+  --versione) echo "RunnerKit Italiano $VERSIONE" ;;
+  --off)
+    rm -f "$LF"; $SUDO rm -f /etc/profile.d/runnerkit-lingua.sh
+    command -v update-locale >/dev/null && $SUDO update-locale LANG=C.UTF-8 2>/dev/null
+    ff ""
+    echo "Lingua predefinita ripristinata. Riavvia il desktop e apri un terminale nuovo." ;;
+  --on|"")
+    if [ "${RKI_SALTA_APT:-0}" != 1 ]; then
+      echo ">> Installo la lingua italiana..."
+      $SUDO apt-get install -y locales >/dev/null 2>&1 || { $SUDO apt-get update >/dev/null 2>&1; $SUDO apt-get install -y locales >/dev/null; }
+      dpkg -s firefox-esr >/dev/null 2>&1 && $SUDO apt-get install -y firefox-esr-l10n-it >/dev/null 2>&1
+      $SUDO sed -i 's/^# *\(it_IT.UTF-8 UTF-8\)/\1/' /etc/locale.gen
+      grep -q '^it_IT.UTF-8 UTF-8' /etc/locale.gen || echo 'it_IT.UTF-8 UTF-8' | $SUDO tee -a /etc/locale.gen >/dev/null
+      $SUDO locale-gen >/dev/null 2>&1
+      $SUDO update-locale LANG=it_IT.UTF-8 LANGUAGE=it:en 2>/dev/null
+    fi
+    mkdir -p "$(dirname "$LF")"; echo "it_IT.UTF-8" > "$LF"
+    printf 'export LANG=it_IT.UTF-8 LANGUAGE=it:en\n' | $SUDO tee /etc/profile.d/runnerkit-lingua.sh >/dev/null 2>&1
+    ff 'user_pref("intl.locale.requested", "it,en-US");
+user_pref("intl.accept_languages", "it-IT, it, en-US, en");'
+    echo "Italiano attivo."
+    echo "  Riavvia il desktop (Stop Desktop -> Open Desktop) e apri un terminale nuovo."
+    echo "  Verifica: apri un programma dal menu, oppure scrivi 'date' nel terminale." ;;
+  *) sed -n '2,4p' "$0" | sed 's/^# \{0,1\}//' ;;
+esac
