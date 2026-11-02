@@ -5,7 +5,7 @@ Tutto quello che serve installare sul Debian di LinuxRunner sta qui, con un coma
 
 | Strumento | Versione | A cosa serve |
 |---|---|---|
-| [TouchPad](#touchpad) | 2.8.0 | Mouse, tasto destro e tastiera italiana touch, fluttuanti sul desktop |
+| [TouchPad](#touchpad) | 2.8.1 | Mouse, tasto destro e tastiera italiana touch, fluttuanti sul desktop |
 | [UnaVolta](#unavolta) | 1.2.0 | Tocchi ripetuti su un'icona aprono il programma una volta sola; se è già aperto lo porta davanti |
 | [Pulizia](#pulizia) | 1.0.0 | Agente di pulizia del disco: report di cosa occupa spazio, pulizia sicura, automatica a settimana |
 | [RunnerBoost](#runnerboost) | 1.2.0 | Diagnosi della velocità, test ripetibile con storico, profili veloce / bilanciato / normale |
@@ -63,7 +63,7 @@ TouchPad diventa una colonna di pallini rotondi sul lato dello schermo:
 | ♻ | Pulizia sicura in sottofondo, poi ti dice quanto ha liberato |
 | ⚡ | Apre RunnerBoost (diagnosi) in un terminale |
 | >_ | Apre il terminale |
-| ⟳ | Aggiorna RunnerKit. **Diventa arancione** quando su GitHub c'è una versione nuova (controllo ogni 6 ore) |
+| ⟳ | Aggiorna RunnerKit: se è già aggiornato lo dice e basta, altrimenti installa e mostra le novità. **Diventa arancione** quando c'è una versione nuova (controllo ogni 6 ore) |
 
 Trascinando un pallino si sposta tutta la colonna, che si aggancia al lato più vicino.
 Se rilanci `touchpad` mentre è già aperto, riappare quello che c'è.

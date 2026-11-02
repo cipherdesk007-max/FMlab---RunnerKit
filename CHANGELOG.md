@@ -3,6 +3,14 @@
 Formato: [versione] - data. Le versioni seguono MAJOR.MINOR.PATCH
 (MAJOR = cambia il modo d'uso, MINOR = funzioni nuove, PATCH = correzioni).
 
+## RunnerKit 2026.11.02-6 - aggiornamento più intelligente
+- **⟳ controlla prima**: se RunnerKit è già aggiornato lo dice ("✔ già aggiornato") senza aprire niente;
+  se manca la rete lo dice; solo se c'è una versione nuova apre il terminale e la installa.
+- Dopo l'aggiornamento mostra **versione vecchia → nuova** e le **novità** (prima voce del registro).
+- Le finestre aperte da ⟳, ⚡ e dagli strumenti **si chiudono da sole** con un conto alla rovescia
+  ("Chiudo tra 20 s · Invio per chiudere subito") invece di aspettare Invio.
+- `rkaggiorna --forza` reinstalla comunque.
+
 ## RunnerKit 2026.11.02-5 - aggiornamento con un tocco
 - **Pallino ⟳** nella colonna di TouchPad (2.8.0), icona **Aggiorna RunnerKit** sul desktop e pulsante in ⚙:
   aggiornano senza scrivere comandi (`rkaggiorna` apre da solo un terminale con l'avanzamento).

@@ -23,13 +23,15 @@ jobs:
           sh -n install.sh
           sh -n unavolta/unavolta
           sh -n pulizia/pulizia
-          for f in strumenti/*; do sh -n "$f"; done
+          for f in strumenti/*; do head -1 "$f" | grep -q bash && bash -n "$f" || sh -n "$f"; done
           sh -n runnerboost/runnerboost
           bash -n terminale/terminale.sh
       - name: Test RunnerBoost + Terminale
         run: sh tests/test_boost_terminale.sh
       - name: Prova GPU (software in CI)
         run: xvfb-run -a -s "-screen 0 1280x720x24" sh -c 'RB_HOME=$(mktemp -d) runnerboost/runnerboost --gpu' 
+      - name: Test Aggiorna
+        run: sh tests/test_aggiorna.sh
       - name: Test Backup + Italiano + Collaudo
         run: sh tests/test_strumenti.sh
       - name: Test Pulizia

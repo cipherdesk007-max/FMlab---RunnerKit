@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """TouchPad 2 - mouse + tastiera fluttuante per LinuxRunner.
 Parla direttamente con X11 (XTEST): nessun processo esterno per tocco."""
-__version__ = "2.8.0"
+__version__ = "2.8.1"
 
 import glob
 import json
@@ -699,10 +699,50 @@ class App:
                     self._toast("Aggiornamento RunnerKit\ndisponibile: tocca ⟳", 8)
 
     def aggiorna(self):
-        """⟳: apre un terminale che scarica e installa l'ultima versione di RunnerKit."""
+        """⟳: controlla GitHub; se c'e' una versione nuova apre il terminale che la installa,
+        altrimenti dice solo "gia' aggiornato" (niente finestre inutili)."""
+        if not shutil.which("curl"):
+            return self._aggiorna_avvia()
+        self._avviso("Controllo aggiornamenti...", 3)
+        try:
+            self._vchk = subprocess.Popen(["curl", "-fsS", "--max-time", "15", URL_VERSIONE],
+                                          stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True)
+        except OSError:
+            return self._aggiorna_avvia()
+        self.root.after(500, self._aggiorna_attendi)
+
+    def _aggiorna_attendi(self):
+        if self._vchk.poll() is None:
+            self.root.after(500, self._aggiorna_attendi)
+            return
+        remota = (self._vchk.stdout.read() or "").strip()
+        azione = self._aggiorna_decidi(remota)
+        if azione == "aggiornato":
+            self._nuova = None
+            if self.mini and self.dock:
+                self._show_bubble()
+            self._avviso(f"✔ RunnerKit è già aggiornato\n(versione {remota})", 4)
+        elif azione == "offline":
+            self._avviso("Nessuna connessione con GitHub:\nriprova più tardi", 5)
+        else:
+            self._aggiorna_avvia()
+
+    def _aggiorna_decidi(self, remota):
+        if not remota or len(remota) > 40:
+            return "offline"
+        return "aggiornato" if remota == self._versione_locale() else "nuova"
+
+    def _avviso(self, testo, secondi=4):
+        if self.mini:
+            self._toast(testo, secondi)
+        else:
+            self.say(testo.replace("\n", " "))
+
+    def _aggiorna_avvia(self):
+        """Apre il terminale che scarica e installa l'ultima versione di RunnerKit."""
         cmd = shutil.which("rkaggiorna")
         if not cmd:
-            self._toast("rkaggiorna mancante:\nrilancia l'installatore") if self.mini else self.say("rkaggiorna mancante")
+            self._avviso("rkaggiorna mancante:\nrilancia l'installatore")
             return
         subprocess.Popen([cmd], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
         self._nuova = None
@@ -1069,7 +1109,9 @@ class App:
             return
         cmd = [t]
         if comando:
-            cmd += ["-e", "bash", "-c", f"{comando}; echo; read -p 'Invio per chiudere ' x"]
+            cmd += ["-e", "bash", "-c", comando + "; echo; for ((i=60;i>0;i--)); do "
+                    "printf '\\r  Chiudo tra %2d s · Invio per chiudere subito ' $i; "
+                    "read -r -s -t 1 && break; done"]
         subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
                          start_new_session=True)
 

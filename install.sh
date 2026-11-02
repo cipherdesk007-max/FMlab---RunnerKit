@@ -34,7 +34,7 @@ $SUDO install -m 644 /tmp/terminale.sh /usr/local/share/runnerkit/terminale.sh
 
 echo ">> Scarico Collaudo, Backup, Italiano, Aggiorna..."
 for t in rkcollaudo rkbackup rkitaliano rkaggiorna; do
-  curl -fsSL "$REPO/strumenti/$t" -o "/tmp/$t" && sh -n "/tmp/$t" && $SUDO install -m 755 "/tmp/$t" "/usr/local/bin/$t"
+  curl -fsSL "$REPO/strumenti/$t" -o "/tmp/$t" && bash -n "/tmp/$t" && $SUDO install -m 755 "/tmp/$t" "/usr/local/bin/$t"
 done
 
 echo ">> Scarico Pulizia..."

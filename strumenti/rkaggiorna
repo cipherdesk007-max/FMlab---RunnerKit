@@ -1,18 +1,55 @@
-#!/bin/sh
-# RunnerKit Aggiorna - scarica e installa l'ultima versione di RunnerKit.
-# Da un'icona o da un pallino (senza terminale) apre da solo una finestra di terminale.
-URL="https://raw.githubusercontent.com/cipherdesk007-max/mia/main/install.sh"
+#!/bin/bash
+# RunnerKit Aggiorna - controlla se c'e' una versione nuova e, se c'e', la installa.
+#   rkaggiorna           aggiorna solo se serve
+#   rkaggiorna --forza   reinstalla comunque
+# Da un'icona o da un pallino (senza terminale) apre da solo una finestra di terminale,
+# che si chiude da sola alla fine (Invio per chiuderla subito).
+REPO="https://raw.githubusercontent.com/cipherdesk007-max/mia/main"
+LOCALE_F=/usr/local/share/runnerkit/versione
 if [ ! -t 1 ] && [ -z "$RK_DENTRO" ] && [ -n "$DISPLAY" ]; then
   for t in x-terminal-emulator xterm lxterminal qterminal xfce4-terminal; do
-    command -v "$t" >/dev/null 2>&1 && exec env RK_DENTRO=1 "$t" -e "$0"
+    command -v "$t" >/dev/null 2>&1 && exec env RK_DENTRO=1 "$t" -e "$0" "$@"
   done
 fi
-echo "== Aggiornamento RunnerKit =="
-if curl -fsSL "$URL" | sh; then
-  echo ""
-  echo "Aggiornato. Le finestre di terminale gia' aperte prendono la versione nuova con: exec bash"
-else
-  echo ""
-  echo "Aggiornamento NON riuscito: controlla la connessione e riprova."
+
+v() { printf '\033[%sm' "$1"; }
+chiudi() {  # $1 secondi: conto alla rovescia, Invio chiude subito (solo nella finestra aperta da icona/pallino)
+  [ -n "$RK_DENTRO" ] || return 0
+  echo
+  for ((i = $1; i > 0; i--)); do
+    printf '\r  %sChiudo tra %2d s · Invio per chiudere subito%s ' "$(v 2)" "$i" "$(v 0)"
+    read -r -s -t 1 && break
+  done
+  echo
+}
+
+printf '%s== Aggiornamento RunnerKit ==%s\n' "$(v '1;35')" "$(v 0)"
+locale=$(cat "$LOCALE_F" 2>/dev/null)
+remota=$(curl -fsS --max-time 15 "$REPO/VERSIONE" 2>/dev/null | tr -d '[:space:]')
+if [ -z "$remota" ]; then
+  printf '  %s✘ Nessuna connessione con GitHub: riprova piu'"'"' tardi.%s\n' "$(v 31)" "$(v 0)"
+  chiudi 8; exit 1
 fi
-if [ -n "$RK_DENTRO" ]; then printf '\nInvio per chiudere '; read -r _; fi
+if [ "$remota" = "$locale" ] && [ "$1" != --forza ]; then
+  printf '  %s✔ RunnerKit e'"'"' gia'"'"' aggiornato%s (versione %s)\n' "$(v '1;32')" "$(v 0)" "$locale"
+  echo "  Per reinstallare comunque: rkaggiorna --forza"
+  chiudi 4; exit 0
+fi
+
+echo "  Versione installata: ${locale:-nessuna}"
+echo "  Versione nuova:      $remota"
+echo
+if curl -fsSL "$REPO/install.sh" | sh; then
+  echo
+  printf '  %s✔ Aggiornato a %s%s\n' "$(v '1;32')" "$remota" "$(v 0)"
+  # le novita': prima voce del registro delle modifiche
+  novita=$(curl -fsS --max-time 15 "$REPO/CHANGELOG.md" 2>/dev/null | awk '/^## /{n++} n==1' | head -14)
+  if [ -n "$novita" ]; then echo; printf '%sNovita'"'"':%s\n' "$(v 1)" "$(v 0)"; echo "$novita" | sed 's/^/  /'; fi
+  echo
+  echo "  I terminali gia' aperti prendono la versione nuova con: exec bash"
+  chiudi 20
+else
+  echo
+  printf '  %s✘ Aggiornamento non riuscito: controlla la connessione e riprova.%s\n' "$(v 31)" "$(v 0)"
+  chiudi 20; exit 1
+fi

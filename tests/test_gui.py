@@ -135,6 +135,9 @@ def main():
         if app._nuova:
             break
     assert app._nuova == "9999.01.01-1", f"aggiornamento non rilevato: {app._nuova}"
+    assert app._aggiorna_decidi("9999.01.01-1") == "nuova"
+    assert app._aggiorna_decidi(open("/tmp/tp-ver-locale").read().strip()) == "aggiornato"
+    assert app._aggiorna_decidi("") == "offline"
     app.toggle_mini(); app.root.update()
     shot(app, "pallino-aggiornamento")
     app.toggle_mini(); app.root.update()
