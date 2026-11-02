@@ -21,6 +21,9 @@ jobs:
         run: |
           /usr/bin/python3 -m py_compile touchpad/touchpad.py
           sh -n install.sh
+          sh -n unavolta/unavolta
+      - name: Test UnaVolta
+        run: sh tests/test_unavolta.sh
       - name: Test motore X11
         run: xvfb-run -a -s "-screen 0 1280x720x24" /usr/bin/python3 tests/test_x11.py
       - name: Test finestra + screenshot

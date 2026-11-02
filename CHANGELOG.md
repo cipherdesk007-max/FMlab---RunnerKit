@@ -3,6 +3,13 @@
 Formato: [versione] - data. Le versioni seguono MAJOR.MINOR.PATCH
 (MAJOR = cambia il modo d'uso, MINOR = funzioni nuove, PATCH = correzioni).
 
+## UnaVolta [1.0.0] - 2026-11-02
+- Nuovo strumento RunnerKit: tocchi ripetuti sulla stessa icona entro 4 s = un solo avvio
+  (blocco atomico); se il programma è già aperto ne porta davanti la finestra (xdotool).
+- `--applica` / `--ripristina` su icone del desktop e menu, senza toccare i file di sistema
+  (copie personali in `~/.local/share/applications`). Esclusioni in `~/.config/unavolta/escludi`.
+- L'installatore RunnerKit lo installa e lo attiva.
+
 ## [2.4.0] - 2026-11-02
 ### Nuovo
 - **Si apre da solo** quando avvii il desktop (file standard `~/.config/autostart/touchpad.desktop`,

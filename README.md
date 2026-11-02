@@ -6,6 +6,7 @@ Tutto quello che serve installare sul Debian di LinuxRunner sta qui, con un coma
 | Strumento | Versione | A cosa serve |
 |---|---|---|
 | [TouchPad](#touchpad) | 2.4.0 | Mouse, tasto destro e tastiera italiana touch, fluttuanti sul desktop |
+| [UnaVolta](#unavolta) | 1.0.0 | Tocchi ripetuti su un'icona aprono il programma una volta sola; se è già aperto lo porta davanti |
 | *prossimi strumenti* | | |
 
 > Pensato per i limiti di LinuxRunner: niente kernel né compositing, CPU emulata.
@@ -50,6 +51,24 @@ Se rilanci `touchpad` mentre è già aperto, non se ne apre un secondo: riappare
 **Trasparenza:** serve il *compositing*: TouchPad avvia `xcompmgr` da solo.
 Su LinuxRunner funziona (provato al 45%, vedi `screenshots/v2.2-impostazioni-opacita-45.png`).
 Se in **⚙** leggi "non disponibile", usa Auto-riduci.
+
+## UnaVolta
+
+Sul telefono un tocco "sporco" vale due o tre clic e apre lo stesso programma più volte.
+UnaVolta si mette davanti a tutti i lanciatori (icone del desktop, menu Applications, barra):
+
+- tocchi ripetuti sulla stessa icona **entro 4 secondi** → **un solo avvio**;
+- programma **già aperto** → porta davanti la sua finestra invece di aprirne un'altra.
+
+Si installa insieme a RunnerKit con lo stesso comando. Altri comandi:
+
+```sh
+unavolta --ripristina     # toglie UnaVolta da icone e menu
+unavolta --applica        # lo rimette (anche dopo aver installato nuovi programmi)
+echo xterm >> ~/.config/unavolta/escludi   # un programma che vuoi poter aprire più volte
+```
+
+Dopo `--applica` / `--ripristina` riavvia il desktop (Stop Desktop → Open Desktop).
 
 ### Versioni e test
 

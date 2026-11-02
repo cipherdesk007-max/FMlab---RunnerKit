@@ -1,0 +1,99 @@
+#!/bin/sh
+# UnaVolta (RunnerKit) - apre ogni programma una volta sola.
+#  - tocchi ripetuti sulla stessa icona entro 4 secondi = un solo avvio
+#  - se il programma e' gia' aperto, porta davanti la sua finestra
+# Uso:  unavolta <comando> [argomenti]     (lo mettono da soli i lanciatori)
+#       unavolta --applica                 (aggiunge UnaVolta a icone e menu)
+#       unavolta --ripristina              (toglie UnaVolta da icone e menu)
+#       unavolta --versione
+VERSIONE="1.0.0"
+ATTESA="${UNAVOLTA_SECONDI:-4}"
+SYS_APPS="${UNAVOLTA_SYS_DIR:-/usr/share/applications}"
+USR_APPS="$HOME/.local/share/applications"
+CONF="$HOME/.config/unavolta"
+MARK="X-UnaVolta"
+
+applica() {
+  mkdir -p "$USR_APPS"
+  n=0
+  for f in "$SYS_APPS"/*.desktop "$USR_APPS"/*.desktop "$HOME"/Desktop/*.desktop "$HOME"/Scrivania/*.desktop; do
+    [ -f "$f" ] || continue
+    grep -q "^$MARK=" "$f" && continue
+    ex=$(grep -m1 '^Exec=' "$f" | cut -d= -f2-)
+    case "$ex" in ""|unavolta*|sh\ *|bash\ *|*/sh\ *|*/bash\ *) continue;; esac  # gia' fatto o script: salto
+    case "$f" in
+      "$SYS_APPS"/*)
+        dst="$USR_APPS/$(basename "$f")"
+        [ -f "$dst" ] && continue          # esiste gia' una versione personale: non la tocco
+        cp "$f" "$dst"; tipo=copia ;;
+      *) dst="$f"; tipo=modifica ;;
+    esac
+    sed -i 's|^Exec=|Exec=unavolta |' "$dst"
+    echo "$MARK=$tipo" >> "$dst"
+    n=$((n + 1))
+  done
+  echo "UnaVolta attivo su $n lanciatori."
+}
+
+ripristina() {
+  n=0
+  for f in "$USR_APPS"/*.desktop "$HOME"/Desktop/*.desktop "$HOME"/Scrivania/*.desktop; do
+    [ -f "$f" ] || continue
+    tipo=$(grep -m1 "^$MARK=" "$f" | cut -d= -f2)
+    case "$tipo" in
+      copia) rm -f "$f" ;;
+      modifica) sed -i -e 's|^Exec=unavolta |Exec=|' -e "/^$MARK=/d" "$f" ;;
+      *) continue ;;
+    esac
+    n=$((n + 1))
+  done
+  echo "UnaVolta tolto da $n lanciatori."
+}
+
+case "$1" in
+  --applica) applica; exit 0 ;;
+  --ripristina) ripristina; exit 0 ;;
+  --versione) echo "UnaVolta $VERSIONE"; exit 0 ;;
+  "") echo "uso: unavolta <comando>"; exit 1 ;;
+esac
+
+# nome del programma (salta "env VAR=..." davanti)
+if [ "$1" = env ]; then
+  shift
+  while [ $# -gt 0 ]; do case "$1" in *=*) shift ;; *) break ;; esac; done
+fi
+nome=$(basename "$1" | tr -c 'A-Za-z0-9._\n-' '_')
+
+# programmi esclusi (uno per riga in ~/.config/unavolta/escludi): si aprono sempre
+if [ -f "$CONF/escludi" ] && grep -qx "$nome" "$CONF/escludi"; then
+  exec "$@"
+fi
+
+# 1) anti-tocco-doppio: blocco atomico (mkdir) valido $ATTESA secondi
+lock="/tmp/unavolta-$(id -u)-$nome"
+ora=$(date +%s)
+if ! mkdir "$lock" 2>/dev/null; then
+  prima=$(cat "$lock/t" 2>/dev/null || echo 0)
+  [ $((ora - prima)) -lt "$ATTESA" ] && exit 0      # avvio gia' in corso: ignoro il tocco
+  rm -rf "$lock"; mkdir "$lock" 2>/dev/null || exit 0
+fi
+echo "$ora" > "$lock/t"
+
+# 2) gia' aperto? porto davanti la sua finestra invece di aprirne un'altra
+if command -v xdotool >/dev/null 2>&1; then
+  for pid in $(pgrep -x "$(echo "$nome" | cut -c1-15)" 2>/dev/null); do
+    wid=$(xdotool search --onlyvisible --pid "$pid" 2>/dev/null | tail -1)
+    if [ -n "$wid" ]; then
+      xdotool windowactivate "$wid" 2>/dev/null || xdotool windowraise "$wid" 2>/dev/null
+      exit 0
+    fi
+  done
+fi
+
+# 3) avvio normale, staccato dal lanciatore
+if command -v setsid >/dev/null 2>&1; then
+  setsid "$@" >/dev/null 2>&1 &
+else
+  "$@" >/dev/null 2>&1 &
+fi
+exit 0

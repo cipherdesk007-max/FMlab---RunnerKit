@@ -1,6 +1,6 @@
 #!/bin/sh
 # RunnerKit - installa o aggiorna gli strumenti per Debian su LinuxRunner.
-# Strumenti: TouchPad
+# Strumenti: TouchPad, UnaVolta
 # Uso:  curl -fsSL https://raw.githubusercontent.com/cipherdesk007-max/mia/main/install.sh | sh
 set -e
 REPO="https://raw.githubusercontent.com/cipherdesk007-max/mia/main"
@@ -9,13 +9,18 @@ SUDO=""
 
 echo "== RunnerKit =="
 echo ">> Pacchetti (python3-tk, python3-xlib, xcompmgr)..."
-$SUDO apt-get install -y python3-tk python3-xlib xcompmgr >/dev/null 2>&1 || {
-  $SUDO apt-get update && $SUDO apt-get install -y python3-tk python3-xlib xcompmgr; }
+$SUDO apt-get install -y python3-tk python3-xlib xcompmgr xdotool >/dev/null 2>&1 || {
+  $SUDO apt-get update && $SUDO apt-get install -y python3-tk python3-xlib xcompmgr xdotool; }
 
 echo ">> Scarico TouchPad..."
 curl -fsSL "$REPO/touchpad/touchpad.py" -o /tmp/touchpad.py
 python3 -m py_compile /tmp/touchpad.py
 $SUDO install -m 755 /tmp/touchpad.py /usr/local/bin/touchpad
+
+echo ">> Scarico UnaVolta..."
+curl -fsSL "$REPO/unavolta/unavolta" -o /tmp/unavolta
+sh -n /tmp/unavolta
+$SUDO install -m 755 /tmp/unavolta /usr/local/bin/unavolta
 
 mkdir -p "$HOME/.local/share/applications"
 cat > "$HOME/.local/share/applications/touchpad.desktop" <<'EOF'
@@ -51,8 +56,12 @@ for D in "$HOME/Desktop" "$HOME/Scrivania"; do
   fi
 done
 
+# UnaVolta su icone e menu (si toglie con: unavolta --ripristina)
+[ "${RUNNERKIT_NO_UNAVOLTA:-0}" = "1" ] || /usr/local/bin/unavolta --applica
+
 V=$(grep -m1 '__version__' /usr/local/bin/touchpad | cut -d'"' -f2)
 echo ">> TouchPad v$V installato."
 echo "   Aprilo: icona sul desktop, Applications -> TouchPad, oppure scrivi 'touchpad' (anche dal Terminal dell'app)"
 echo "   Si apre da solo a ogni avvio del desktop (disattivabile nelle impostazioni)."
+echo ">> UnaVolta: ogni programma si apre una volta sola anche con tocchi ripetuti."
 echo "   Per aggiornare in futuro: rilancia lo stesso comando curl."
