@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """TouchPad 2 - mouse + tastiera fluttuante per LinuxRunner.
 Parla direttamente con X11 (XTEST): nessun processo esterno per tocco."""
-__version__ = "2.9.0"
+__version__ = "2.9.1"
 
 import glob
 import json
@@ -93,6 +93,19 @@ ABC = [list("1234567890'"), list("qwertyuiopè"), list("asdfghjklòà"),
        ["⇧"] + list("zxcvbnm,.") + ["⌫"], ["?123", "Ctrl", "Alt", "␣", "ù", "-", "⏎"]]
 SYM = [list('!"£$%&/()=?'), list("@#[]{}<>|\\^"), list("*+~_;:€°éì`"),
        ["⇧"] + list("ç§«»¿¡ñ,.") + ["⌫"], ["abc", "Ctrl", "Alt", "␣", "ù", "-", "⏎"]]
+# tastiera secondo la lingua di Linux: italiano -> layout italiano, altre lingue -> layout USA
+ABC_US = [list("1234567890-"), list("qwertyuiop'"), list("asdfghjkl;="),
+          ["⇧"] + list("zxcvbnm,.") + ["⌫"], ["?123", "Ctrl", "Alt", "␣", "/", "-", "⏎"]]
+SYM_US = [list("!@#$%^&*()_"), list('[]{}<>|\\"+'), list("`~:;€£°§±×÷"),
+          ["⇧"] + list("¿¡ñçßé,.") + ["⌫"], ["abc", "Ctrl", "Alt", "␣", "?", "-", "⏎"]]
+_LINGUA = (os.environ.get("LANGUAGE") or os.environ.get("LC_ALL") or os.environ.get("LANG") or "it")
+try:
+    _LINGUA = open(os.path.expanduser("~/.config/runnerkit/lingua")).read().strip() or _LINGUA
+except OSError:
+    pass
+_l = _LINGUA.lower()
+if not (_l.startswith("it") or _l in ("", "c", "c.utf-8", "c.utf8", "posix")):
+    ABC, SYM = ABC_US, SYM_US
 SPECIAL = {"⌫": "BackSpace", "⏎": "Return", "␣": "space"}
 REPEAT = {"⌫", "←", "→", "↑", "↓", "␣"}
 

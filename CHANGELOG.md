@@ -3,6 +3,15 @@
 Formato: [versione] - data. Le versioni seguono MAJOR.MINOR.PATCH
 (MAJOR = cambia il modo d'uso, MINOR = funzioni nuove, PATCH = correzioni).
 
+## RunnerKit 2026.11.02-11 - prestazioni e pulizia rapida
+- **Centro 1.1.0**: finestra più piccola e compatta; **⚡ Pulizia rapida** (un tocco, tutte le categorie
+  sicure); nuova scheda **Prestazioni** (profili Veloce/Bilanciato/Normale, trasparenza on/off, test
+  velocità, prova GPU, diagnosi, pulizia rapida); avviso quando è lo spazio dell'iPhone a essere finito.
+- **RAM corretta nel Terminal dell'app**: lì manca MemAvailable e risultava sempre 100%; ora si stima da
+  MemFree+Buffers+Cached (Terminale 1.3.2, RunnerBoost, Collaudo, Centro).
+- **TouchPad 2.9.1**: la tastiera segue la lingua di Linux (italiano → layout italiano, altrimenti USA).
+- **README in inglese** ([README.en.md](README.en.md)), l'italiano resta principale.
+
 ## RunnerKit 2026.11.02-10 - aggiornamenti leggeri
 - Un aggiornamento ha fatto chiudere LinuxRunner: l'installatore rilanciava ogni volta apt e la
   ricostruzione dell'archivio dei tipi di file, le operazioni più pesanti sotto l'interprete.

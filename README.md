@@ -1,5 +1,7 @@
 # RunnerKit 📱🐧
 
+🇮🇹 Italiano · [🇬🇧 English](README.en.md)
+
 **Il kit tutto-in-uno per usare Linux sull'iPhone con [LinuxRunner](https://github.com/mxhm11cr/LinuxRunner).**
 Tocco, tastiera, pulizia, velocità, backup e aggiornamenti per il desktop Debian di LinuxRunner.
 Si installa con un comando e poi si aggiorna con un tocco.
@@ -50,7 +52,7 @@ Scrivi `rk` in un terminale per vedere tutti i comandi, e `rk versioni` per sape
 | Pagina | Cosa fa |
 |---|---|
 | **Mouse** | Trascini sul riquadro per muovere il mirino rosso: tocco = clic sinistro, pressione lunga = clic destro. Tasti Sx, Dx, doppio clic, scroll, Trascina, Dx fisso, centra il mirino, velocità |
-| **Tastiera** | QWERTY italiana con à è ì ò ù, simboli (`?123`), ⇧ e ⇪, Ctrl e Alt per il tasto successivo. ⌫ e frecce si ripetono tenendo premuto |
+| **Tastiera** | Segue la lingua di Linux: italiana (à è ì ò ù) se Linux è in italiano, altrimenti USA. QWERTY italiana con à è ì ò ù, simboli (`?123`), ⇧ e ⇪, Ctrl e Alt per il tasto successivo. ⌫ e frecce si ripetono tenendo premuto |
 | **Tasti** | Esc, Tab, frecce, Home/Fine, PgSu/PgGiù, F1–F12, Copia/Incolla (anche da terminale), Alt+Tab, Alt+F4, **→ iPhone** e **Incolla iPhone** |
 | **⚙** | Tema, dimensione, opacità, velocità, Auto-riduci, avvio col desktop, copia automatica verso l'iPhone, aggiornamento. In fondo mostra GPU e risoluzione |
 
@@ -75,7 +77,8 @@ Si apre dall'icona **RunnerKit Centro**, dai pallini ♻ e ⚡, oppure con `rk c
 | Scheda | Cosa mostra |
 |---|---|
 | **Sistema** | Indicatori circolari per RAM, processore e disco (verde, giallo, rosso), grafico degli ultimi 3 minuti, swap, carico, da quanto è acceso, processi, GPU e JIT |
-| **Pulizia** | Ogni categoria con la sua dimensione e una barra: scegli e premi **Pulisci selezionati**. I pacchetti inutili sono "avanzati" e non vengono scelti di default. Pulizia settimanale on/off e report completo |
+| **Pulizia** | **⚡ Pulizia rapida** con un tocco, oppure ogni categoria con la sua dimensione e una barra: scegli e premi **Pulisci selezionati**. I pacchetti inutili sono "avanzati" e non vengono scelti di default. Pulizia settimanale on/off e report completo |
+| **Prestazioni** | Profili Veloce / Bilanciato / Normale con un tocco, trasparenza on/off, test di velocità, prova GPU, diagnosi e consigli, pulizia rapida |
 | **Processi** | I programmi che usano più memoria e CPU, aggiornati ogni 3 s, con **Chiudi**, poi **Forza** se non rispondono. I processi del sistema sono protetti |
 
 Legge tutto direttamente dal sistema, senza lanciare programmi per misurare, e aggiorna solo la scheda visibile.

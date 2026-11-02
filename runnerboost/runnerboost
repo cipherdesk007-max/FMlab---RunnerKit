@@ -47,7 +47,7 @@ diagnosi() {
   fi
   if pgrep -x xcompmgr >/dev/null 2>&1; then info "trasparenza (compositing) accesa: costa un po' di CPU"; else info "trasparenza spenta"; fi
   titolo "Memoria"
-  awk '/MemTotal/{t=$2} /MemAvailable/{a=$2} END{ if(t){u=t-a; printf "  • RAM: %d MB usati su %d MB (%d%%)\n", u/1024, t/1024, u*100/t; if(u*100/t>85) print "  ! RAM quasi piena"} }' /proc/meminfo 2>/dev/null
+  awk '/MemTotal/{t=$2} /MemAvailable/{a=$2} /^(MemFree|Buffers|Cached|SReclaimable):/{l+=$2} END{ if(a<=0) a=l; if(t){u=t-a; printf "  • RAM: %d MB usati su %d MB (%d%%)\n", u/1024, t/1024, u*100/t; if(u*100/t>85) print "  ! RAM quasi piena"} }' /proc/meminfo 2>/dev/null
   echo "  • i processi piu' pesanti:"
   ps -eo rss,comm --sort=-rss 2>/dev/null | awk 'NR>1 && NR<=6 {printf "      %5.0f MB  %s\n", $1/1024, $2}'
   titolo "Disco"

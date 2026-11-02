@@ -85,7 +85,7 @@ sez "Spazio e memoria"
 libero=$(df -Pk / 2>/dev/null | awk 'NR==2{print $4}')
 gb=$(awk -v k="${libero:-0}" 'BEGIN{printf "%.1f", k/1048576}')
 [ "${libero:-0}" -ge 10485760 ] && ok "spazio libero: $gb GB" || avv "spazio libero: $gb GB (consigliati 10 GB)"
-riga "  RAM: $(awk '/MemTotal/{t=$2} /MemAvailable/{a=$2} END{printf "%d/%d MB usati", (t-a)/1024, t/1024}' /proc/meminfo)"
+riga "  RAM: $(awk '/MemTotal/{t=$2} /MemAvailable/{a=$2} /^(MemFree|Buffers|Cached|SReclaimable):/{l+=$2} END{if(a<=0)a=l; printf "%d/%d MB usati", (t-a)/1024, t/1024}' /proc/meminfo)"
 ls "${SHARED:-/mnt/LinuxRunnerShared}"/RunnerKit-backup/*.tar.gz >/dev/null 2>&1 && ok "esiste almeno un backup" || avv "nessun backup: rk backup"
 
 sez "Risultato"

@@ -56,6 +56,11 @@ for _ in range(120):
         break
 assert not os.path.exists("/tmp/centro-home/.cache/prova/file.bin"), "la cache non e' stata pulita"
 
+app.mostra("prestazioni")
+app.root.update()
+assert set(app.pr_bott) == {"veloce", "bilanciato", "normale"}
+shot(app, "centro-prestazioni")
+
 app.mostra("processi")
 app._aggiorna_processi()
 app.root.update()

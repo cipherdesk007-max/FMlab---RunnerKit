@@ -2,7 +2,7 @@
 # Caricato da ~/.bashrc. Tutto e' scritto in bash puro, leggendo /proc: niente programmi
 # lanciati a ogni prompt, perche' su LinuxRunner ogni processo costa.
 case $- in *i*) ;; *) return ;; esac
-RK_TERM_VERSIONE="1.3.1"
+RK_TERM_VERSIONE="1.3.2"
 [ -r "$HOME/.config/runnerkit/terminale" ] && . "$HOME/.config/runnerkit/terminale"   # RK_FISSO=0/1
 # lingua scelta con "rk italiano"
 if [ -r "$HOME/.config/runnerkit/lingua" ]; then export LANG="$(cat "$HOME/.config/runnerkit/lingua")" LANGUAGE=it:en; fi
@@ -27,10 +27,11 @@ _rk_n() { printf '\033[%sm' "$1"; }
 
 # ---------- funzioni veloci (solo /proc, nessun processo) ----------
 _rk_ram() {  # usati totale percentuale (MB)
-  local k v t=0 a=0
+  local k v t=0 a=-1 lib=0
   while read -r k v _; do
-    case $k in MemTotal:) t=$v ;; MemAvailable:) a=$v ;; esac
+    case $k in MemTotal:) t=$v ;; MemAvailable:) a=$v ;; MemFree:|Buffers:|Cached:|SReclaimable:) lib=$((lib + v)) ;; esac
   done < /proc/meminfo
+  (( a <= 0 )) && a=$lib   # alcuni ambienti (Terminal dell'app) non danno MemAvailable
   echo $(( (t - a) / 1024 )) $(( t / 1024 )) $(( t ? (t - a) * 100 / t : 0 ))
 }
 _rk_barra() {  # $1 percentuale, $2 larghezza
