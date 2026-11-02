@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """TouchPad 2 - mouse + tastiera fluttuante per LinuxRunner.
 Parla direttamente con X11 (XTEST): nessun processo esterno per tocco."""
-__version__ = "2.5.2"
+__version__ = "2.5.3"
 
 import glob
 import json
@@ -609,6 +609,14 @@ class App:
         Se i pallini sono stati nascosti per errore, li rimostro."""
         try:
             if self.mini:
+                if not self.dock or not all(b.winfo_exists() for b, *_ in self.dock):
+                    for b, *_ in self.dock:  # qualche pallino distrutto: ricostruisco la colonna
+                        try:
+                            b.destroy()
+                        except tk.TclError:
+                            pass
+                    self.dock = []
+                    self._show_bubble()
                 for b, *_ in self.dock:
                     if not b.winfo_viewable():
                         b.deiconify()
@@ -700,6 +708,7 @@ class App:
             for sym, act in self.DOCK:
                 b = tk.Toplevel(self.root)
                 b.title("tp-bubble")
+                b.protocol("WM_DELETE_WINDOW", lambda: None)  # nessuno puo' chiudere un pallino
                 b.overrideredirect(True)
                 b.attributes("-topmost", True)
                 cv = tk.Canvas(b, width=S, height=S, highlightthickness=0, bd=0)
@@ -817,8 +826,9 @@ class App:
             wid = int((self._sel.stdout.read() or "0").strip() or 0)
         except ValueError:
             wid = 0
-        mie = {int(w.wm_frame(), 16) for w in [self.root, self.mk] + [b for b, *_ in self.dock]}
-        if not wid or wid in mie:
+        if not wid or self._mia(wid):
+            if wid:
+                self._toast("Quello è TouchPad:\nnon lo chiudo")
             return
         from Xlib.protocol import event
         d = self.x.d
@@ -834,6 +844,32 @@ class App:
         except Exception:
             return
         self.root.after(5000, lambda: self._chiudi_verifica(wid))
+
+    def _mia(self, wid):
+        """True se la finestra appartiene a TouchPad (finestra principale, mirino, pallini, messaggi)."""
+        mie = set()
+        for w in [self.root, self.mk] + [b for b, *_ in self.dock if b.winfo_exists()]:
+            try:
+                mie |= {w.winfo_id(), int(w.wm_frame(), 16)}
+            except tk.TclError:
+                pass
+        if wid in mie:
+            return True
+        d = self.x.d
+        try:
+            w = d.create_resource_object("window", wid)
+            pid = w.get_full_property(d.intern_atom("_NET_WM_PID"), X.AnyPropertyType)
+            if pid and pid.value and pid.value[0] == os.getpid():
+                return True
+            for _ in range(4):  # risale ai contenitori: se uno e' mio, e' mio
+                w = w.query_tree().parent
+                if not w or w.id == d.screen().root.id:
+                    break
+                if w.id in mie:
+                    return True
+        except Exception:
+            return True  # nel dubbio non chiudo
+        return False
 
     def _protetta(self, w):
         """Desktop (icone), barra delle applicazioni, sfondo: non si chiudono mai con ✕."""

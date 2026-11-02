@@ -90,6 +90,15 @@ def main():
     app.toggle_mini()
     app.root.update()
 
+    # ✕ non deve mai chiudere TouchPad stesso (pallini compresi)
+    app.toggle_mini(); app.root.update()
+    for bb, *_ in app.dock:
+        assert app._mia(bb.winfo_id()) and app._mia(int(bb.wm_frame(), 16)), "pallino non riconosciuto come mio"
+    app.dock[0][0].destroy(); app.dock[1][0].destroy()      # simula pallini distrutti
+    app._sempre_sopra(); app.root.update()
+    assert len(app.dock) == 5 and all(bb.winfo_viewable() for bb, *_ in app.dock), "colonna non ricostruita"
+    app.toggle_mini(); app.root.update()
+
     # ✕ non deve mai chiudere desktop o barra
     import tkinter as _tk
     finto = _tk.Toplevel(app.root)

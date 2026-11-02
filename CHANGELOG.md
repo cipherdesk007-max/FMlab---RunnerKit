@@ -3,6 +3,13 @@
 Formato: [versione] - data. Le versioni seguono MAJOR.MINOR.PATCH
 (MAJOR = cambia il modo d'uso, MINOR = funzioni nuove, PATCH = correzioni).
 
+## TouchPad [2.5.3] - 2026-11-02
+### Corretto
+- **✕ chiudeva i pallini di TouchPad** (spariti ⌨ e ✕): ora riconosce tutte le sue finestre
+  (anche quelle interne, tramite PID e contenitori) e risponde "Quello è TouchPad: non lo chiudo".
+- I pallini ignorano qualunque richiesta di chiusura esterna.
+- Se un pallino sparisce lo stesso, la colonna si ricostruisce da sola entro 1,5 s.
+
 ## TouchPad [2.5.2] - 2026-11-02
 ### Corretto
 - **✕ poteva chiudere il desktop o la barra** se si toccava lo sfondo, le icone o la barra in basso.
