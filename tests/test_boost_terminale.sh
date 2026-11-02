@@ -7,10 +7,10 @@ export RB_HOME="$T/home" RB_GIRI=1 RB_SCALA=1
 mkdir -p "$RB_HOME/.mozilla/firefox/abc.default-esr"
 RB="$DIR/runnerboost/runnerboost"
 
-"$RB" | grep -q "Consigli"
+o=$("$RB"); printf '%s\n' "$o" | grep -q "Consigli" || { printf '%s\n' "$o"; exit 1; }
 echo "ok: diagnosi"
-"$RB" --test "prima" | grep -q "TOTALE"
-"$RB" --test "dopo" | grep -q "rispetto a"
+o=$("$RB" --test "prima"); printf '%s\n' "$o" | grep -q "TOTALE" || { echo "FALLITO test prima:"; printf '%s\n' "$o"; exit 1; }
+o=$("$RB" --test "dopo"); printf '%s\n' "$o" | grep -q "rispetto a" || { echo "FALLITO test dopo:"; printf '%s\n' "$o"; exit 1; }
 [ "$(wc -l < "$RB_HOME/.config/runnerboost/storico.csv")" = 3 ]
 echo "ok: test di velocita' + confronto + storico"
 
