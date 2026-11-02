@@ -9,7 +9,7 @@ Tutto quello che serve installare sul Debian di LinuxRunner sta qui, con un coma
 | [UnaVolta](#unavolta) | 1.2.0 | Tocchi ripetuti su un'icona aprono il programma una volta sola; se è già aperto lo porta davanti |
 | [Pulizia](#pulizia) | 1.0.0 | Agente di pulizia del disco: report di cosa occupa spazio, pulizia sicura, automatica a settimana |
 | [RunnerBoost](#runnerboost) | 1.2.0 | Diagnosi della velocità, test ripetibile con storico, profili veloce / bilanciato / normale |
-| [Terminale](#terminale) | 1.3.0 | Prompt a colori con ramo git, esito e durata dei comandi, statistiche, monitor dal vivo, scorciatoie |
+| [Terminale](#terminale) | 1.3.1 | Prompt a colori con ramo git, esito e durata dei comandi, statistiche, monitor dal vivo, scorciatoie |
 | [Collaudo](#collaudo-backup-italiano-appunti) | 1.0.0 | `rk collaudo`: prova tutto sul telefono e salva un report |
 | [Backup](#collaudo-backup-italiano-appunti) | 1.0.0 | `rk backup` / `rk ripristina`: impostazioni e file nella cartella dell'app File |
 | [Italiano](#collaudo-backup-italiano-appunti) | 1.0.0 | `rk italiano`: Linux, programmi e Firefox in italiano |

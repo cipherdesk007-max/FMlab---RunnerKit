@@ -2,7 +2,7 @@
 # Caricato da ~/.bashrc. Tutto e' scritto in bash puro, leggendo /proc: niente programmi
 # lanciati a ogni prompt, perche' su LinuxRunner ogni processo costa.
 case $- in *i*) ;; *) return ;; esac
-RK_TERM_VERSIONE="1.3.0"
+RK_TERM_VERSIONE="1.3.1"
 [ -r "$HOME/.config/runnerkit/terminale" ] && . "$HOME/.config/runnerkit/terminale"   # RK_FISSO=0/1
 # lingua scelta con "rk italiano"
 if [ -r "$HOME/.config/runnerkit/lingua" ]; then export LANG="$(cat "$HOME/.config/runnerkit/lingua")" LANGUAGE=it:en; fi
@@ -122,16 +122,19 @@ _rk_riga1() {
 _rk_barra_mini() { local p=$1 f=$(( $1 * 8 / 100 )) i s=""; for (( i = 0; i < 8; i++ )); do (( i < f )) && s+="▮" || s+="▯"; done; printf '%s' "$s"; }
 _rk_riga2() { printf '\033[2m rk = comandi · rk collaudo · rk backup · rk copia/incolla (appunti iPhone) · rk fisso off\033[0m'; }
 _RK_H=2
+_rk_righe() {  # altezza del terminale (LINES puo' essere vuoto al primo prompt)
+  local r=${LINES:-0}
+  (( r > 0 )) || read -r r _ < <(stty size 2>/dev/null)
+  echo "${r:-0}"
+}
 _rk_fisso() {
-  [[ ${RK_FISSO:-1} == 1 && -t 0 && -t 1 ]] || return 0
-  local rows=${LINES:-0} r c
-  (( rows >= 12 )) || return 0
-  # dove si trova il cursore (se il terminale non risponde, niente barra: nessun danno)
-  IFS='[;' read -s -t 0.3 -d R -p $'\033[6n' _ r c < /dev/tty 2>/dev/null || return 0
-  printf '\0337\033[%d;%dr' $((_RK_H + 1)) "$rows"
-  printf '\033[1;1H\033[2K%s\033[2;1H\033[2K%s' "$(_rk_riga1)" "$(_rk_riga2)"
-  printf '\0338'
-  (( ${r:-99} <= _RK_H )) && printf '\033[%d;1H' $((_RK_H + 1))
+  # Disegna la barra nelle righe 1-2 e fa scorrere i comandi solo dalla riga 3 in giu'.
+  # Non chiede nulla al terminale (alcuni non rispondono): salva e rimette il cursore.
+  [[ ${RK_FISSO:-1} == 1 && -t 1 ]] || return 0
+  local rows; rows=$(_rk_righe)
+  (( rows >= 10 )) || return 0
+  printf '\0337\033[%d;%dr\033[1;1H\033[2K%s\033[2;1H\033[2K%s\0338' \
+    $((_RK_H + 1)) "$rows" "$(_rk_riga1)" "$(_rk_riga2)"
   return 0
 }
 _rk_prompt_tutto() { local e=$?; _rk_fisso; (exit $e); _rk_prompt; }
@@ -219,10 +222,13 @@ EOF
 
 # clear e Ctrl+L puliscono lo schermo ma la schermata RunnerKit resta sempre in alto
 clear() {
-  command clear
-  if [[ ${RK_FISSO:-1} == 1 && -t 1 ]]; then printf '\033[%d;1H' $((_RK_H + 1))   # la barra si ridisegna al prompt
+  command clear 2>/dev/null || printf '\033[H\033[2J'
+  if [[ ${RK_FISSO:-1} == 1 && -t 1 ]]; then
+    _rk_fisso; printf '\033[%d;1H' $((_RK_H + 1))      # barra subito in cima, cursore sotto
   elif [[ ${RK_BANNER:-1} = 1 ]]; then rkinfo; fi
 }
 bind -x '"\C-l": clear' 2>/dev/null
 
-[[ ${RK_BANNER:-1} = 1 ]] && rkinfo
+# all'apertura: barra fissa in cima e statistiche complete sotto
+if [[ ${RK_FISSO:-1} == 1 && -t 1 ]]; then clear; fi
+if [[ ${RK_BANNER:-1} = 1 ]]; then rkinfo; fi

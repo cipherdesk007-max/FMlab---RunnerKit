@@ -3,6 +3,11 @@
 Formato: [versione] - data. Le versioni seguono MAJOR.MINOR.PATCH
 (MAJOR = cambia il modo d'uso, MINOR = funzioni nuove, PATCH = correzioni).
 
+## RunnerKit 2026.11.02-7 - barra fissa corretta
+- **Terminale 1.3.1**: la barra in cima non chiede più la posizione del cursore al terminale (il Terminal
+  dell'app non rispondeva e la barra non compariva); `clear` e Ctrl+L la ridisegnano subito; all'apertura
+  la barra è in cima e le statistiche sotto. Testato in un pseudo-terminale.
+
 ## RunnerKit 2026.11.02-6 - aggiornamento più intelligente
 - **⟳ controlla prima**: se RunnerKit è già aggiornato lo dice ("✔ già aggiornato") senza aprire niente;
   se manca la rete lo dice; solo se c'è una versione nuova apre il terminale e la installa.

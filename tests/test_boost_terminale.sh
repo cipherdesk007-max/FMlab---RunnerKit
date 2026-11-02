@@ -41,5 +41,12 @@ printf "%s\n" "$out" | grep -q "GPU:"
 [ "$(printf "%s\n" "$out" | grep -c "RunnerKit ─")" -ge 2 ] || { echo "dopo clear la schermata non torna"; exit 1; }
 printf "%s\n" "$out" | grep -q "versioni installate"
 echo "ok: terminale (banner con GPU, prompt, comandi)"
+# barra fissa in un terminale vero (pseudo-tty con script): dopo clear deve ricomparire in cima
+if command -v script >/dev/null; then
+  tty_out=$(HOME="$T/home" LINES=30 COLUMNS=100 script -qec "bash --norc -i -c \". '$DIR/terminale/terminale.sh'; clear; echo FINE\"" /dev/null 2>&1 || true)
+  printf '%s' "$tty_out" | grep -q "3;30r" || { echo "barra fissa: area di scorrimento non impostata"; exit 1; }
+  [ "$(printf '%s' "$tty_out" | grep -o "RunnerKit " | wc -l)" -ge 2 ] || { echo "barra fissa non ridisegnata dopo clear"; exit 1; }
+  echo "ok: barra fissa resta dopo clear (pseudo-terminale)"
+fi
 rm -rf "$T" /tmp/runnerboost-dati
 echo "OK runnerboost + terminale"
