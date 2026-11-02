@@ -189,6 +189,7 @@ rk() {  # comando unico di RunnerKit: rk, rk aggiorna, rk versioni, rk gpu, ...
     top) rktop ;;
     gpu) runnerboost --gpu ;;
     boost) runnerboost ;;
+    riposo) runnerboost --riposo "${2:-20}" ;;
     pulizia) pulizia ;;
     pulisci) pulizia --sicura ;;
     log) unavolta --log; echo; tail -20 ~/.touchpad.log 2>/dev/null ;;
@@ -213,6 +214,7 @@ rk() {  # comando unico di RunnerKit: rk, rk aggiorna, rk versioni, rk gpu, ...
       cat <<'EOF'
   rk info · rk top     statistiche · monitor dal vivo
   rk gpu · rk boost    prova GPU · diagnosi velocita'
+  rk riposo            quanto lavora (e scalda) il telefono quando non fai niente, e chi
   rk pulizia           report del disco · rk pulisci = pulizia sicura
   rk log               ultimi avvii (UnaVolta) e errori di TouchPad
   rk aggiorna          aggiorna RunnerKit (e ricarica il terminale)

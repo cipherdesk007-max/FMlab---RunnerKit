@@ -58,7 +58,7 @@ Scrivi `rk` in un terminale per vedere tutti i comandi, e `rk versioni` per sape
 | **Mouse** | Trascini sul riquadro per muovere il mirino rosso: tocco = clic sinistro, pressione lunga = clic destro. Tasti Sx, Dx, doppio clic, scroll, Trascina, Dx fisso, centra il mirino, velocità |
 | **Tastiera** | Segue la lingua di Linux: italiana (à è ì ò ù) se Linux è in italiano, altrimenti USA. ⇧ e ⇪, Ctrl e Alt per il tasto successivo, ⌫ e frecce che si ripetono tenendo premuto. Nei simboli (`?123`) anche **Esc, Tab, ← →** per il terminale. I tasti funzione hanno un colore a parte, Invio è evidenziato e ogni tasto si illumina quando lo tocchi |
 | **Tasti** | Esc, Tab, frecce, Home/Fine, PgSu/PgGiù, F1–F12, Copia/Incolla (anche da terminale), Alt+Tab, Alt+F4, **→ iPhone** e **Incolla iPhone** |
-| **⚙** | Tema, dimensione, opacità, velocità, Auto-riduci, avvio col desktop, copia automatica verso l'iPhone. In fondo **⟳ Aggiorna**, **ℹ Info** (riepilogo in un quadro a parte) e **⏻ Esci** (chiude TouchPad del tutto) |
+| **⚙** | Tema, dimensione, opacità, velocità, Auto-riduci, avvio col desktop, copia automatica verso l'iPhone. In fondo **⟳ Aggiorna**, **ℹ Info** (riepilogo in un quadro a parte) e **✕ Esci** (chiude TouchPad del tutto) |
 
 **Colonna di pallini.** Con **×**, o da solo dopo 1 minuto che non lo usi, TouchPad diventa una colonna sul lato:
 
@@ -114,12 +114,25 @@ Non tocca **mai** i file personali (Desktop, documenti, Shared, progetti).
 | `runnerboost --gpu` | Prova la GPU: fotogrammi al secondo e **% di disegni fatti su Metal** (dalle statistiche di LinuxRunner) |
 | `runnerboost --gpu-stats` | Per ogni programma: FPS, disegni su Metal e in software |
 | `runnerboost --test "etichetta"` | Test ripetibile (Python, avvio programmi, compressione, sha256, ordinamento), con confronto e storico |
-| `runnerboost --profilo veloce \| bilanciato \| normale` | Meno animazioni e un Firefox più leggero; normale rimette tutto com'era |
+| `runnerboost --riposo` (`rk riposo`) | **Consumo a riposo**: quanto lavora il processore quando non fai niente e quali programmi ne sono la causa. È ciò che scalda il telefono e consuma batteria |
+| `runnerboost --profilo veloce \| bilanciato \| normale` | Meno animazioni e un Firefox più leggero (30 fotogrammi al secondo, cache in RAM invece che sulla memoria flash, niente funzioni superflue); normale rimette tutto com'era |
 
 **Come usa la GPU LinuxRunner 1.1.0**, letto dal suo codice: i programmi aperti dal desktop disegnano l'OpenGL
 sul chip grafico dell'iPhone tramite una libreria che LinuxRunner carica nei processi
 (`LR_GUI_GPU_ACTIVE=mesa-metal-resident`, dispositivo `/dev/linuxrunner-gpu`). I browser restano in software
 per scelta di LinuxRunner. Primo risultato su 15 Pro Max: **glxgears a 68,7 FPS** a 960×540 con Metal.
+
+**Velocità senza sciupare il telefono.** Dal codice e dalla documentazione di LinuxRunner (`docs/PERFORMANCE.md`,
+`kernel/resource.c`):
+- Linux non può cambiare le priorità (`nice` non è supportato): tutti i processi valgono uguale. Quindi
+  l'unico modo per avere più velocità e meno calore è **far lavorare meno quello che gira in sottofondo**.
+- Lo schermo è disegnato dal processore: con la trasparenza accesa ogni aggiornamento viene ricomposto
+  (la prova GPU scende da ~68 a ~33 FPS). Per questo **TouchPad spegne la trasparenza quando è ridotto a
+  pallini** e la riaccende solo se lo riapri non opaco.
+- Il JIT secondo i loro test rende Python ~1,7 volte più veloce nei calcoli lunghi, ma rallenta l'avvio dei
+  programmi brevi: utile solo per lavori pesanti.
+- Il telefono quasi pieno rallenta tutto l'iPhone: la diagnosi lo segnala per primo.
+- iOS non passa a Linux la temperatura: il calore si controlla dal lavoro, con `rk riposo`.
 
 ## Terminale
 

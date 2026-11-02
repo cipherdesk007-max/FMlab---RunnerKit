@@ -8,8 +8,9 @@
 #   runnerboost --profilo normale   rimette tutto come prima
 #   runnerboost --gpu               prova la GPU: renderer attivo e fotogrammi al secondo (Metal vs software)
 #   runnerboost --gpu-stats         quanti disegni ogni programma ha fatto su Metal e quanti in software
+#   runnerboost --riposo [secondi]  consumo a riposo: quanto lavora il telefono quando non fai niente, e chi
 #   runnerboost --report            diagnosi + ultimo test in un file da mandare (cartella Shared)
-VERSIONE="1.2.0"
+VERSIONE="1.3.0"
 H="${RB_HOME:-$HOME}"
 CONF="$H/.config/runnerboost"
 STORICO="$CONF/storico.csv"
@@ -45,7 +46,10 @@ diagnosi() {
     ris=$(xdpyinfo 2>/dev/null | awk '/dimensions:/{print $2; exit}')
     [ -n "$ris" ] && info "risoluzione del desktop: $ris"
   fi
-  if pgrep -x xcompmgr >/dev/null 2>&1; then info "trasparenza (compositing) accesa: costa un po' di CPU"; else info "trasparenza spenta"; fi
+  if pgrep -x xcompmgr >/dev/null 2>&1; then
+    info "trasparenza (compositing) accesa: ogni aggiornamento dello schermo viene ricomposto dal processore"
+    info "  (TouchPad la spegne da solo quando e' ridotto a pallini; misura con: runnerboost --gpu)"
+  else info "trasparenza spenta: nessun lavoro extra per lo schermo"; fi
   titolo "Memoria"
   awk '/MemTotal/{t=$2} /MemAvailable/{a=$2} /^(MemFree|Buffers|Cached|SReclaimable):/{l+=$2} END{ if(a<=0) a=l; if(t){u=t-a; printf "  • RAM: %d MB usati su %d MB (%d%%)\n", u/1024, t/1024, u*100/t; if(u*100/t>85) print "  ! RAM quasi piena"} }' /proc/meminfo 2>/dev/null
   echo "  • i processi piu' pesanti:"
@@ -54,7 +58,10 @@ diagnosi() {
   libero=$(df -Pk / 2>/dev/null | awk 'NR==2{print $4}')
   if [ -n "$libero" ]; then
     gb=$(awk -v k="$libero" 'BEGIN{printf "%.1f", k/1048576}')
-    if [ "$libero" -lt 10485760 ]; then no "spazio libero: $gb GB (consigliati almeno 10 GB)"; CONSIGLI="$CONSIGLI|Spazio: lancia 'pulizia' e libera spazio anche sull'iPhone (foto/video)"
+    if [ "$libero" -lt 10485760 ]; then
+      no "spazio libero: $gb GB (consigliati almeno 10 GB)"
+      info "  questo e' lo spazio dell'iPhone: quasi pieno rallenta tutto il telefono e consuma di piu' la memoria flash"
+      CONSIGLI="|Spazio iPhone ($gb GB liberi): togli le distribuzioni che non usi in LinuxRunner (es. Alpine), foto/video vecchi, poi 'pulizia --sicura'$CONSIGLI"
     else ok "spazio libero: $gb GB"; fi
   fi
   titolo "Avvio"
@@ -66,7 +73,13 @@ diagnosi() {
   titolo "Consigli, in ordine di effetto"
   if [ -z "$CONSIGLI" ]; then ok "niente da migliorare: misura con runnerboost --test"
   else echo "$CONSIGLI" | tr '|' '\n' | sed '/^$/d' | awk '{printf "  %d. %s\n", NR, $0}'; fi
-  [ -n "${JIT_OFF:-}" ] && echo "  Facoltativo: JIT (Settings > Advanced > Execution Engine + StikDebug) per calcoli pesanti; sperimentale."
+  if [ -n "${JIT_OFF:-}" ]; then
+    echo "  Facoltativo: JIT (Settings > Advanced > Execution Engine + StikDebug) per calcoli pesanti; sperimentale."
+    echo "  Dati degli sviluppatori di LinuxRunner (docs/PERFORMANCE.md): con JIT Python fa i calcoli ~1,7x piu' veloce,"
+    echo "  ma i programmi brevi partono piu' lenti (avvio Python 198 ms invece di 171). Utile solo per lavori lunghi."
+  fi
+  echo "  Nota: su LinuxRunner 'nice' e le priorita' non esistono (tutti i processi hanno la stessa): l'unico modo"
+  echo "  per avere piu' velocita' e meno calore e' far lavorare meno i programmi in sottofondo -> runnerboost --riposo"
   echo
   echo "  Dopo ogni modifica: runnerboost --test \"cosa ho cambiato\"  (confronto automatico)"
 }
@@ -113,6 +126,7 @@ prova_gpu() {
     r=$(glxinfo -B 2>/dev/null | grep -m1 'OpenGL renderer' | cut -d: -f2-)
     info "renderer OpenGL visto dai programmi:${r:- non rilevato}"
   fi
+  pgrep -x xcompmgr >/dev/null 2>&1 && info "trasparenza accesa: il risultato sara' piu' basso (ogni fotogramma viene ricomposto dal processore). Per la misura vera: TouchPad ridotto a pallini o profilo veloce"
   if command -v glxgears >/dev/null 2>&1; then
     echo "  Misuro i fotogrammi al secondo per circa 12 secondi (si apre una finestra con gli ingranaggi)..."
     fps=$(timeout 12 glxgears 2>&1 | awk '/frames in/ {f=$(NF-1)} END{print f}')
@@ -174,7 +188,7 @@ for i in range($n): s+=i*i'")
   tot=$((py + av + gz + sh2 + so))
   printf '  %s%-26s %6s ms%s\n' "$(c 1)" "TOTALE" "$tot" "$(c 0)"
   [ -f "$STORICO" ] || echo "data;etichetta;python;avvio;gzip;sha256;sort;totale" > "$STORICO"
-  prec=$(tail -n +2 "$STORICO" | grep -v ";GPU " | tail -1)   # salta le righe della prova GPU
+  prec=$(tail -n +2 "$STORICO" | grep -v ";GPU \|;RIPOSO " | tail -1)   # salta le righe della prova GPU e del consumo a riposo
   echo "$(date '+%Y-%m-%d %H:%M');$etichetta;$py;$av;$gz;$sh2;$so;$tot" >> "$STORICO"
   if [ -n "$prec" ]; then
     pt=$(echo "$prec" | cut -d';' -f8); pe=$(echo "$prec" | cut -d';' -f2)
@@ -210,7 +224,13 @@ user_pref("general.smoothScroll", false);
 user_pref("toolkit.cosmeticAnimations.enabled", false);
 user_pref("browser.sessionstore.interval", 60000);
 user_pref("browser.tabs.unloadOnLowMemory", true);
-user_pref("media.autoplay.default", 5);'
+user_pref("media.autoplay.default", 5);
+user_pref("layout.frame_rate", 30);
+user_pref("browser.cache.disk.enable", false);
+user_pref("browser.cache.memory.enable", true);
+user_pref("extensions.pocket.enabled", false);
+user_pref("reader.parse-on-load.enabled", false);
+user_pref("browser.newtabpage.activity-stream.feeds.section.topstories", false);'
 
 profilo() {
   case "$1" in
@@ -235,6 +255,45 @@ profilo() {
   echo "  Riavvia il desktop (Stop Desktop -> Open Desktop) e misura: runnerboost --test \"profilo $1\""
 }
 
+# ---------------- consumo a riposo ----------------
+# Il telefono scalda e consuma per il lavoro che i programmi Linux fanno anche quando non tocchi niente.
+# Si misura dal processore (/proc/stat) e da ogni processo (/proc/PID/stat), senza programmi esterni.
+_cpu_tot() { awk '/^cpu /{b=$2+$3+$4+$7+$8; i=$5+$6; print b, b+i}' /proc/stat; }
+_proc_ticks() {
+  for d in /proc/[0-9]*; do
+    [ -r "$d/stat" ] || continue
+    read -r line < "$d/stat" 2>/dev/null || continue
+    nome=${line#*(}; nome=${nome%%)*}; resto=${line##*) }
+    set -- $resto
+    echo "${d#/proc/} $(( ${12:-0} + ${13:-0} )) $nome"
+  done
+}
+riposo() {
+  sec="${1:-20}"
+  printf '%sRunnerBoost — consumo a riposo%s  (%s s: non toccare niente)\n' "$(c '1;35')" "$(c 0)" "$sec"
+  t0=$(_cpu_tot); p0=$(_proc_ticks)
+  sleep "$sec"
+  t1=$(_cpu_tot); p1=$(_proc_ticks)
+  set -- $t0 $t1
+  occ=$(( $3 - $1 )); tot=$(( $4 - $2 )); [ "$tot" -gt 0 ] || tot=1
+  pct=$(( occ * 100 / tot ))
+  if [ "$pct" -le 10 ]; then ok "processore occupato a riposo: $pct% (ottimo: il telefono resta fresco)"
+  elif [ "$pct" -le 30 ]; then info "processore occupato a riposo: $pct% (accettabile)"
+  else no "processore occupato a riposo: $pct% (troppo: scalda e consuma batteria anche senza fare niente)"; fi
+  echo "  Chi lavora di piu' mentre non fai niente:"
+  printf '%s\n' "$p0" > "$CONF/.r0"; printf '%s\n' "$p1" | awk -v tot="$tot" -v f="$CONF/.r0" '
+    BEGIN{ while ((getline l < f) > 0) { split(l, a, " "); prima[a[1]] = a[2] } }
+    { d = $2 - prima[$1]; if ($1 in prima && d > 0) { n = $3; for (i = 4; i <= NF; i++) n = n " " $i; s[n] += d } }
+    END{ for (n in s) printf "%d %s\n", s[n], n }' | sort -rn | head -8 |
+    awk -v tot="$tot" '{d=$1; $1=""; printf "    %5.1f%%  %s\n", d*100/tot, substr($0,2)}'
+  rm -f "$CONF/.r0"
+  [ -f "$STORICO" ] || echo "data;etichetta;python;avvio;gzip;sha256;sort;totale" > "$STORICO"
+  echo "$(date '+%Y-%m-%d %H:%M');RIPOSO ${sec}s;;;;;;cpu=$pct%" >> "$STORICO"
+  echo "  (salvato nello storico: runnerboost --storico)"
+  echo "  Consigli: chiudi i programmi in cima alla lista se non li usi; riduci TouchPad a pallini;"
+  echo "  il profilo 'veloce' toglie trasparenza e animazioni; Firefox con molte schede lavora sempre."
+}
+
 dove() { for d in /mnt/LinuxRunnerShared "$H/Shared"; do [ -d "$d" ] && [ -w "$d" ] && { echo "$d"; return; }; done; echo "$H"; }
 
 case "$1" in
@@ -242,6 +301,7 @@ case "$1" in
   --test) shift; test_velocita "$*" ;;
   --storico) column -t -s';' "$STORICO" 2>/dev/null || cat "$STORICO" 2>/dev/null || echo "nessun test ancora: runnerboost --test" ;;
   --profilo) profilo "$2" ;;
+  --riposo) riposo "${2:-20}" ;;
   --gpu) prova_gpu ;;
   --gpu-stats) printf '%sRunnerBoost — statistiche GPU per programma%s\n' "$(c '1;35')" "$(c 0)"; gpu_stats 20 ;;
   --report)

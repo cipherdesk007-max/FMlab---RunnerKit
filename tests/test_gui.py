@@ -144,7 +144,7 @@ def main():
 
     # × riduce a pallini (non chiude); il riepilogo sta nel quadro Info a parte
     app.show("⚙"); app.root.update()
-    assert "⏻ Esci" in app.cfg_btn and "ℹ Info" in app.cfg_btn, "mancano Info/Esci in ⚙"
+    assert "✕ Esci" in app.cfg_btn and "ℹ Info" in app.cfg_btn, "mancano Info/Esci in ⚙"
     shot(app, "impostazioni")
     app.info_quadro(); app.root.update()
     assert app._quadro is not None and "TouchPad" in app._quadro_lbl.cget("text"), "quadro Info non aperto"

@@ -50,7 +50,7 @@ Type `rk` in a terminal for all commands, `rk versioni` for installed versions.
 
 | Bubble | Tap |
 |---|---|
-| ⌨ | Reopen TouchPad where it was (TouchPad's own × also shrinks it to the dock; ⚙ → ⏻ Esci quits) |
+| ⌨ | Reopen TouchPad where it was (TouchPad's own × also shrinks it to the dock; ⚙ → ✕ Esci quits) |
 | ✕ | Tap a window to close it; tap ✕ again to force-close a frozen one. Desktop, panel and TouchPad are protected |
 | ♻ | Open the Center on **Cleaning** |
 | ⚡ | Open the Center on **System** |
@@ -64,6 +64,12 @@ into their processes (`LR_GUI_GPU_ACTIVE=mesa-metal-resident`, device `/dev/linu
 on software rendering by LinuxRunner's choice. `runnerboost --gpu` reports FPS and the share of draws done
 on Metal. First result on a 15 Pro Max: **glxgears at 68.7 FPS** at 960×540.
 
+**Speed without wearing out the phone.** From LinuxRunner's own docs and source: Linux priorities (`nice`) are
+not supported, so the only way to gain speed and lose heat is less background work. The screen is drawn by the
+CPU, so compositing re-renders every update (glxgears drops from ~68 to ~33 FPS); TouchPad therefore turns
+transparency off while it is minimized. JIT gives ~1.7× on long Python computations but slows short programs.
+iOS does not expose temperature to Linux, so heat is tracked through work with `rk riposo`.
+
 ### Useful commands
 
 | Command | What it does |
@@ -73,6 +79,7 @@ on Metal. First result on a 15 Pro Max: **glxgears at 68.7 FPS** at 960×540.
 | `rk backup` / `rk ripristina` | Back up / restore settings, desktop, scripts, SSH config and the package list (keeps 5, safety copy before restore). Private SSH keys are left out because the Files-app folder is visible to other apps (`RKB_CHIAVI=1 rk backup` to include them) |
 | `pulizia --sicura` | Clean only what regenerates itself: apt cache, caches of closed apps (a running Firefox keeps its cache), trash, old logs, temp files older than 3 days (never those of running programs) |
 | `runnerboost` | Diagnosis with recommendations ordered by impact |
+| `rk riposo` | Idle consumption: how busy the CPU is while you do nothing, and which programs cause it (heat and battery) |
 | `rk copia TEXT` · `cmd \| rk copia` · `rk incolla` | iPhone clipboard via LinuxRunner's `/dev/clipboard` |
 | `rk italiano` / `rk italiano off` | Italian locale for Debian, programs (via UnaVolta), terminal and Firefox |
 | `rk disinstalla [--tutto]` | Uninstall RunnerKit and undo its changes (icons, autostart, terminal, UnaVolta, profile, locale). `--tutto` also removes settings; backups stay |

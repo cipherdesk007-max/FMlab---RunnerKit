@@ -352,7 +352,8 @@ class App:
             fr = tk.Frame(parent, bg=self.T("bg"))
             fr.pack(fill="x", pady=(3, 0))
             for k in row:
-                b = self.btn(fr, "spazio" if k == "␣" else k, w=2 if k != "␣" else None)
+                b = self.btn(fr, "spazio" if k == "␣" else k,
+                             w=None if k == "␣" else 4 if len(k) >= 4 else 3 if len(k) == 3 else 2)
                 b.pack(side="left", expand=True, fill="x", padx=1,
                        ipadx=40 if k == "␣" else 0)
                 b.bind("<ButtonPress-1>", lambda e, k=k, b=b: (self._lampo(b), self.kpress(k)))
@@ -463,7 +464,7 @@ class App:
                  ("No", lambda: self.set_autostart(False))],
                 [("Copia → iPhone auto", None), ("On", lambda: self.set_appunti(True)),
                  ("Off", lambda: self.set_appunti(False))],
-                [("⟳ Aggiorna", self.aggiorna), ("ℹ Info", self.info_quadro), ("⏻ Esci", self.quit)]]
+                [("⟳ Aggiorna", self.aggiorna), ("ℹ Info", self.info_quadro), ("✕ Esci", self.quit)]]
         b = self.cfg_btn = self.grid_rows(f, rows)
         b[self.cfg["theme"]].config(bg=self.T("acc"))
         b["Dim " + self.cfg["size"]].config(bg=self.T("acc"))
@@ -649,6 +650,8 @@ class App:
 
     def _alpha(self, d=0):
         a = self.cfg["alpha"] = max(0.3, min(1.0, round(self.cfg["alpha"] + d, 2)))
+        if d < 0 and not self.mini:
+            self._comp_riprendi()
         for w in (self.root, self.mk, *[b for b, *_ in getattr(self, "dock", [])]):
             if w is None:
                 continue
@@ -661,6 +664,27 @@ class App:
                      else "opacità non disponibile qui")
             self.save()
         self._cfg_refresh()
+
+    # ---------- trasparenza solo quando serve ----------
+    # Su LinuxRunner lo schermo e' disegnato dal processore: con xcompmgr acceso ogni aggiornamento di
+    # qualsiasi finestra viene ricomposto (la prova GPU scende da ~68 a ~33 fotogrammi al secondo).
+    # La trasparenza serve solo a TouchPad aperto e non opaco: ridotto a pallini la spengo, riaprendolo la riaccendo.
+    def _comp_pausa(self):
+        if not self.cfg.get("comp_auto", True) or not self.trasp:
+            return
+        if subprocess.run(["pgrep", "-x", "xcompmgr"], stdout=subprocess.DEVNULL).returncode == 0:
+            subprocess.run(["pkill", "-x", "xcompmgr"], stderr=subprocess.DEVNULL)
+            self._comp_spento = True
+
+    def _comp_riprendi(self):
+        if not getattr(self, "_comp_spento", False) or self.cfg["alpha"] >= 0.99:
+            return   # opaco: la trasparenza non serve, resta spenta
+        if os.path.exists(os.path.expanduser("~/.config/runnerboost/no-compositing")) or not shutil.which("xcompmgr"):
+            return
+        subprocess.Popen(["xcompmgr"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                         start_new_session=True)
+        self._comp_spento = False
+        self.root.after(700, self._alpha)
 
     def _check_comp(self, first=False):
         """La trasparenza funziona solo con un compositing manager.
@@ -713,7 +737,8 @@ class App:
                 self.mk.lift()
         except tk.TclError:
             pass
-        self.root.after(1500, self._sempre_sopra)
+        # ridotto a pallini: controllo meno spesso (ogni risveglio costa processore sul telefono)
+        self.root.after(2500 if self.mini else 1500, self._sempre_sopra)
 
     def _errore(self, tipo, valore, tb):
         """Un errore in un pulsante non deve far sparire niente: lo scrivo nel log e vado avanti."""
@@ -844,7 +869,7 @@ class App:
                         f.write(t)
         except OSError:
             pass
-        self.root.after(1500, self._appunti_loop)
+        self.root.after(2500 if self.mini else 1500, self._appunti_loop)
 
     def set_appunti(self, on):
         self.cfg["appunti"] = on
@@ -940,9 +965,11 @@ class App:
             self.root.withdraw()
             self.mk.withdraw()
             self._show_bubble()
+            self._comp_pausa()
         else:
             for b, *_ in self.dock:
                 b.withdraw()
+            self._comp_riprendi()
             self.root.deiconify()
             self.root.geometry(self.cfg.get("geo", ""))
             self.root.attributes("-topmost", True)

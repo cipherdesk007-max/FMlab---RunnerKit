@@ -49,4 +49,7 @@ if command -v script >/dev/null; then
   echo "ok: barra fissa resta dopo clear (pseudo-terminale)"
 fi
 rm -rf "$T" /tmp/runnerboost-dati
+out=$(RB_HOME=$(mktemp -d) sh "$DIR/runnerboost/runnerboost" --riposo 1)
+printf '%s\n' "$out" | grep -q "processore occupato a riposo" || { echo "riposo: misura mancante"; printf '%s\n' "$out"; exit 1; }
+echo "ok: consumo a riposo"
 echo "OK runnerboost + terminale"

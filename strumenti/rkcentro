@@ -3,7 +3,7 @@
    rkcentro [sistema|pulizia|processi]
 Legge tutto da /proc e os.statvfs (niente programmi lanciati per misurare), aggiorna solo la
 scheda visibile, e per la pulizia usa lo strumento `pulizia` (solo categorie sicure)."""
-__version__ = "1.1.1"
+__version__ = "1.2.0"
 
 import json
 import os
@@ -225,6 +225,9 @@ class Centro:
     # ---------- ciclo di aggiornamento: solo la scheda visibile ----------
     def _ciclo(self):
         try:
+            if self.root.state() in ("iconic", "withdrawn"):   # ridotto: niente lavoro inutile
+                self.root.after(5000, self._ciclo)
+                return
             if self.attiva == "sistema":
                 self._aggiorna_sistema()
             elif self.attiva == "processi":
@@ -475,6 +478,7 @@ class Centro:
                 ("Test velocità", lambda: self._terminale("runnerboost --test \"dal Centro\"")),
                 ("Prova GPU", lambda: self._terminale("runnerboost --gpu")),
                 ("Diagnosi e consigli", lambda: self._terminale("runnerboost")),
+                ("Consumo a riposo", self._riposo),
                 ("Pulizia rapida", lambda: (self.mostra("pulizia"), self.pulizia_rapida())))
         for i, (t, c) in enumerate(voci):
             self._btn(azioni, t, c).grid(row=i // 3, column=i % 3, sticky="ew", padx=3, pady=3)
@@ -484,6 +488,11 @@ class Centro:
                                 justify="left", anchor="w")
         self.pr_info.pack(fill="x", pady=(8, 0))
         self._info_prestazioni()
+
+    def _riposo(self):
+        """Misura quanto lavora il telefono a riposo: il Centro si riduce, cosi' non entra nella misura."""
+        self._terminale("runnerboost --riposo 20")
+        self.root.after(800, self.root.iconify)
 
     def _colora_profili(self):
         p = self._prof_attuale()

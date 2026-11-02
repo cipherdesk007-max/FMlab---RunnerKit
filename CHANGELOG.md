@@ -3,9 +3,22 @@
 Formato: [versione] - data. Le versioni seguono MAJOR.MINOR.PATCH
 (MAJOR = cambia il modo d'uso, MINOR = funzioni nuove, PATCH = correzioni).
 
+## FMlab - RunnerKit 2026.11.02-15 - velocità senza sciupare il telefono
+Studiato sul codice e sui dati degli sviluppatori di LinuxRunner (docs/PERFORMANCE.md, kernel/resource.c):
+- **Trasparenza solo quando serve**: TouchPad spegne il compositing quando è ridotto a pallini (la prova GPU
+  sul telefono passava da ~68 a ~33 FPS con la trasparenza accesa) e lo riaccende solo se lo riapri non opaco.
+- **Nuovo `rk riposo`** (anche nel Centro → Prestazioni → Consumo a riposo): misura quanto lavora il processore
+  quando non fai niente e chi ne è la causa; il risultato va nello storico per i confronti prima/dopo.
+- Meno risvegli in sottofondo: TouchPad ridotto controlla ogni 2,5 s invece di 1,5; il Centro ridotto a icona si ferma.
+- Profilo veloce/bilanciato: Firefox a 30 fotogrammi al secondo, cache in RAM invece che sulla memoria flash
+  (meno scritture = meno usura), niente Pocket e notizie nella nuova scheda.
+- Diagnosi: spazio dell'iPhone quasi pieno come primo consiglio, dati reali sul JIT, spiegazione del perché
+  `nice` non funziona su LinuxRunner; la prova GPU avvisa se la trasparenza abbassa il risultato.
+- TouchPad: tasti larghi come "?123" non più tagliati; "Esci" con un simbolo che tutti i font hanno.
+
 ## FMlab - RunnerKit 2026.11.02-14 - TouchPad 3.0
 - **×** di TouchPad non chiude più tutto: lo riduce alla colonna di pallini, come gli altri strumenti.
-  Il tasto **—** non serve più ed è stato tolto. Per chiudere TouchPad del tutto: ⚙ → **⏻ Esci**.
+  Il tasto **—** non serve più ed è stato tolto. Per chiudere TouchPad del tutto: ⚙ → **✕ Esci**.
 - Pagina ⚙ compatta: il riepilogo (opacità, velocità, GPU, versioni...) è nel quadro **ℹ Info**, che si apre
   accanto a TouchPad solo quando lo chiedi e si chiude da solo dopo 30 secondi.
 - Tastiera: tasti funzione con un colore a parte, Invio evidenziato, ogni tasto si illumina al tocco,
