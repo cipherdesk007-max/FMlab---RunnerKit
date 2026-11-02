@@ -63,6 +63,11 @@ def main():
         app.root.update()
     assert not app.mini, "la seconda istanza non ha riaperto"
 
+    app.set_autostart(True)
+    assert os.path.exists(touchpad.AUTOSTART), "avvio automatico non creato"
+    app.set_autostart(False)
+    assert not os.path.exists(touchpad.AUTOSTART), "avvio automatico non rimosso"
+
     app.set_autohide(10)
     app.last_touch -= 60
     app._autohide_loop()

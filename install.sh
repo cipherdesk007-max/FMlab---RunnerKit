@@ -28,6 +28,21 @@ Type=Application
 Categories=Utility;
 EOF
 
+# avvio automatico con il desktop (si spegne da TouchPad: impostazioni -> Avvio col desktop -> No)
+if [ "${RUNNERKIT_NO_AUTOSTART:-0}" != "1" ]; then
+  mkdir -p "$HOME/.config/autostart"
+  cat > "$HOME/.config/autostart/touchpad.desktop" <<'EOF'
+[Desktop Entry]
+Type=Application
+Name=TouchPad
+Comment=Avvia TouchPad con il desktop (RunnerKit)
+Exec=sh -c "sleep 3; pgrep -x xcompmgr >/dev/null || xcompmgr & exec touchpad"
+X-GNOME-Autostart-enabled=true
+X-XFCE-Autostart-Override=true
+Hidden=false
+EOF
+fi
+
 # icona anche sul desktop (stessa cartella di Firefox ESR / Tastiera)
 for D in "$HOME/Desktop" "$HOME/Scrivania"; do
   if [ -d "$D" ]; then
@@ -39,4 +54,5 @@ done
 V=$(grep -m1 '__version__' /usr/local/bin/touchpad | cut -d'"' -f2)
 echo ">> TouchPad v$V installato."
 echo "   Aprilo: icona sul desktop, Applications -> TouchPad, oppure scrivi 'touchpad' (anche dal Terminal dell'app)"
+echo "   Si apre da solo a ogni avvio del desktop (disattivabile nelle impostazioni)."
 echo "   Per aggiornare in futuro: rilancia lo stesso comando curl."

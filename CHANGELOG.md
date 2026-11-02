@@ -3,6 +3,11 @@
 Formato: [versione] - data. Le versioni seguono MAJOR.MINOR.PATCH
 (MAJOR = cambia il modo d'uso, MINOR = funzioni nuove, PATCH = correzioni).
 
+## [2.4.0] - 2026-11-02
+### Nuovo
+- **Si apre da solo** quando avvii il desktop (file standard `~/.config/autostart/touchpad.desktop`,
+  creato dall'installatore). Interruttore in **⚙ → Avvio col desktop: Sì / No**.
+
 ## [2.3.0] - 2026-11-02
 ### Nuovo
 - **Pallino intelligente:** "—" e Auto-riduci riducono TouchPad a un pallino rotondo nell'angolo

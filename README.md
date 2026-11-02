@@ -5,7 +5,7 @@ Tutto quello che serve installare sul Debian di LinuxRunner sta qui, con un coma
 
 | Strumento | Versione | A cosa serve |
 |---|---|---|
-| [TouchPad](#touchpad) | 2.3.0 | Mouse, tasto destro e tastiera italiana touch, fluttuanti sul desktop |
+| [TouchPad](#touchpad) | 2.4.0 | Mouse, tasto destro e tastiera italiana touch, fluttuanti sul desktop |
 | *prossimi strumenti* | | |
 
 > Pensato per i limiti di LinuxRunner: niente kernel né compositing, CPU emulata.
@@ -39,6 +39,9 @@ Poi aprilo dall'**icona sul desktop**, da **Applications → TouchPad** oppure s
 
 Barra in alto: **⠿** sposta la finestra · **—** riduce · **×** chiude.
 La finestra resta sempre dentro lo schermo.
+
+**Avvio automatico:** dopo l'installazione TouchPad si apre da solo ogni volta che avvii il desktop.
+Si spegne/riaccende da **⚙ → Avvio col desktop**.
 
 **Pallino:** **—** (o Auto-riduci) trasforma TouchPad in un pallino rotondo nell'angolo.
 Toccalo e torna esattamente dov'era, sulla stessa pagina. Trascinalo e si aggancia al bordo più vicino.

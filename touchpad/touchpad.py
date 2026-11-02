@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """TouchPad 2 - mouse + tastiera fluttuante per LinuxRunner.
 Parla direttamente con X11 (XTEST): nessun processo esterno per tocco."""
-__version__ = "2.3.0"
+__version__ = "2.4.0"
 
 import glob
 import json
@@ -64,6 +64,16 @@ from Xlib import X, XK, display  # noqa: E402
 from Xlib.ext import xtest  # noqa: E402
 
 CFG = os.path.expanduser("~/.config/touchpad.json")
+AUTOSTART = os.path.expanduser("~/.config/autostart/touchpad.desktop")
+AUTOSTART_TXT = """[Desktop Entry]
+Type=Application
+Name=TouchPad
+Comment=Avvia TouchPad con il desktop (RunnerKit)
+Exec=sh -c "sleep 3; pgrep -x xcompmgr >/dev/null || xcompmgr & exec touchpad"
+X-GNOME-Autostart-enabled=true
+X-XFCE-Autostart-Override=true
+Hidden=false
+"""
 THEMES = {
     "scuro": dict(bg="#1b1f27", key="#2a303c", fg="#e6e6e6", acc="#3b82f6", dim="#7c8696"),
     "blu": dict(bg="#0f1b2d", key="#1d3557", fg="#f1faee", acc="#e63946", dim="#8da9c4"),
@@ -403,12 +413,14 @@ class App:
                  ("Mirino ◎", self.center)],
                 [("Auto-riduci", None)] +
                 [(lab, lambda v=v: self.set_autohide(v))
-                 for lab, v in (("Off", 0), ("10 s", 10), ("30 s", 30))]]
+                 for lab, v in (("Off", 0), ("10 s", 10), ("30 s", 30))],
+                [("Avvio col desktop", None), ("Sì", lambda: self.set_autostart(True)),
+                 ("No", lambda: self.set_autostart(False))]]
         b = self.cfg_btn = self.grid_rows(f, rows)
         b[self.cfg["theme"]].config(bg=self.T("acc"))
         b["Dim " + self.cfg["size"]].config(bg=self.T("acc"))
-        b["Auto-riduci"].config(bg=self.T("bg"), state="disabled",
-                                disabledforeground=self.T("fg"))
+        for k in ("Auto-riduci", "Avvio col desktop"):
+            b[k].config(bg=self.T("bg"), state="disabled", disabledforeground=self.T("fg"))
         if self.trasp is False:
             for k in ("Opacità −", "Opacità +"):
                 b[k].config(state="disabled", disabledforeground=self.T("dim"))
@@ -427,6 +439,9 @@ class App:
             return
         for lab, v in (("Off", 0), ("10 s", 10), ("30 s", 30)):
             b[lab].config(bg=self.T("acc") if self.cfg["autohide"] == v else self.T("key"))
+        auto = os.path.exists(AUTOSTART)
+        b["Sì"].config(bg=self.T("acc") if auto else self.T("key"))
+        b["No"].config(bg=self.T("key") if auto else self.T("acc"))
         if self.trasp:
             t = f"Opacità: {int(self.cfg['alpha'] * 100)}%"
         elif self.trasp is None:
@@ -436,6 +451,7 @@ class App:
         ah = self.cfg["autohide"]
         self.cfg_info.config(text=f"{t}\nVelocità mirino: {self.cfg['speed']}\n"
                                   f"Auto-riduci: {'spento' if not ah else f'dopo {ah} s'}\n"
+                                  f"Avvio col desktop: {'sì' if auto else 'no'}\n"
                                   f"Tema: {self.cfg['theme']} · Dimensione: {self.cfg['size']}")
 
     # ---------- mirino e touchpad ----------
@@ -559,6 +575,19 @@ class App:
         else:
             self.trasp = False
         self._alpha()
+
+    def set_autostart(self, on):
+        try:
+            if on:
+                os.makedirs(os.path.dirname(AUTOSTART), exist_ok=True)
+                with open(AUTOSTART, "w") as f:
+                    f.write(AUTOSTART_TXT)
+            elif os.path.exists(AUTOSTART):
+                os.remove(AUTOSTART)
+            self.say("si apre da solo all'avvio" if on else "avvio automatico spento")
+        except OSError as ex:
+            self.say(f"errore: {ex}")
+        self._cfg_refresh()
 
     def _touched(self, e=None):
         self.last_touch = time.time()
