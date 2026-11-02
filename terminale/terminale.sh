@@ -2,7 +2,7 @@
 # Caricato da ~/.bashrc. Tutto e' scritto in bash puro, leggendo /proc: niente programmi
 # lanciati a ogni prompt, perche' su LinuxRunner ogni processo costa.
 case $- in *i*) ;; *) return ;; esac
-RK_TERM_VERSIONE="1.0.0"
+RK_TERM_VERSIONE="1.1.0"
 
 # ---------- storia comandi ----------
 HISTSIZE=20000; HISTFILESIZE=40000
@@ -62,7 +62,12 @@ rkinfo() {
   printf '  RAM    %s  %s/%s MB\n' "$(_rk_barra "$pct")" "$used" "$total"
   [[ -n $dp ]] && printf '  Disco  %s  %s/%s GB\n' "$(_rk_barra "${dp%\%}")" "$du" "$dt"
   printf '  Acceso da %s · carico %s · processi %s\n' "$(_rk_uptime)" "${load:-?}" "${procs#*/}"
-  [[ -n $jit ]] && printf '  JIT: %s\n' "$jit"
+  local gpu="software"
+  case ${LR_GUI_GPU_ACTIVE:-} in mesa-metal-resident) gpu="Metal (GPU del telefono)";; mesa-metal-verify) gpu="Metal (verifica)";; esac
+  [[ -z ${LR_GUI_GPU_ACTIVE:-} && -c /dev/linuxrunner-gpu ]] && gpu="Metal disponibile"
+  printf '  GPU: %s' "$gpu"
+  [[ -n $jit ]] && printf ' · JIT: %s' "${jit##*: }"
+  echo
   printf '  %sComandi RunnerKit: rk%s\n' "$(_rk_n 2)" "$(_rk_n 0)"
 }
 

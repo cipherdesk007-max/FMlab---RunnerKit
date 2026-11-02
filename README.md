@@ -5,11 +5,11 @@ Tutto quello che serve installare sul Debian di LinuxRunner sta qui, con un coma
 
 | Strumento | Versione | A cosa serve |
 |---|---|---|
-| [TouchPad](#touchpad) | 2.5.3 | Mouse, tasto destro e tastiera italiana touch, fluttuanti sul desktop |
+| [TouchPad](#touchpad) | 2.6.0 | Mouse, tasto destro e tastiera italiana touch, fluttuanti sul desktop |
 | [UnaVolta](#unavolta) | 1.1.0 | Tocchi ripetuti su un'icona aprono il programma una volta sola; se è già aperto lo porta davanti |
 | [Pulizia](#pulizia) | 1.0.0 | Agente di pulizia del disco: report di cosa occupa spazio, pulizia sicura, automatica a settimana |
-| [RunnerBoost](#runnerboost) | 1.0.0 | Diagnosi della velocità, test ripetibile con storico, profili veloce / bilanciato / normale |
-| [Terminale](#terminale) | 1.0.0 | Prompt a colori con ramo git, esito e durata dei comandi, statistiche, monitor dal vivo, scorciatoie |
+| [RunnerBoost](#runnerboost) | 1.1.0 | Diagnosi della velocità, test ripetibile con storico, profili veloce / bilanciato / normale |
+| [Terminale](#terminale) | 1.1.0 | Prompt a colori con ramo git, esito e durata dei comandi, statistiche, monitor dal vivo, scorciatoie |
 | *prossimi strumenti* | | |
 
 > Pensato per i limiti di LinuxRunner: niente kernel né compositing, CPU emulata.
@@ -108,10 +108,17 @@ il telefono non si rompe, ma i numeri peggiorano).
 | `runnerboost` | Diagnosi: JIT, GPU o rendering software, compositing, RAM, disco, programmi all'avvio. Chiude con i **consigli in ordine di effetto** |
 | `runnerboost --test "etichetta"` | Test ripetibile (calcolo Python, avvio programmi, compressione, sha256, ordinamento; 3 giri, mediana). Confronta col test precedente |
 | `runnerboost --storico` | Tutti i test fatti |
+| `runnerboost --gpu` | Prova la GPU: stato reale (Metal o software), renderer OpenGL e fotogrammi al secondo con glxgears. Da lanciare dal terminale del desktop |
 | `runnerboost --profilo veloce` | Niente trasparenza, niente animazioni GTK, Firefox più leggero |
 | `runnerboost --profilo bilanciato` | Come veloce ma tiene la trasparenza |
 | `runnerboost --profilo normale` | Rimette tutto com'era |
 | `runnerboost --report` | Diagnosi + storico in un file nella cartella Shared, da mandare |
+
+**Come usa la GPU LinuxRunner 1.1.0** (letto dal suo codice): i programmi aperti dal desktop
+disegnano l'OpenGL sul chip grafico dell'iPhone tramite una libreria che LinuxRunner carica nei
+processi (`LR_GUI_GPU_ACTIVE=mesa-metal-resident`, dispositivo `/dev/linuxrunner-gpu`).
+I browser restano sempre in software per scelta di LinuxRunner. RunnerBoost, Terminale e TouchPad
+leggono questi valori reali.
 
 Le modifiche più grosse sono nell'app LinuxRunner, non in Linux: **aggiornare alla 1.1.0 (build 900)**,
 **Graphics → Metal**, e (sperimentale) **JIT con StikDebug**. La diagnosi te lo segnala.

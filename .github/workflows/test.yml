@@ -16,7 +16,7 @@ jobs:
       - name: Dipendenze
         run: |
           sudo apt-get update
-          sudo apt-get install -y xvfb python3-tk python3-xlib imagemagick fonts-dejavu-core
+          sudo apt-get install -y xvfb python3-tk python3-xlib imagemagick fonts-dejavu-core mesa-utils x11-utils
       - name: Sintassi
         run: |
           /usr/bin/python3 -m py_compile touchpad/touchpad.py
@@ -27,6 +27,8 @@ jobs:
           bash -n terminale/terminale.sh
       - name: Test RunnerBoost + Terminale
         run: sh tests/test_boost_terminale.sh
+      - name: Prova GPU (software in CI)
+        run: xvfb-run -a -s "-screen 0 1280x720x24" sh -c 'RB_HOME=$(mktemp -d) runnerboost/runnerboost --gpu' 
       - name: Test Pulizia
         run: sh tests/test_pulizia.sh
       - name: Test UnaVolta

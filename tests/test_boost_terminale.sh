@@ -8,7 +8,9 @@ mkdir -p "$RB_HOME/.mozilla/firefox/abc.default-esr"
 RB="$DIR/runnerboost/runnerboost"
 
 o=$("$RB"); printf '%s\n' "$o" | grep -q "Consigli" || { printf '%s\n' "$o"; exit 1; }
-echo "ok: diagnosi"
+printf '%s\n' "$o" | grep -q "Grafica (GPU del telefono)" || { echo "manca sezione GPU"; exit 1; }
+LR_GUI_GPU_ACTIVE=mesa-metal-resident "$RB" | grep -q "disegnano sulla GPU" || { echo "stato GPU non letto"; exit 1; }
+echo "ok: diagnosi (con stato GPU)"
 o=$("$RB" --test "prima"); printf '%s\n' "$o" | grep -q "TOTALE" || { echo "FALLITO test prima:"; printf '%s\n' "$o"; exit 1; }
 o=$("$RB" --test "dopo"); printf '%s\n' "$o" | grep -q "rispetto a" || { echo "FALLITO test dopo:"; printf '%s\n' "$o"; exit 1; }
 [ "$(wc -l < "$RB_HOME/.config/runnerboost/storico.csv")" = 3 ]
@@ -33,6 +35,7 @@ printf "%s\n" "$out" | grep -q "RunnerKit"
 printf "%s\n" "$out" | grep -q "RAM"
 printf "%s\n" "$out" | grep -q "PS1=.*❯"
 printf "%s\n" "$out" | grep -q "RKTOP"
-echo "ok: terminale (banner, prompt, comandi)"
+printf "%s\n" "$out" | grep -q "GPU:"
+echo "ok: terminale (banner con GPU, prompt, comandi)"
 rm -rf "$T" /tmp/runnerboost-dati
 echo "OK runnerboost + terminale"

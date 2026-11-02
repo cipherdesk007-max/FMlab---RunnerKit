@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """TouchPad 2 - mouse + tastiera fluttuante per LinuxRunner.
 Parla direttamente con X11 (XTEST): nessun processo esterno per tocco."""
-__version__ = "2.5.3"
+__version__ = "2.6.0"
 
 import glob
 import json
@@ -443,6 +443,15 @@ class App:
         self.cfg_info.pack(fill="x", pady=(6, 2), padx=4)
         self._cfg_refresh()
 
+    @staticmethod
+    def _gpu_testo():
+        g = os.environ.get("LR_GUI_GPU_ACTIVE", "")
+        if g == "mesa-metal-resident":
+            return "Metal (telefono)"
+        if os.path.exists("/dev/linuxrunner-gpu"):
+            return "Metal disponibile"
+        return "software"
+
     def _cfg_refresh(self):
         b = getattr(self, "cfg_btn", None)
         try:
@@ -465,7 +474,8 @@ class App:
         self.cfg_info.config(text=f"{t}\nVelocità mirino: {self.cfg['speed']}\n"
                                   f"Auto-riduci: {'spento' if not ah else f'dopo {ah} s senza tocchi'}\n"
                                   f"Avvio col desktop: {'sì' if auto else 'no'}\n"
-                                  f"Tema: {self.cfg['theme']} · Dimensione: {self.cfg['size']}")
+                                  f"Tema: {self.cfg['theme']} · Dimensione: {self.cfg['size']}\n"
+                                  f"GPU: {self._gpu_testo()} · Schermo: {self.sw}×{self.sh}")
 
     # ---------- mirino e touchpad ----------
     def _marker(self):

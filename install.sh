@@ -9,8 +9,8 @@ SUDO=""
 
 echo "== RunnerKit =="
 echo ">> Pacchetti (python3-tk, python3-xlib, xcompmgr)..."
-$SUDO apt-get install -y python3-tk python3-xlib xcompmgr xdotool shared-mime-info desktop-file-utils bash-completion mesa-utils >/dev/null 2>&1 || {
-  $SUDO apt-get update && $SUDO apt-get install -y python3-tk python3-xlib xcompmgr xdotool shared-mime-info desktop-file-utils bash-completion mesa-utils; }
+$SUDO apt-get install -y python3-tk python3-xlib xcompmgr xdotool shared-mime-info desktop-file-utils bash-completion mesa-utils x11-utils >/dev/null 2>&1 || {
+  $SUDO apt-get update && $SUDO apt-get install -y python3-tk python3-xlib xcompmgr xdotool shared-mime-info desktop-file-utils bash-completion mesa-utils x11-utils; }
 
 echo ">> Scarico TouchPad..."
 curl -fsSL "$REPO/touchpad/touchpad.py" -o /tmp/touchpad.py

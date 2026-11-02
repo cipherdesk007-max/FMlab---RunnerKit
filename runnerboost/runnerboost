@@ -6,8 +6,9 @@
 #   runnerboost --profilo veloce    meno lavoro inutile = piu' veloce e meno calore
 #   runnerboost --profilo bilanciato  come veloce ma tiene la trasparenza (compositing)
 #   runnerboost --profilo normale   rimette tutto come prima
+#   runnerboost --gpu               prova la GPU: renderer attivo e fotogrammi al secondo (Metal vs software)
 #   runnerboost --report            diagnosi + ultimo test in un file da mandare (cartella Shared)
-VERSIONE="1.0.0"
+VERSIONE="1.1.0"
 H="${RB_HOME:-$HOME}"
 CONF="$H/.config/runnerboost"
 STORICO="$CONF/storico.csv"
@@ -29,24 +30,21 @@ diagnosi() {
   info "core visti da Linux: $(nproc 2>/dev/null || echo ?)"
   if [ -r /proc/ish/jit ]; then
     j=$(grep -m1 -i 'mode' /proc/ish/jit 2>/dev/null)
-    case "$j" in *JIT*|*jit*) case "$j" in *off*|*gadget*) no "JIT spento ($j)"; CONSIGLI="$CONSIGLI|JIT: Settings > Advanced > Developer Mode > Execution Engine > Attach with StikDebug (sperimentale)";; *) ok "JIT attivo ($j)";; esac;;
-      *) info "JIT: $j";; esac
-  else
-    no "JIT non disponibile in questa versione di LinuxRunner (serve la 1.1.0, build 900)"
-    CONSIGLI="$CONSIGLI|Aggiorna LinuxRunner alla 1.1.0 (build 900): GPU Metal completa + JIT"
-  fi
-  titolo "Grafica"
-  if command -v glxinfo >/dev/null 2>&1 && [ -n "$DISPLAY" ]; then
-    r=$(glxinfo -B 2>/dev/null | grep -m1 'OpenGL renderer' | cut -d: -f2-)
-    case "$r" in
-      *llvmpipe*|*softpipe*|*Software*) no "rendering software:$r"; CONSIGLI="$CONSIGLI|GPU: LinuxRunner Settings > Graphics > Renderer > Metal, poi chiudi e riapri l'app";;
-      "") info "renderer non rilevato";;
-      *) ok "GPU:$r";;
+    case "$j" in
+      *off*|*gadget*|"") info "JIT spento: va bene per l'uso normale (facoltativo, vedi sotto)"; JIT_OFF=1;;
+      *) ok "JIT attivo ($j)";;
     esac
   else
-    info "renderer: installa 'mesa-utils' e lancia dal desktop per vederlo"
+    no "JIT non disponibile: LinuxRunner e' una versione vecchia (serve 1.1.0, build 900)"
+    CONSIGLI="$CONSIGLI|Aggiorna LinuxRunner alla 1.1.0 (build 900): GPU Metal + JIT"
   fi
-  if pgrep -x xcompmgr >/dev/null 2>&1; then info "compositing (trasparenza) ACCESO: costa un po' di CPU"; else info "compositing spento"; fi
+  titolo "Grafica (GPU del telefono)"
+  gpu_stato
+  if [ -n "$DISPLAY" ] && command -v xdpyinfo >/dev/null 2>&1; then
+    ris=$(xdpyinfo 2>/dev/null | awk '/dimensions:/{print $2; exit}')
+    [ -n "$ris" ] && info "risoluzione del desktop: $ris"
+  fi
+  if pgrep -x xcompmgr >/dev/null 2>&1; then info "trasparenza (compositing) accesa: costa un po' di CPU"; else info "trasparenza spenta"; fi
   titolo "Memoria"
   awk '/MemTotal/{t=$2} /MemAvailable/{a=$2} END{ if(t){u=t-a; printf "  • RAM: %d MB usati su %d MB (%d%%)\n", u/1024, t/1024, u*100/t; if(u*100/t>85) print "  ! RAM quasi piena"} }' /proc/meminfo 2>/dev/null
   echo "  • i processi piu' pesanti:"
@@ -67,8 +65,55 @@ diagnosi() {
   titolo "Consigli, in ordine di effetto"
   if [ -z "$CONSIGLI" ]; then ok "niente da migliorare: misura con runnerboost --test"
   else echo "$CONSIGLI" | tr '|' '\n' | sed '/^$/d' | awk '{printf "  %d. %s\n", NR, $0}'; fi
+  [ -n "${JIT_OFF:-}" ] && echo "  Facoltativo: JIT (Settings > Advanced > Execution Engine + StikDebug) per calcoli pesanti; sperimentale."
   echo
   echo "  Dopo ogni modifica: runnerboost --test \"cosa ho cambiato\"  (confronto automatico)"
+}
+
+
+# ---------------- GPU: legge lo stato vero dal desktop di LinuxRunner ----------------
+# LinuxRunner 1.1.0 instrada l'OpenGL dei programmi sulla GPU (Metal) caricando una sua
+# libreria nei processi del desktop: lo stato e' nella variabile LR_GUI_GPU_ACTIVE e nel
+# dispositivo /dev/linuxrunner-gpu. I browser restano sempre in software (scelta di LinuxRunner).
+gpu_stato() {
+  if [ -c /dev/linuxrunner-gpu ]; then ok "dispositivo GPU Metal presente (/dev/linuxrunner-gpu)"
+  else no "dispositivo GPU Metal assente"; CONSIGLI="$CONSIGLI|GPU: LinuxRunner Settings > Graphics > Renderer: GPU-Resident Metal, poi chiudi e riapri l'app"; fi
+  [ -c /dev/dri/card1 ] && ok "GPU virtuale virgl presente (Settings > Graphics > GPU: Metal GPU)"
+  case "${LR_GUI_GPU_ACTIVE:-}" in
+    mesa-metal-resident) ok "i programmi di questo desktop disegnano sulla GPU (Metal, resident)";;
+    mesa-metal-verify) info "GPU in modalita' verifica (lenta, solo per diagnosi)";;
+    mesa) info "i programmi di questo desktop disegnano in software";;
+    "") if [ -z "$DISPLAY" ]; then info "stato GPU dei programmi: lancia dal terminale del DESKTOP (pallino >_) per vederlo"
+        else info "stato GPU dei programmi non indicato da LinuxRunner"; fi;;
+  esac
+  if [ -n "${LR_MESA_METAL_STATS_DIR:-}" ] && [ -d "$LR_MESA_METAL_STATS_DIR" ]; then
+    n=$(ls "$LR_MESA_METAL_STATS_DIR" 2>/dev/null | wc -l)
+    info "statistiche GPU: $n programmi registrati in $LR_MESA_METAL_STATS_DIR"
+  fi
+}
+
+prova_gpu() {
+  printf '%sRunnerBoost — prova GPU%s\n' "$(c '1;35')" "$(c 0)"
+  [ -n "$DISPLAY" ] || { echo "  Lancia dal terminale del desktop (pallino >_), non dal Terminal dell'app."; return 1; }
+  gpu_stato
+  if command -v glxinfo >/dev/null 2>&1; then
+    r=$(glxinfo -B 2>/dev/null | grep -m1 'OpenGL renderer' | cut -d: -f2-)
+    info "renderer OpenGL visto dai programmi:${r:- non rilevato}"
+  fi
+  if command -v glxgears >/dev/null 2>&1; then
+    echo "  Misuro i fotogrammi al secondo per circa 12 secondi (si apre una finestra con gli ingranaggi)..."
+    fps=$(timeout 12 glxgears 2>&1 | awk '/frames in/ {f=$(NF-1)} END{print f}')
+    if [ -n "$fps" ]; then
+      printf '  %s→ %s fotogrammi al secondo%s\n' "$(c 1)" "$fps" "$(c 0)"
+      [ -f "$STORICO" ] || echo "data;etichetta;python;avvio;gzip;sha256;sort;totale" > "$STORICO"
+      echo "$(date '+%Y-%m-%d %H:%M');GPU glxgears ${LR_GUI_GPU_ACTIVE:-?};;;;;;fps=$fps" >> "$STORICO"
+      echo "  Confronta: prova con Graphics > Renderer su Software e poi su Metal (riavvio dell'app in mezzo)."
+    else
+      echo "  glxgears non ha prodotto misure."
+    fi
+  else
+    echo "  Per la misura dei fotogrammi installa: apt install mesa-utils"
+  fi
 }
 
 # ---------------- test di velocita' ----------------
@@ -167,6 +212,7 @@ case "$1" in
   --test) shift; test_velocita "$*" ;;
   --storico) column -t -s';' "$STORICO" 2>/dev/null || cat "$STORICO" 2>/dev/null || echo "nessun test ancora: runnerboost --test" ;;
   --profilo) profilo "$2" ;;
+  --gpu) prova_gpu ;;
   --report)
     out="$(dove)/runnerboost-report-$(date +%Y%m%d-%H%M).txt"
     { diagnosi; echo; echo "--- STORICO TEST ---"; cat "$STORICO" 2>/dev/null; } | sed 's/\x1b\[[0-9;]*m//g' > "$out"

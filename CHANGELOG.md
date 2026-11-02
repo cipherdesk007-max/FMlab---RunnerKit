@@ -3,6 +3,15 @@
 Formato: [versione] - data. Le versioni seguono MAJOR.MINOR.PATCH
 (MAJOR = cambia il modo d'uso, MINOR = funzioni nuove, PATCH = correzioni).
 
+## RunnerKit - aggiornamento GPU 2026-11-02 (LinuxRunner 1.1.0)
+Studiato il codice di LinuxRunner 1.1.0 (gpu-env.sh, desktop-env.sh) per leggere lo stato vero della GPU.
+- **RunnerBoost 1.1.0**: sezione "Grafica (GPU del telefono)" con dispositivo Metal, GPU virgl e stato
+  reale dei programmi del desktop; risoluzione del desktop; nuovo `runnerboost --gpu` (renderer +
+  fotogrammi al secondo con glxgears, salvati nello storico); il JIT diventa un consiglio facoltativo.
+- **Terminale 1.1.0**: riga "GPU: Metal / software · JIT" nella schermata iniziale.
+- **TouchPad 2.6.0**: in ⚙ mostra GPU e risoluzione dello schermo.
+- Installatore: aggiunge x11-utils (risoluzione). CI: prova `--gpu` in software.
+
 ## TouchPad [2.5.3] - 2026-11-02
 ### Corretto
 - **✕ chiudeva i pallini di TouchPad** (spariti ⌨ e ✕): ora riconosce tutte le sue finestre
