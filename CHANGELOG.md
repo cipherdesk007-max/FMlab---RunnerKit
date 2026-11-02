@@ -3,6 +3,10 @@
 Formato: [versione] - data. Le versioni seguono MAJOR.MINOR.PATCH
 (MAJOR = cambia il modo d'uso, MINOR = funzioni nuove, PATCH = correzioni).
 
+## [2.0.1] - 2026-11-02
+### Corretto
+- Tastiera: ultima riga con tasti "ù" e "-" troppo stretti, ora tutti i tasti hanno larghezza minima uguale.
+
 ## [2.0.0] - 2026-11-02
 ### Nuovo
 - Tastiera completa italiana: lettere accentate (à è ì ò ù é), pagina simboli (?123),

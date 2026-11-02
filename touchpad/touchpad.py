@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """TouchPad 2 - mouse + tastiera fluttuante per LinuxRunner.
 Parla direttamente con X11 (XTEST): nessun processo esterno per tocco."""
-__version__ = "2.0.0"
+__version__ = "2.0.1"
 
 import json
 import os
@@ -233,9 +233,9 @@ class App:
             fr = tk.Frame(parent, bg=self.T("bg"))
             fr.pack(fill="x", pady=(3, 0))
             for k in row:
-                b = self.btn(fr, k)
+                b = self.btn(fr, k, w=2 if k != "␣" else None)
                 b.pack(side="left", expand=True, fill="x", padx=1,
-                       ipadx=50 if k == "␣" else 0)
+                       ipadx=40 if k == "␣" else 0)
                 b.bind("<ButtonPress-1>", lambda e, k=k: self.kpress(k))
                 b.bind("<ButtonRelease-1>", lambda e: self._stop_rep())
                 out.append((k, b))
