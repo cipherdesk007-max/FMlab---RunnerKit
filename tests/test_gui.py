@@ -142,6 +142,26 @@ def main():
     shot(app, "pallino-aggiornamento")
     app.toggle_mini(); app.root.update()
 
+    # × riduce a pallini (non chiude); il riepilogo sta nel quadro Info a parte
+    app.show("⚙"); app.root.update()
+    assert "⏻ Esci" in app.cfg_btn and "ℹ Info" in app.cfg_btn, "mancano Info/Esci in ⚙"
+    shot(app, "impostazioni")
+    app.info_quadro(); app.root.update()
+    assert app._quadro is not None and "TouchPad" in app._quadro_lbl.cget("text"), "quadro Info non aperto"
+    shot(app, "impostazioni-info")
+    app.info_quadro(); app.root.update()
+    assert app._quadro is None, "il quadro Info non si chiude col secondo tocco"
+    app.toggle_mini(); app.root.update()
+    assert app.mini and app.root.state() == "withdrawn", "× deve ridurre a pallini"
+    app.toggle_mini(); app.root.update()
+    # tastiera: Esc/Tab/frecce nel livello simboli
+    app.show("Tastiera"); app.set_layer("sym"); app.root.update()
+    tasti = [k for k, _ in app.layers["sym"][1]]
+    assert all(t in tasti for t in ("Esc", "Tab", "←", "→")), f"tasti mancanti: {tasti}"
+    app.kpress("←"); app._stop_rep(); app.kpress("Esc")
+    shot(app, "tastiera-simboli")
+    app.set_layer("abc")
+
     app.set_autohide(10)
     app.last_touch -= 60
     app._autohide_loop()

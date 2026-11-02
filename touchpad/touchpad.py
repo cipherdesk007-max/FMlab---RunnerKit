@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """TouchPad 2 - mouse + tastiera fluttuante per LinuxRunner.
 Parla direttamente con X11 (XTEST): nessun processo esterno per tocco."""
-__version__ = "2.9.1"
+__version__ = "3.0.0"
 
 import glob
 import json
@@ -83,22 +83,22 @@ X-XFCE-Autostart-Override=true
 Hidden=false
 """
 THEMES = {
-    "scuro": dict(bg="#1b1f27", key="#2a303c", fg="#e6e6e6", acc="#3b82f6", dim="#7c8696"),
-    "blu": dict(bg="#0f1b2d", key="#1d3557", fg="#f1faee", acc="#e63946", dim="#8da9c4"),
-    "chiaro": dict(bg="#e9edf2", key="#ffffff", fg="#1b1f27", acc="#2563eb", dim="#6b7280"),
-    "verde": dict(bg="#0d1f17", key="#163828", fg="#d8f3dc", acc="#40c057", dim="#74a98a"),
+    "scuro": dict(bg="#1b1f27", key="#2a303c", mod="#20252f", fg="#e6e6e6", acc="#3b82f6", dim="#7c8696"),
+    "blu": dict(bg="#0f1b2d", key="#1d3557", mod="#152742", fg="#f1faee", acc="#e63946", dim="#8da9c4"),
+    "chiaro": dict(bg="#e9edf2", key="#ffffff", mod="#d3d9e1", fg="#1b1f27", acc="#2563eb", dim="#6b7280"),
+    "verde": dict(bg="#0d1f17", key="#163828", mod="#10291d", fg="#d8f3dc", acc="#40c057", dim="#74a98a"),
 }
 SIZES = {"S": (9, 3, 220, 110), "M": (11, 6, 270, 140), "L": (14, 9, 340, 180)}
 
 ABC = [list("1234567890'"), list("qwertyuiopè"), list("asdfghjklòà"),
        ["⇧"] + list("zxcvbnm,.") + ["⌫"], ["?123", "Ctrl", "Alt", "␣", "ù", "-", "⏎"]]
 SYM = [list('!"£$%&/()=?'), list("@#[]{}<>|\\^"), list("*+~_;:€°éì`"),
-       ["⇧"] + list("ç§«»¿¡ñ,.") + ["⌫"], ["abc", "Ctrl", "Alt", "␣", "ù", "-", "⏎"]]
+       ["⇧"] + list("ç§«»¿-ñ,.") + ["⌫"], ["abc", "Esc", "Tab", "␣", "←", "→", "⏎"]]
 # tastiera secondo la lingua di Linux: italiano -> layout italiano, altre lingue -> layout USA
 ABC_US = [list("1234567890-"), list("qwertyuiop'"), list("asdfghjkl;="),
           ["⇧"] + list("zxcvbnm,.") + ["⌫"], ["?123", "Ctrl", "Alt", "␣", "/", "-", "⏎"]]
 SYM_US = [list("!@#$%^&*()_"), list('[]{}<>|\\"+'), list("`~:;€£°§±×÷"),
-          ["⇧"] + list("¿¡ñçßé,.") + ["⌫"], ["abc", "Ctrl", "Alt", "␣", "?", "-", "⏎"]]
+          ["⇧"] + list("?¿ñçßé,.") + ["⌫"], ["abc", "Esc", "Tab", "␣", "←", "→", "⏎"]]
 _LINGUA = (os.environ.get("LANGUAGE") or os.environ.get("LC_ALL") or os.environ.get("LANG") or "it")
 try:
     _LINGUA = open(os.path.expanduser("~/.config/runnerkit/lingua")).read().strip() or _LINGUA
@@ -107,7 +107,9 @@ except OSError:
 _l = _LINGUA.lower()
 if not (_l.startswith("it") or _l in ("", "c", "c.utf-8", "c.utf8", "posix")):
     ABC, SYM = ABC_US, SYM_US
-SPECIAL = {"⌫": "BackSpace", "⏎": "Return", "␣": "space"}
+SPECIAL = {"⌫": "BackSpace", "⏎": "Return", "␣": "space", "Esc": "Escape", "Tab": "Tab",
+           "←": "Left", "→": "Right"}
+MODKEYS = {"⇧", "⌫", "⏎", "?123", "abc", "Ctrl", "Alt", "Esc", "Tab", "←", "→"}  # tasti funzione: colore a parte
 REPEAT = {"⌫", "←", "→", "↑", "↓", "␣"}
 
 
@@ -263,8 +265,8 @@ class App:
             b = self.btn(bar, name, lambda n=name: self.show(n), bg=self.T("bg"))
             b.pack(side="left", padx=1)
             self.tabs[name] = b
-        for t, f in (("×", self.quit), ("—", self.toggle_mini)):
-            self.btn(bar, t, f, bg=self.T("bg"), w=2).pack(side="right", padx=1)
+        # × riduce TouchPad alla colonna di pallini (come gli altri strumenti); per uscire davvero: ⚙ → Esci
+        self.btn(bar, "×", self.toggle_mini, bg=self.T("bg"), w=2).pack(side="right", padx=1)
         self.holder = tk.Frame(self.root, bg=self.T("bg"))
         self.holder.pack(fill="both", padx=5, pady=(0, 5))
         self.status = tk.Label(self.root, text="", bg=self.T("bg"), fg=self.T("dim"),
@@ -350,13 +352,18 @@ class App:
             fr = tk.Frame(parent, bg=self.T("bg"))
             fr.pack(fill="x", pady=(3, 0))
             for k in row:
-                b = self.btn(fr, k, w=2 if k != "␣" else None)
+                b = self.btn(fr, "spazio" if k == "␣" else k, w=2 if k != "␣" else None)
                 b.pack(side="left", expand=True, fill="x", padx=1,
                        ipadx=40 if k == "␣" else 0)
-                b.bind("<ButtonPress-1>", lambda e, k=k: self.kpress(k))
+                b.bind("<ButtonPress-1>", lambda e, k=k, b=b: (self._lampo(b), self.kpress(k)))
                 b.bind("<ButtonRelease-1>", lambda e: self._stop_rep())
                 out.append((k, b))
         return out
+
+    def _lampo(self, b):
+        """Sul telefono non si sente il tasto: si accende per un attimo."""
+        b.config(bg=self.T("acc"))
+        self.root.after(110, self.refresh_keys)
 
     def set_layer(self, name):
         if self.layer:
@@ -373,7 +380,8 @@ class App:
                 b.config(text=k.upper() if self.shift else k)
             on = (k == "⇧" and self.shift) or (k == "Ctrl" and self.ctrl) or \
                  (k == "Alt" and self.alt)
-            b.config(bg=self.T("acc") if on else self.T("key"))
+            normale = self.T("acc") if k == "⏎" else self.T("mod") if k in MODKEYS else self.T("key")
+            b.config(bg=self.T("acc") if on else normale)
         lock = self.layers[self.layer][1]
         for k, b in lock:
             if k == "⇧":
@@ -455,7 +463,7 @@ class App:
                  ("No", lambda: self.set_autostart(False))],
                 [("Copia → iPhone auto", None), ("On", lambda: self.set_appunti(True)),
                  ("Off", lambda: self.set_appunti(False))],
-                [("⟳ Aggiorna RunnerKit", self.aggiorna)]]
+                [("⟳ Aggiorna", self.aggiorna), ("ℹ Info", self.info_quadro), ("⏻ Esci", self.quit)]]
         b = self.cfg_btn = self.grid_rows(f, rows)
         b[self.cfg["theme"]].config(bg=self.T("acc"))
         b["Dim " + self.cfg["size"]].config(bg=self.T("acc"))
@@ -464,11 +472,57 @@ class App:
         if self.trasp is False:
             for k in ("Opacità −", "Opacità +"):
                 b[k].config(state="disabled", disabledforeground=self.T("dim"))
-        self.cfg_info = tk.Label(f, text="", bg=self.T("bg"), fg=self.T("fg"),
-                                 justify="left", anchor="w",
-                                 font=("DejaVu Sans", max(9, self.font - 1)))
-        self.cfg_info.pack(fill="x", pady=(6, 2), padx=4)
+        self.cfg_info = None   # il riepilogo sta nel quadro "ℹ Info", non in questa pagina
         self._cfg_refresh()
+
+    def _info_testo(self):
+        if self.trasp:
+            t = f"Opacità: {int(self.cfg['alpha'] * 100)}%"
+        elif self.trasp is None:
+            t = "Opacità: verifica in corso..."
+        else:
+            t = "Opacità: non disponibile (manca il compositing)"
+        ah = self.cfg["autohide"]
+        auto = os.path.exists(AUTOSTART)
+        return (f"{t}\nVelocità mirino: {self.cfg['speed']}\n"
+                f"Auto-riduci: {'spento' if not ah else f'dopo {ah} s senza tocchi'}\n"
+                f"Avvio col desktop: {'sì' if auto else 'no'}\n"
+                f"Copia → iPhone: {'accesa' if self.cfg['appunti'] else 'spenta'}\n"
+                f"Tema: {self.cfg['theme']} · Dimensione: {self.cfg['size']}\n"
+                f"GPU: {self._gpu_testo()} · Schermo: {self.sw}×{self.sh}\n"
+                f"TouchPad {__version__} · RunnerKit {self._versione_locale() or '?'}")
+
+    def info_quadro(self):
+        """Riepilogo in un quadro a parte: si apre solo quando serve, la pagina ⚙ resta compatta."""
+        q = getattr(self, "_quadro", None)
+        if q is not None:
+            try:
+                q.destroy()
+            except tk.TclError:
+                pass
+            self._quadro = None
+            return
+        q = self._quadro = tk.Toplevel(self.root)
+        q.title("TouchPad · Info")
+        q.overrideredirect(True)
+        q.attributes("-topmost", True)
+        q.configure(bg=self.T("key"), highlightthickness=1, highlightbackground=self.T("acc"))
+        top = tk.Frame(q, bg=self.T("key"))
+        top.pack(fill="x")
+        tk.Label(top, text="ℹ Info", bg=self.T("key"), fg=self.T("fg"),
+                 font=("DejaVu Sans", self.font, "bold"), padx=8).pack(side="left")
+        chiudi = lambda: (q.destroy(), setattr(self, "_quadro", None))
+        self.btn(top, "×", chiudi, bg=self.T("key"), w=2).pack(side="right")
+        self._quadro_lbl = tk.Label(q, text=self._info_testo(), bg=self.T("key"), fg=self.T("fg"),
+                                    justify="left", anchor="w", padx=10, pady=6,
+                                    font=("DejaVu Sans", max(9, self.font - 1)))
+        self._quadro_lbl.pack(fill="both")
+        q.update_idletasks()
+        w, h = q.winfo_reqwidth(), q.winfo_reqheight()
+        rx, ry = self.root.winfo_x(), self.root.winfo_y()
+        x = rx - w - 8 if rx - w - 8 >= 0 else min(self.sw - w, rx + self.root.winfo_width() + 8)
+        q.geometry(f"+{max(0, x)}+{max(0, min(ry, self.sh - h))}")
+        q.after(30000, lambda: self._quadro is q and chiudi())   # si chiude da solo dopo 30 s
 
     @staticmethod
     def _gpu_testo():
@@ -482,9 +536,9 @@ class App:
     def _cfg_refresh(self):
         b = getattr(self, "cfg_btn", None)
         try:
-            if not b or not self.cfg_info.winfo_exists():
+            if not b or not b["Sì"].winfo_exists():
                 return
-        except tk.TclError:
+        except (tk.TclError, KeyError):
             return
         for lab, v in (("Off", 0), ("30 s", 30), ("1 min", 60), ("2 min", 120)):
             b[lab].config(bg=self.T("acc") if self.cfg["autohide"] == v else self.T("key"))
@@ -493,18 +547,12 @@ class App:
         b["No"].config(bg=self.T("key") if auto else self.T("acc"))
         b["On"].config(bg=self.T("acc") if self.cfg["appunti"] else self.T("key"))
         b["Off"].config(bg=self.T("key") if self.cfg["appunti"] else self.T("acc"))
-        if self.trasp:
-            t = f"Opacità: {int(self.cfg['alpha'] * 100)}%"
-        elif self.trasp is None:
-            t = "Opacità: verifica in corso..."
-        else:
-            t = "Opacità: non disponibile su questo schermo\n(manca il compositing). Usa Auto-riduci."
-        ah = self.cfg["autohide"]
-        self.cfg_info.config(text=f"{t}\nVelocità mirino: {self.cfg['speed']}\n"
-                                  f"Auto-riduci: {'spento' if not ah else f'dopo {ah} s senza tocchi'}\n"
-                                  f"Avvio col desktop: {'sì' if auto else 'no'}\n"
-                                  f"Tema: {self.cfg['theme']} · Dimensione: {self.cfg['size']}\n"
-                                  f"GPU: {self._gpu_testo()} · Schermo: {self.sw}×{self.sh}")
+        q = getattr(self, "_quadro_lbl", None)
+        try:
+            if q is not None and q.winfo_exists():
+                q.config(text=self._info_testo())
+        except tk.TclError:
+            pass
 
     # ---------- mirino e touchpad ----------
     def _marker(self):
@@ -876,13 +924,19 @@ class App:
     S, G = 48, 10   # diametro pallino, spazio tra pallini
 
     def toggle_mini(self):
-        """— (o Auto-riduci) riduce TouchPad a una colonna di pallini sul lato dello schermo.
+        """× (o Auto-riduci) riduce TouchPad a una colonna di pallini sul lato dello schermo.
         Pallino ⌨: torna dov'era. Gli altri: chiudi finestra, pulizia, boost, terminale."""
         self.mini = not self.mini
         self.cfg["mini"] = self.mini
         if self.mini:
             self.save()  # posizione e pagina da ritrovare alla riapertura
             self._stop_rep()
+            if getattr(self, "_quadro", None) is not None:
+                try:
+                    self._quadro.destroy()
+                except tk.TclError:
+                    pass
+                self._quadro = None
             self.root.withdraw()
             self.mk.withdraw()
             self._show_bubble()

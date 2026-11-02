@@ -50,7 +50,7 @@ Type `rk` in a terminal for all commands, `rk versioni` for installed versions.
 
 | Bubble | Tap |
 |---|---|
-| ⌨ | Reopen TouchPad where it was |
+| ⌨ | Reopen TouchPad where it was (TouchPad's own × also shrinks it to the dock; ⚙ → ⏻ Esci quits) |
 | ✕ | Tap a window to close it; tap ✕ again to force-close a frozen one. Desktop, panel and TouchPad are protected |
 | ♻ | Open the Center on **Cleaning** |
 | ⚡ | Open the Center on **System** |

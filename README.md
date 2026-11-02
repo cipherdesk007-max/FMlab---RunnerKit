@@ -56,11 +56,11 @@ Scrivi `rk` in un terminale per vedere tutti i comandi, e `rk versioni` per sape
 | Pagina | Cosa fa |
 |---|---|
 | **Mouse** | Trascini sul riquadro per muovere il mirino rosso: tocco = clic sinistro, pressione lunga = clic destro. Tasti Sx, Dx, doppio clic, scroll, Trascina, Dx fisso, centra il mirino, velocità |
-| **Tastiera** | Segue la lingua di Linux: italiana (à è ì ò ù) se Linux è in italiano, altrimenti USA. QWERTY italiana con à è ì ò ù, simboli (`?123`), ⇧ e ⇪, Ctrl e Alt per il tasto successivo. ⌫ e frecce si ripetono tenendo premuto |
+| **Tastiera** | Segue la lingua di Linux: italiana (à è ì ò ù) se Linux è in italiano, altrimenti USA. ⇧ e ⇪, Ctrl e Alt per il tasto successivo, ⌫ e frecce che si ripetono tenendo premuto. Nei simboli (`?123`) anche **Esc, Tab, ← →** per il terminale. I tasti funzione hanno un colore a parte, Invio è evidenziato e ogni tasto si illumina quando lo tocchi |
 | **Tasti** | Esc, Tab, frecce, Home/Fine, PgSu/PgGiù, F1–F12, Copia/Incolla (anche da terminale), Alt+Tab, Alt+F4, **→ iPhone** e **Incolla iPhone** |
-| **⚙** | Tema, dimensione, opacità, velocità, Auto-riduci, avvio col desktop, copia automatica verso l'iPhone, aggiornamento. In fondo mostra GPU e risoluzione |
+| **⚙** | Tema, dimensione, opacità, velocità, Auto-riduci, avvio col desktop, copia automatica verso l'iPhone. In fondo **⟳ Aggiorna**, **ℹ Info** (riepilogo in un quadro a parte) e **⏻ Esci** (chiude TouchPad del tutto) |
 
-**Colonna di pallini.** Con **—**, o da solo dopo 1 minuto che non lo usi, TouchPad diventa una colonna sul lato:
+**Colonna di pallini.** Con **×**, o da solo dopo 1 minuto che non lo usi, TouchPad diventa una colonna sul lato:
 
 | Pallino | Tocco |
 |---|---|
