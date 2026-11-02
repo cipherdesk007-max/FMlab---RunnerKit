@@ -3,6 +3,11 @@
 Formato: [versione] - data. Le versioni seguono MAJOR.MINOR.PATCH
 (MAJOR = cambia il modo d'uso, MINOR = funzioni nuove, PATCH = correzioni).
 
+## FMlab - RunnerKit 2026.11.02-16 - TouchPad 3.1
+- All'apertura del desktop TouchPad compare **subito come colonna di pallini sul lato** (attesa ridotta da 3 a 1
+  secondo, nessuna finestra grande che lampeggia e sparisce). Tocca ⌨ per aprirlo.
+- All'avvio la trasparenza non parte più: si accende solo quando apri TouchPad (meno lavoro, avvio più rapido).
+
 ## FMlab - RunnerKit 2026.11.02-15 - velocità senza sciupare il telefono
 Studiato sul codice e sui dati degli sviluppatori di LinuxRunner (docs/PERFORMANCE.md, kernel/resource.c):
 - **Trasparenza solo quando serve**: TouchPad spegne il compositing quando è ridotto a pallini (la prova GPU

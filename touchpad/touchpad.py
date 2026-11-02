@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """TouchPad 2 - mouse + tastiera fluttuante per LinuxRunner.
 Parla direttamente con X11 (XTEST): nessun processo esterno per tocco."""
-__version__ = "3.0.0"
+__version__ = "3.1.0"
 
 import glob
 import json
@@ -77,7 +77,7 @@ AUTOSTART_TXT = """[Desktop Entry]
 Type=Application
 Name=TouchPad
 Comment=Avvia TouchPad con il desktop (RunnerKit)
-Exec=sh -c "sleep 3; [ -f ~/.config/runnerboost/no-compositing ] || pgrep -x xcompmgr >/dev/null || xcompmgr & exec touchpad --avvio"
+Exec=sh -c "sleep 1; exec touchpad --avvio"
 X-GNOME-Autostart-enabled=true
 X-XFCE-Autostart-Override=true
 Hidden=false
@@ -218,17 +218,31 @@ class App:
         self.drag_from = None
         self.mini = False
         self._rep = self._mk_job = None
+        # all'apertura del desktop TouchPad compare subito come colonna di pallini sul lato
+        # (niente finestra grande che lampeggia e sparisce); anche se l'avevi lasciato ridotto
+        lato = "--avvio" in sys.argv or c.get("mini")
+        if lato:
+            r.withdraw()
         self._marker()
+        if lato:
+            self.mk.withdraw()
         self.build()
         r.geometry(c.get("geo", f"+{self.sw - 460}+{self.sh - 360}"))
         self.trasp = None  # None = da verificare, True/False
-        self._check_comp(first=True)
+        if lato:
+            # ridotto la trasparenza non serve: xcompmgr partira' solo quando apri TouchPad
+            self.trasp = bool(self.x.has_composite() and shutil.which("xcompmgr") and not os.path.exists(
+                os.path.expanduser("~/.config/runnerboost/no-compositing"))) or self.x.compositing()
+            self._comp_spento = self.trasp and not self.x.compositing()
+            self._alpha()
+        else:
+            self._check_comp(first=True)
         self.last_touch = time.time()
         r.bind_all("<ButtonPress>", self._touched, add="+")
         r.after(100, self._clamp)
-        if c.get("mini"):  # era ridotto: riparte come colonna di pallini
+        if lato:
             c["mini"] = False
-            r.after(400, self.toggle_mini)
+            r.after_idle(self.toggle_mini)
         r.after(1500, self._sempre_sopra)
         self._clip_ultimo = None
         self._nuova = None   # versione nuova disponibile (stringa) o None
