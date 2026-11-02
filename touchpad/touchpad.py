@@ -640,20 +640,24 @@ class App:
         """Ritaglia la finestra a cerchio (estensione SHAPE di X11), se c'e'."""
         try:
             from Xlib.ext import shape
-            if not self.x.d.has_extension("SHAPE"):
+            d = self.x.d
+            if not d.has_extension("SHAPE"):
                 return
-            w = self.x.d.create_resource_object("window", int(win.wm_frame(), 16))
-            pm = w.create_pixmap(S, S, 1)
+            inner = d.create_resource_object("window", win.winfo_id())
+            wins = [inner, inner.query_tree().parent]  # finestra Tk + suo contenitore
+            pm = inner.create_pixmap(S, S, 1)
             gc = pm.create_gc(foreground=0, background=0)
             pm.fill_rectangle(gc, 0, 0, S, S)
             gc.change(foreground=1)
             pm.fill_arc(gc, 0, 0, S, S, 0, 360 * 64)
-            w.shape_mask(shape.SO.Set, shape.SK.Bounding, 0, 0, pm)
+            for w in wins:
+                if w and w.id != d.screen().root.id:
+                    w.shape_mask(shape.SO.Set, shape.SK.Bounding, 0, 0, pm)
             gc.free()
             pm.free()
-            self.x.d.sync()
-        except Exception:
-            pass  # resta quadrato: funziona lo stesso
+            d.sync()
+        except Exception as ex:  # resta quadrato: funziona lo stesso
+            print("pallino rotondo non disponibile:", ex, file=sys.stderr)
 
     def _b_down(self, e):
         self._bx, self._by = e.x_root, e.y_root
