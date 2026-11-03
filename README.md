@@ -157,22 +157,12 @@ per scelta di LinuxRunner. Primo risultato su 15 Pro Max: **glxgears a 68,7 FPS*
 | `rk copia TESTO` · `comando \| rk copia` · `rk incolla` | Appunti condivisi con l'iPhone, tramite il dispositivo `/dev/clipboard` di LinuxRunner |
 | `rk disinstalla [--tutto]` | Toglie RunnerKit e annulla le sue modifiche (icone, avvio automatico, terminale, UnaVolta, profilo, lingua). Con `--tutto` toglie anche le impostazioni; i backup restano |
 
-## FMlab Pulizia (app per iPhone)
+## FMLAB Cleaner (app per iPhone)
 
-Linux non può toccare le foto dell'iPhone, ma **LiveContainer** dà il permesso alle Foto alle app che ospita.
-**FMlab Pulizia** è un'app nostra, da installare in LiveContainer:
-
-- **Pulizia**: video grandi (dal più pesante), doppioni identici (l'originale resta), registrazioni dello
-  schermo, screenshot, scatti a raffica non scelti. Tocchi quello che vuoi togliere: iOS chiede conferma e tutto
-  va in *Eliminati di recente* (recuperabile per 30 giorni). Niente internet, niente abbonamenti.
-- **Telefono**: batteria, risparmio energetico, **temperatura** come la comunica iOS (utile mentre usi Linux),
-  spazio, memoria, da quanti giorni è acceso, e consigli veri in ordine di effetto. Nessuna app iOS può "liberare
-  la RAM" o "riparare la batteria": chi lo promette non fa niente di vero.
-- **Aggiornamenti**: l'app controlla GitHub e, se c'è una versione nuova, un tocco la scarica.
-
-**Installazione**: scarica [FMlab-PuliziaFoto.ipa](https://github.com/cipherdesk007-max/FMlab---RunnerKit/releases/download/pulizia-foto/FMlab-PuliziaFoto.ipa)
-dall'iPhone, apri LiveContainer → **+** in alto a destra → scegli il file. La compila GitHub a ogni modifica
-(con Theos su Linux, sorgenti in [`fotopulizia/`](fotopulizia/)).
+Linux non può toccare le foto dell'iPhone, ma LiveContainer dà il permesso alle Foto alle app che ospita.
+**[FMLAB Cleaner](https://github.com/cipherdesk007-max/FMLAB-cleaner)** è l'app gemella di RunnerKit, con un
+repository suo: pulizia di foto e video (anche compressione e "Eliminati di recente" in una volta), spazio delle
+app in LiveContainer, stato del telefono. Si installa in LiveContainer e si aggiorna da sola.
 
 ## Qualità e verifiche
 
