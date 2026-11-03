@@ -3,6 +3,11 @@
 Formato: [versione] - data. Le versioni seguono MAJOR.MINOR.PATCH
 (MAJOR = cambia il modo d'uso, MINOR = funzioni nuove, PATCH = correzioni).
 
+## FMlab Pulizia 1.1.0 (app per iPhone, nuova)
+- Pulizia di foto e video (video grandi, doppioni, registrazioni, screenshot, raffiche) e scheda Telefono
+  (batteria, temperatura, spazio, consigli). Si installa in LiveContainer, che dà il permesso alle Foto.
+- Controllo aggiornamenti da GitHub; il file .ipa si ricompila da solo a ogni modifica.
+
 ## FMlab - RunnerKit 2026.11.03-1 - verifiche dell'avvio col desktop
 - Nuovo test automatico del meccanismo vero: bus D-Bus di sessione + due programmi GTK che partono insieme
   (come lxpanel e pcmanfm) → TouchPad deve partire **una volta sola** e i programmi non devono aspettare.
