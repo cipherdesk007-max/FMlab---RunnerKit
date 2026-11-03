@@ -23,7 +23,7 @@ time.sleep(20)
 EOT
 chmod +x "$T/bin/touchpad"
 # il servizio punta a un piccolo involucro che passa il finto TouchPad
-printf '#!/bin/sh\nRKAVVIO_TP=%s exec %s "$@"\n' "$T/bin/touchpad" "$T/bin/rkavvio" > "$T/bin/avvio"; chmod +x "$T/bin/avvio"
+printf '#!/bin/sh\nexec 2>>%s/svc.err; echo "servizio avviato $(date +%%T)" >&2\nRKAVVIO_TP=%s exec bash -x %s "$@"\n' "$T" "$T/bin/touchpad" "$T/bin/rkavvio" > "$T/bin/avvio"; chmod +x "$T/bin/avvio"
 printf '[D-BUS Service]\nName=org.a11y.Bus\nExec=%s\n' "$T/bin/avvio" > "$XDG_DATA_HOME/dbus-1/services/org.a11y.Bus.service"
 eval "$(dbus-launch --sh-syntax 2>/dev/null)" || {
   ADDR=$(dbus-daemon --session --fork --print-address); export DBUS_SESSION_BUS_ADDRESS="$ADDR"; }
@@ -37,6 +37,11 @@ kill "${DBUS_SESSION_BUS_PID:-0}" 2>/dev/null; eval "$(dbus-launch --sh-syntax)"
 # due programmi GTK insieme, come lxpanel e pcmanfm: TouchPad deve partire UNA volta
 durata=$(tempo)
 echo "  tempi: senza RunnerKit ${base}s, con RunnerKit ${durata}s"
+if [ "$durata" -gt $((base + 3)) ]; then
+  echo "--- diagnosi ---"; cat "$T/svc.err" 2>/dev/null | tail -40
+  i=$(date +%s); dbus-send --session --print-reply --dest=org.a11y.Bus /org/a11y/bus org.a11y.Bus.GetAddress 2>&1 | tail -2; echo "GetAddress: $(( $(date +%s) - i ))s"
+  ps -eo pid,ppid,etimes,args | grep -E "at-spi|touchpad|rkavvio|dbus" | grep -v grep
+fi
 sleep 2
 n=$(grep -c "avviato --avvio" "$T/segno" 2>/dev/null || echo 0)
 pkill -f "$T/bin/touchpad" 2>/dev/null || true
