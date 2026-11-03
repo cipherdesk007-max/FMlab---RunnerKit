@@ -15,18 +15,22 @@ final class StatoTelefono: ObservableObject {
     @Published var totale: Int64 = 0
     @Published var acceso: TimeInterval = 0
     let ram = ProcessInfo.processInfo.physicalMemory
-    private var timer: Timer?
+    private var ciclo: Task<Void, Never>?
 
     func avvia() {
         UIDevice.current.isBatteryMonitoringEnabled = true
         aggiorna()
-        timer?.invalidate()
-        timer = Timer.scheduledTimer(withTimeInterval: 5, repeats: true) { [weak self] _ in
-            Task { @MainActor in self?.aggiorna() }
+        ciclo?.cancel()
+        ciclo = Task { [weak self] in   // ogni 5 s, solo mentre la scheda e' aperta
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 5_000_000_000)
+                guard let self = self else { return }
+                self.aggiorna()
+            }
         }
     }
 
-    func ferma() { timer?.invalidate(); timer = nil }
+    func ferma() { ciclo?.cancel(); ciclo = nil }
 
     func aggiorna() {
         let d = UIDevice.current

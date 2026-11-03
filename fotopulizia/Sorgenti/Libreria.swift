@@ -86,6 +86,13 @@ enum Analizzatore {
         }
     }
 
+    /// Registrazione dello schermo: iOS 17+ la marca con un sottotipo; prima si riconosce dal nome
+    /// che iOS da' sempre a questi file (RPReplay_...).
+    static func registrazione(_ a: PHAsset) -> Bool {
+        if a.mediaSubtypes.contains(PHAssetMediaSubtype(rawValue: 1 << 15)) { return true }
+        return PHAssetResource.assetResources(for: a).contains { $0.originalFilename.hasPrefix("RPReplay") }
+    }
+
     static func esegui(progresso: @escaping (Double) -> Void) -> Risultato {
         var ris = Risultato()
         let opzioni = PHFetchOptions()
@@ -105,7 +112,7 @@ enum Analizzatore {
             let e = Elemento(asset: a, byte: b, gruppo: 0, daTenere: false)
             if a.mediaType == .video {
                 ris.video += 1
-                if a.mediaSubtypes.contains(.videoScreenRecording) {
+                if registrazione(a) {
                     registrazioni.append(e)
                 } else if b >= sogliaVideo {
                     video.append(e)
