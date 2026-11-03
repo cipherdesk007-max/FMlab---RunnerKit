@@ -1,5 +1,7 @@
 # FMlab - RunnerKit 📱🐧
 
+<p align="center"><img src="risorse/fmlab-256.png" width="128" alt="Logo FMlab"></p>
+
 🇮🇹 Italiano · [🇬🇧 English](README.en.md)
 
 **FMlab - RunnerKit** è il kit tutto-in-uno per usare Linux sull'iPhone con [LinuxRunner](https://github.com/mxhm11cr/LinuxRunner).

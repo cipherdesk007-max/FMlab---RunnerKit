@@ -3,6 +3,16 @@
 Formato: [versione] - data. Le versioni seguono MAJOR.MINOR.PATCH
 (MAJOR = cambia il modo d'uso, MINOR = funzioni nuove, PATCH = correzioni).
 
+## FMlab - RunnerKit 2026.11.03-2 e FMlab Pulizia 1.2.0 - logo FMlab
+- **Logo FMlab** sulle icone del desktop Linux (RunnerKit Centro, Aggiorna RunnerKit), nella finestra e
+  nell'intestazione del Centro, sulla pagina GitHub e come icona dell'app per iPhone.
+- **FMlab Pulizia 1.2.0**:
+  - **Comprimi video**: dai "Video grandi" scegli i video e li riduci (HEVC, al massimo 1080p) a circa metà
+    peso; data, luogo e preferiti restano, l'originale va in Eliminati di recente solo dopo la copia.
+    Rallentatori e video Cinematografici si saltano.
+  - **Scheda App** (dentro LiveContainer): quanto occupa ogni app installata in LiveContainer, svuota cache e
+    file temporanei, toglie i file .ipa rimasti e i dati di app già disinstallate. Documenti e dati non si toccano.
+
 ## FMlab Pulizia 1.1.0 (app per iPhone, nuova)
 - Pulizia di foto e video (video grandi, doppioni, registrazioni, screenshot, raffiche) e scheda Telefono
   (batteria, temperatura, spazio, consigli). Si installa in LiveContainer, che dà il permesso alle Foto.

@@ -47,7 +47,8 @@ fi
 #    Si installa solo se e' tutto a posto: una rete che cade a meta' non lascia mai il kit mezzo vecchio e mezzo nuovo.
 echo ">> Scarico i file..."
 FILES="VERSIONE touchpad/touchpad.py unavolta/unavolta runnerboost/runnerboost terminale/terminale.sh terminale/rkterminale
-pulizia/pulizia strumenti/rkcollaudo strumenti/rkbackup strumenti/rkitaliano strumenti/rkaggiorna strumenti/rkcentro strumenti/rkdisinstalla strumenti/rkavvio"
+pulizia/pulizia strumenti/rkcollaudo strumenti/rkbackup strumenti/rkitaliano strumenti/rkaggiorna strumenti/rkcentro strumenti/rkdisinstalla strumenti/rkavvio
+risorse/fmlab-256.png risorse/fmlab-48.png"
 for f in $FILES; do
   mkdir -p "$W/$(dirname "$f")"
   e=0; curl -fsS --location --retry 3 --retry-delay 2 --max-time 120 "$REPO/$f?t=$T" -o "$W/$f" 2>/dev/null || e=$?
@@ -64,6 +65,7 @@ case "$NUOVA" in
 esac
 for f in $FILES; do
   [ "$f" = VERSIONE ] && continue
+  case "$f" in *.png) head -c 8 "$W/$f" | od -An -c | grep -q "P   N   G" || { echo "!! Immagine rovinata ($f). Non ho cambiato niente."; exit 1; }; continue ;; esac
   case "$(head -1 "$W/$f")" in
     *python*) python3 -m py_compile "$W/$f" ;;
     *bash*) bash -n "$W/$f" ;;
@@ -81,6 +83,7 @@ for f in unavolta/unavolta runnerboost/runnerboost terminale/rkterminale pulizia
   $SUDO install -m 755 "$W/$f" "/usr/local/bin/$(basename "$f")"
 done
 $SUDO install -m 644 "$W/terminale/terminale.sh" /usr/local/share/runnerkit/terminale.sh
+$SUDO install -m 644 "$W/risorse/fmlab-256.png" "$W/risorse/fmlab-48.png" /usr/local/share/runnerkit/   # logo FMlab
 
 mkdir -p "$HOME/.local/share/applications"
 # ~/Templates: pannello e desktop di LinuxRunner lo cercano a ogni avvio (avviso nel report di LinuxRunner)
@@ -148,7 +151,7 @@ Type=Application
 Name=RunnerKit Centro
 Comment=Sistema, pulizia del disco e processi
 Exec=rkcentro
-Icon=utilities-system-monitor
+Icon=/usr/local/share/runnerkit/fmlab-256.png
 Categories=Utility;System;
 EOF
 for D in "$HOME/Desktop" "$HOME/Scrivania"; do
@@ -162,7 +165,7 @@ Type=Application
 Name=Aggiorna RunnerKit
 Comment=Scarica e installa l'ultima versione di RunnerKit
 Exec=rkaggiorna
-Icon=system-software-update
+Icon=/usr/local/share/runnerkit/fmlab-256.png
 Categories=Utility;
 EOF
 for D in "$HOME/Desktop" "$HOME/Scrivania"; do
