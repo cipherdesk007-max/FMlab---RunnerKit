@@ -2,3 +2,6 @@ build/
 *.xcodeproj/
 Payload/
 *.ipa
+theos/Sources/
+theos/.theos/
+theos/packages/
