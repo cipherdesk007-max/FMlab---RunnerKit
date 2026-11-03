@@ -45,6 +45,9 @@ jobs:
         run: sh tests/test_pulizia.sh
       - name: Test UnaVolta
         run: sh tests/test_unavolta.sh
+      - name: Esperimento D-Bus
+        continue-on-error: true
+        run: sudo apt-get install -y bc >/dev/null 2>&1; sh tests/esperimento_dbus.sh 2>&1
       - name: Test avvio col desktop (GTK -> D-Bus -> rkavvio -> TouchPad)
         run: xvfb-run -a sh tests/test_avvio.sh
       - name: Test installatore completo (installa, aggiorna, file rovinato, disinstalla)
