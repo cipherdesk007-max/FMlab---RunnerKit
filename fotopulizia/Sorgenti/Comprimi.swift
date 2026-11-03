@@ -158,14 +158,15 @@ struct Compressione: View {
         for i in voci.indices {
             if Task.isCancelled { break }
             voci[i].stato = "compressione…"
+            let el = voci[i].elemento
             do {
-                let n = try await Compressore.comprimi(voci[i].elemento) { p in
+                let n = try await Compressore.comprimi(el) { p in
                     Task { @MainActor in voci[i].avanzamento = p }
                 }
                 voci[i].nuovo = n
                 voci[i].fatto = true
-                voci[i].stato = "fatto: \(Int((1 - Double(n) / Double(max(voci[i].elemento.byte, 1))) * 100))% in meno"
-                originali.append(voci[i].elemento)
+                voci[i].stato = "fatto: \(Int((1 - Double(n) / Double(max(el.byte, 1))) * 100))% in meno"
+                originali.append(el)
             } catch {
                 voci[i].stato = error.localizedDescription
             }

@@ -85,13 +85,13 @@ final class SpazioLC: ObservableObject {
             let nome = (info["CFBundleDisplayName"] ?? info["CFBundleName"]) as? String ?? b.deletingPathExtension().lastPathComponent
             var cartelle: [(String, String)] = []
             // le versioni vecchie di LiveContainer tenevano queste chiavi in Info.plist
-            let lc = lc.isEmpty ? info : lc
-            if let cs = lc["LCContainers"] as? [[String: Any]] {
+            let lcInfo = lc.isEmpty ? info : lc
+            if let cs = lcInfo["LCContainers"] as? [[String: Any]] {
                 for c in cs {
                     if let f = c["folderName"] as? String { cartelle.append((f, c["name"] as? String ?? f)) }
                 }
             }
-            if let u = lc["LCDataUUID"] as? String, !cartelle.contains(where: { $0.0 == u }) { cartelle.append((u, "dati")) }
+            if let u = lcInfo["LCDataUUID"] as? String, !cartelle.contains(where: { $0.0 == u }) { cartelle.append((u, "dati")) }
             var dati: [Cartella] = []
             for (f, n) in cartelle {
                 let u = dir.appendingPathComponent(f)

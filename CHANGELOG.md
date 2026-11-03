@@ -3,6 +3,11 @@
 Formato: [versione] - data. Le versioni seguono MAJOR.MINOR.PATCH
 (MAJOR = cambia il modo d'uso, MINOR = funzioni nuove, PATCH = correzioni).
 
+## FMlab Pulizia 1.3.0
+- **Svuota "Eliminati di recente" tutto in una volta** dall'app (l'app Foto li carica a pezzi da circa 3000):
+  mostra quanti sono e quanto pesano, poi una conferma e iOS chiede la sua. Se la versione di iOS non lo
+  permette, l'app spiega il modo manuale ("Elimina tutto").
+
 ## FMlab - RunnerKit 2026.11.03-2 e FMlab Pulizia 1.2.0 - logo FMlab
 - **Logo FMlab** sulle icone del desktop Linux (RunnerKit Centro, Aggiorna RunnerKit), nella finestra e
   nell'intestazione del Centro, sulla pagina GitHub e come icona dell'app per iPhone.

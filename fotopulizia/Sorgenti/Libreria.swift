@@ -204,6 +204,48 @@ final class Libreria: ObservableObject {
         risultato = r
         analizzata = true
         analisiInCorso = false
+        await leggiCestino()
+    }
+
+    // MARK: Eliminati di recente
+    // L'app Foto carica a pezzi l'album "Eliminati di recente". iOS non lo elenca tra gli album pubblici:
+    // si raggiunge col suo numero interno (1000000201). Se in questa versione di iOS non risponde,
+    // l'app lo dice e spiega il modo manuale.
+    @Published var cestino: (numero: Int, byte: Int64)?
+    @Published var cestinoNonRaggiungibile = false
+    @Published var cestinoInLettura = false
+
+    nonisolated static func elementiCestino() -> [PHAsset] {
+        guard let sub = PHAssetCollectionSubtype(rawValue: 1000000201),
+              let album = PHAssetCollection.fetchAssetCollections(with: .smartAlbum, subtype: sub, options: nil).firstObject
+        else { return [] }
+        let r = PHAsset.fetchAssets(in: album, options: nil)
+        var out: [PHAsset] = []
+        out.reserveCapacity(r.count)
+        r.enumerateObjects { a, _, _ in out.append(a) }
+        return out
+    }
+
+    func leggiCestino() async {
+        guard accesso, !cestinoInLettura else { return }
+        cestinoInLettura = true
+        let r = await Task.detached(priority: .utility) { () -> (Int, Int64) in
+            let a = Libreria.elementiCestino()
+            return (a.count, a.reduce(0) { $0 + Analizzatore.peso($1) })
+        }.value
+        cestino = r.0 > 0 ? (r.0, r.1) : nil
+        cestinoNonRaggiungibile = r.0 == 0 && liberato > 0
+        cestinoInLettura = false
+    }
+
+    /// Cancella per sempre tutto "Eliminati di recente" in una volta (iOS chiede conferma).
+    func svuotaCestino() async throws {
+        let assets = await Task.detached { Libreria.elementiCestino() }.value
+        guard !assets.isEmpty else { return }
+        try await PHPhotoLibrary.shared().performChanges {
+            PHAssetChangeRequest.deleteAssets(assets as NSArray)
+        }
+        await leggiCestino()
     }
 
     func elementi(_ c: Categoria) -> [Elemento] { risultato.categorie[c] ?? [] }
@@ -227,5 +269,6 @@ final class Libreria: ObservableObject {
         let conteggi = Dictionary(grouping: elementi(.doppioni), by: \.gruppo).mapValues(\.count)
         risultato.categorie[.doppioni] = elementi(.doppioni).filter { (conteggi[$0.gruppo] ?? 0) > 1 }
         risultato.totale -= scelti.reduce(0) { $0 + $1.byte }
+        await leggiCestino()
     }
 }

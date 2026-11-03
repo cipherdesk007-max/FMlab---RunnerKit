@@ -93,6 +93,8 @@ struct Analisi: View {
 struct Riepilogo: View {
     @EnvironmentObject var lib: Libreria
     @EnvironmentObject var agg: Aggiornamenti
+    @State private var svuota = false
+    @State private var erroreCestino: String?
 
     var recuperabile: Int64 { Categoria.allCases.reduce(0) { $0 + lib.peso($1) } }
 
@@ -118,6 +120,26 @@ struct Riepilogo: View {
                     }
                 }
                 .padding(.vertical, 6)
+            }
+            Section {
+                if let c = lib.cestino {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Label("Eliminati di recente: \(c.numero) elementi · \(formatoByte(c.byte))", systemImage: "trash")
+                            .font(.headline)
+                        Text("Occupano ancora spazio finché non svuoti il cestino (iOS li tiene 30 giorni).")
+                            .font(.footnote).foregroundColor(.secondary)
+                        Button(role: .destructive) { svuota = true } label: {
+                            Text("Svuota tutto in una volta").frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.borderedProminent).tint(.red)
+                    }
+                    .padding(.vertical, 4)
+                } else if lib.cestinoNonRaggiungibile {
+                    Text("Per svuotare \"Eliminati di recente\" tutto insieme: Foto → Raccolte → Eliminati di recente → Seleziona → **Elimina tutto** (in basso a sinistra): toglie anche le foto non ancora caricate sullo schermo.")
+                        .font(.footnote)
+                } else if lib.cestinoInLettura {
+                    HStack { ProgressView(); Text("Controllo Eliminati di recente…").font(.footnote).foregroundColor(.secondary) }
+                }
             }
             Section("Cosa togliere") {
                 ForEach(Categoria.allCases) { c in
@@ -149,6 +171,20 @@ struct Riepilogo: View {
             .font(.footnote)
         }
         .refreshable { await lib.analizza() }
+        .confirmationDialog("Cancellare per sempre \(lib.cestino?.numero ?? 0) elementi (\(formatoByte(lib.cestino?.byte ?? 0)))?",
+                            isPresented: $svuota, titleVisibility: .visible) {
+            Button("Svuota Eliminati di recente", role: .destructive) {
+                Task {
+                    do { try await lib.svuotaCestino() } catch {
+                        let e = error as NSError
+                        if !(e.domain == "PHPhotosErrorDomain" && e.code == 3072) { erroreCestino = error.localizedDescription }
+                    }
+                }
+            }
+        } message: { Text("Non si potranno più recuperare. iOS chiederà ancora conferma.") }
+        .alert("Non riuscito", isPresented: Binding(get: { erroreCestino != nil }, set: { if !$0 { erroreCestino = nil } })) {
+            Button("OK", role: .cancel) {}
+        } message: { Text((erroreCestino ?? "") + "\n\nIn alternativa: Foto → Eliminati di recente → Seleziona → Elimina tutto.") }
         .overlay(alignment: .top) {
             if lib.analisiInCorso { ProgressView(value: lib.progresso).padding(.horizontal) }
         }
