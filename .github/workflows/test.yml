@@ -22,7 +22,7 @@ jobs:
       - name: Dipendenze
         run: |
           sudo apt-get update
-          sudo apt-get install -y xvfb python3-tk python3-xlib imagemagick fonts-dejavu-core mesa-utils x11-utils curl zenity dbus-x11
+          sudo apt-get install -y xvfb python3-tk python3-xlib imagemagick fonts-dejavu-core mesa-utils x11-utils curl python3-gi gir1.2-gtk-3.0 dbus-x11
       - name: Sintassi
         run: |
           /usr/bin/python3 -m py_compile touchpad/touchpad.py
