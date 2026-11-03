@@ -6,6 +6,9 @@ Formato: [versione] - data. Le versioni seguono MAJOR.MINOR.PATCH
 ## FMlab - RunnerKit 2026.11.03-1 - verifiche dell'avvio col desktop
 - Nuovo test automatico del meccanismo vero: bus D-Bus di sessione + due programmi GTK che partono insieme
   (come lxpanel e pcmanfm) → TouchPad deve partire **una volta sola** e i programmi non devono aspettare.
+- **Trovato e corretto grazie a quel test**: l'aggancio della versione -17 faceva aspettare il desktop fino a
+  **25 secondi** all'apertura (D-Bus considera "ancora in avvio" un servizio che esce senza errore). Ora risponde
+  subito: con RunnerKit i programmi GTK partono in 1 s, come senza.
 - Registro degli avvii (`~/.config/runnerkit/avvio.log`, in `rk log`): quando il desktop ha fatto partire
   TouchPad e **in quanti secondi** TouchPad è comparso (misura reale sul telefono).
 - `rk collaudo` controlla anche l'aggancio all'apertura del desktop, l'ultimo avvio e il registro del visore.
