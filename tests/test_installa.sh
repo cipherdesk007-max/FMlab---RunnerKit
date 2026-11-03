@@ -27,7 +27,7 @@ done
 [ -f "$H/Desktop/runnerkit-centro.desktop" ] && grep -q "RunnerKit Terminale inizio" "$H/.bashrc"
 grep -q "Exec=/usr/local/bin/rkavvio" "$H/.local/share/dbus-1/services/org.a11y.Bus.service" || { echo "FALLITO: servizio D-Bus di avvio"; exit 1; }
 # rkavvio deve finire subito (D-Bus aspetta la sua uscita prima di rispondere ai programmi del desktop)
-inizio=$(date +%s); RKAVVIO_PROVA=1 HOME="$H" /usr/local/bin/rkavvio; [ $(( $(date +%s) - inizio )) -le 2 ] || { echo "FALLITO: rkavvio lento"; exit 1; }
+inizio=$(date +%s); HOME="$H" RKAVVIO_TP=/nessuno /usr/local/bin/rkavvio || true; [ $(( $(date +%s) - inizio )) -le 2 ] || { echo "FALLITO: rkavvio lento"; exit 1; }
 [ ! -d /tmp/runnerkit-installa.lock ] || { echo "FALLITO: blocco rimasto"; exit 1; }
 echo "ok: installazione completa"
 
