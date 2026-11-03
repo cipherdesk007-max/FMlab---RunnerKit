@@ -12,6 +12,11 @@ struct PuliziaFotoApp: App {
             TabView {
                 Principale()
                     .tabItem { Label("Pulizia", systemImage: "sparkles") }
+                if SpazioLC.disponibile {
+                    NavigationView { SchedaApp() }
+                        .navigationViewStyle(.stack)
+                        .tabItem { Label("App", systemImage: "square.grid.2x2") }
+                }
                 NavigationView { Telefono() }
                     .navigationViewStyle(.stack)
                     .tabItem { Label("Telefono", systemImage: "iphone") }
@@ -164,6 +169,7 @@ struct Elenco: View {
     @State private var conferma = false
     @State private var errore: String?
     @State private var anteprima: Elemento?
+    @State private var comprimi = false
 
     var elementi: [Elemento] { lib.elementi(categoria) }
     var sceltiElementi: [Elemento] { elementi.filter { scelti.contains($0.id) } }
@@ -203,17 +209,32 @@ struct Elenco: View {
             } label: { Image(systemName: "checkmark.circle") }
         }
         .safeAreaInset(edge: .bottom) {
-            Button {
-                conferma = true
-            } label: {
-                Text(scelti.isEmpty ? "Tocca le foto da togliere"
-                     : "Togli \(scelti.count) · \(formatoByte(pesoScelti))")
-                    .frame(maxWidth: .infinity).padding(.vertical, 6)
+            HStack(spacing: 10) {
+                if categoria == .videoGrandi && !scelti.isEmpty {
+                    Button {
+                        comprimi = true
+                    } label: {
+                        Text("Comprimi · ~\(formatoByte(pesoScelti / 2))")
+                            .frame(maxWidth: .infinity).padding(.vertical, 6)
+                    }
+                    .buttonStyle(.borderedProminent)
+                }
+                Button {
+                    conferma = true
+                } label: {
+                    Text(scelti.isEmpty ? (categoria == .videoGrandi ? "Tocca i video da togliere o comprimere" : "Tocca le foto da togliere")
+                         : "Togli \(scelti.count) · \(formatoByte(pesoScelti))")
+                        .frame(maxWidth: .infinity).padding(.vertical, 6)
+                }
+                .buttonStyle(.borderedProminent).tint(scelti.isEmpty ? .gray : .red)
+                .disabled(scelti.isEmpty)
             }
-            .buttonStyle(.borderedProminent).tint(scelti.isEmpty ? .gray : .red)
-            .disabled(scelti.isEmpty)
             .padding()
             .background(.ultraThinMaterial)
+            // (foglio agganciato qui: due .sheet sulla stessa vista non funzionano su iOS 15)
+            .sheet(isPresented: $comprimi, onDismiss: { scelti = [] }) {
+                Compressione(elementi: sceltiElementi).environmentObject(lib)
+            }
         }
         .confirmationDialog("Togliere \(scelti.count) elementi (\(formatoByte(pesoScelti)))?",
                             isPresented: $conferma, titleVisibility: .visible) {

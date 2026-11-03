@@ -33,7 +33,7 @@ enum Categoria: String, CaseIterable, Identifiable {
     var spiegazione: String {
         switch self {
         case .videoGrandi:
-            return "I video da 50 MB in su, dal più pesante. Sono quasi sempre il modo più veloce per liberare spazio."
+            return "I video da 50 MB in su, dal più pesante. Puoi toglierli oppure comprimerli: restano uguali sul telefono e pesano circa la metà."
         case .doppioni:
             return "Foto e video identici (stesse dimensioni e stesso peso). Il più vecchio di ogni gruppo resta: gli altri sono già selezionati."
         case .registrazioni:
