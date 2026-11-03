@@ -45,24 +45,26 @@ fi
 sleep 2
 n=$(grep -c "avviato --avvio" "$T/segno" 2>/dev/null || echo 0)
 pkill -f "$T/bin/touchpad" 2>/dev/null || true
-[ -n "${DBUS_SESSION_BUS_PID:-}" ] && kill "$DBUS_SESSION_BUS_PID" 2>/dev/null
+kill "${DBUS_SESSION_BUS_PID:-0}" 2>/dev/null || true
 [ "$n" = 1 ] || { echo "FALLITO: TouchPad avviato $n volte (atteso 1)"; cat "$HOME/.config/runnerkit/avvio.log" 2>/dev/null; exit 1; }
 grep -q "avvio TouchPad" "$HOME/.config/runnerkit/avvio.log" || { echo "FALLITO: registro avvio"; exit 1; }
 [ "$durata" -le $((base + 3)) ] || { echo "FALLITO: i programmi GTK hanno aspettato troppo ($durata s invece di $base)"; exit 1; }
 # come sul telefono: servizio di accessibilita' vero NON installato -> rkavvio esce subito
-kill "${DBUS_SESSION_BUS_PID:-0}" 2>/dev/null; eval "$(dbus-launch --sh-syntax)"; rm -rf /tmp/rkavvio-"$(id -u)".lock
+eval "$(dbus-launch --sh-syntax)"; rm -rf /tmp/rkavvio-"$(id -u)".lock
 printf '#!/bin/sh\nRKAVVIO_LAUNCHER= RKAVVIO_TP=%s exec %s "$@"\n' "$T/bin/touchpad" "$T/bin/rkavvio" > "$T/bin/avvio"
 pkill -f "$T/bin/touchpad" 2>/dev/null || true
 telefono=$(tempo)
 echo "  tempi come sul telefono (senza at-spi): ${telefono}s"
 [ "$telefono" -le 6 ] || { echo "FALLITO: senza at-spi i programmi GTK aspettano ($telefono s)"; exit 1; }
+sleep 1; pkill -f "$T/bin/touchpad" 2>/dev/null || true; kill "${DBUS_SESSION_BUS_PID:-0}" 2>/dev/null || true
+: > "$T/segno"
 echo "ok: GTK -> D-Bus -> rkavvio -> TouchPad una volta sola (programmi GTK pronti in $durata s)"
 # avvio col desktop spento: niente TouchPad
 rm "$HOME/.config/autostart/touchpad.desktop"; rm -rf /tmp/rkavvio-"$(id -u)".lock
 eval "$(dbus-launch --sh-syntax 2>/dev/null)"
 gtk || true
 sleep 1
-[ "$(grep -c "avviato" "$T/segno")" = 1 ] || { echo "FALLITO: avviato anche da spento"; exit 1; }
-[ -n "${DBUS_SESSION_BUS_PID:-}" ] && kill "$DBUS_SESSION_BUS_PID" 2>/dev/null
+[ "$(grep -c "avviato" "$T/segno")" = 0 ] || { echo "FALLITO: avviato anche da spento"; exit 1; }
+kill "${DBUS_SESSION_BUS_PID:-0}" 2>/dev/null || true
 rm -rf "$T" /tmp/rkavvio-"$(id -u)".lock
 echo "OK avvio col desktop"
