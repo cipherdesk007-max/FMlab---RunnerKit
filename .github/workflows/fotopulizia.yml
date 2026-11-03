@@ -22,7 +22,7 @@ jobs:
         run: |
           brew install xcodegen
           cd fotopulizia && xcodegen generate
-      - name: Compila (senza firma: la firma la mette LiveContainer / SideStore)
+      - name: "Compila senza firma (la firma la mette LiveContainer o SideStore)"
         run: |
           cd fotopulizia
           xcodebuild -project PuliziaFoto.xcodeproj -scheme PuliziaFoto -configuration Release \
