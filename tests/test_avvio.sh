@@ -28,18 +28,29 @@ printf '[D-BUS Service]\nName=org.a11y.Bus\nExec=%s\n' "$T/bin/avvio" > "$XDG_DA
 eval "$(dbus-launch --sh-syntax 2>/dev/null)" || {
   ADDR=$(dbus-daemon --session --fork --print-address); export DBUS_SESSION_BUS_ADDRESS="$ADDR"; }
 dbus-update-activation-environment DISPLAY HOME XDG_DATA_HOME 2>/dev/null || true
+tempo() { i=$(date +%s); gtk & gtk & wait; echo $(( $(date +%s) - i )); }
+# riferimento: stesso bus SENZA il nostro servizio
+mv "$XDG_DATA_HOME/dbus-1/services/org.a11y.Bus.service" "$T/servizio"
+base=$(tempo)
+mv "$T/servizio" "$XDG_DATA_HOME/dbus-1/services/org.a11y.Bus.service"
+kill "${DBUS_SESSION_BUS_PID:-0}" 2>/dev/null; eval "$(dbus-launch --sh-syntax)"
 # due programmi GTK insieme, come lxpanel e pcmanfm: TouchPad deve partire UNA volta
-inizio=$(date +%s)
-gtk & gtk &
-wait
-durata=$(( $(date +%s) - inizio ))
+durata=$(tempo)
+echo "  tempi: senza RunnerKit ${base}s, con RunnerKit ${durata}s"
 sleep 2
 n=$(grep -c "avviato --avvio" "$T/segno" 2>/dev/null || echo 0)
 pkill -f "$T/bin/touchpad" 2>/dev/null || true
 [ -n "${DBUS_SESSION_BUS_PID:-}" ] && kill "$DBUS_SESSION_BUS_PID" 2>/dev/null
 [ "$n" = 1 ] || { echo "FALLITO: TouchPad avviato $n volte (atteso 1)"; cat "$HOME/.config/runnerkit/avvio.log" 2>/dev/null; exit 1; }
 grep -q "avvio TouchPad" "$HOME/.config/runnerkit/avvio.log" || { echo "FALLITO: registro avvio"; exit 1; }
-[ "$durata" -le 6 ] || { echo "FALLITO: i programmi GTK hanno aspettato troppo ($durata s)"; exit 1; }
+[ "$durata" -le $((base + 3)) ] || { echo "FALLITO: i programmi GTK hanno aspettato troppo ($durata s invece di $base)"; exit 1; }
+# come sul telefono: servizio di accessibilita' vero NON installato -> rkavvio esce subito
+kill "${DBUS_SESSION_BUS_PID:-0}" 2>/dev/null; eval "$(dbus-launch --sh-syntax)"; rm -rf /tmp/rkavvio-"$(id -u)".lock
+printf '#!/bin/sh\nRKAVVIO_LAUNCHER= RKAVVIO_TP=%s exec %s "$@"\n' "$T/bin/touchpad" "$T/bin/rkavvio" > "$T/bin/avvio"
+pkill -f "$T/bin/touchpad" 2>/dev/null || true
+telefono=$(tempo)
+echo "  tempi come sul telefono (senza at-spi): ${telefono}s"
+[ "$telefono" -le 6 ] || { echo "FALLITO: senza at-spi i programmi GTK aspettano ($telefono s)"; exit 1; }
 echo "ok: GTK -> D-Bus -> rkavvio -> TouchPad una volta sola (programmi GTK pronti in $durata s)"
 # avvio col desktop spento: niente TouchPad
 rm "$HOME/.config/autostart/touchpad.desktop"; rm -rf /tmp/rkavvio-"$(id -u)".lock

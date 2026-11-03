@@ -31,7 +31,7 @@ if [ -f "$HOME/.config/autostart/pulizia.desktop" ] && [ -x /usr/local/bin/puliz
   (setsid sh -c '/usr/local/bin/pulizia --auto-giro; sleep 3600; rmdir "$0"' "$LOCK-pulizia" </dev/null >/dev/null 2>&1 &)
 fi
 # il vero servizio di accessibilita' (pacchetto at-spi2-core), se installato, continua a funzionare
-for l in /usr/libexec/at-spi-bus-launcher /usr/lib/at-spi2-core/at-spi-bus-launcher; do
+for l in ${RKAVVIO_LAUNCHER-/usr/libexec/at-spi-bus-launcher /usr/lib/at-spi2-core/at-spi-bus-launcher}; do
   [ -x "$l" ] && exec "$l" "$@"
 done
 exit 0
