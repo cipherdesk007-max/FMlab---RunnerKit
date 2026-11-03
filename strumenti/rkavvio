@@ -39,4 +39,7 @@ fi
 for l in ${RKAVVIO_LAUNCHER-/usr/libexec/at-spi-bus-launcher /usr/lib/at-spi2-core/at-spi-bus-launcher}; do
   [ -x "$l" ] && exec "$l" "$@"
 done
-exit 0
+# Uscita NON zero, apposta: con "exit 0" D-Bus pensa che il servizio stia ancora partendo e fa aspettare
+# lxpanel e pcmanfm fino a 25 secondi; con un errore risponde subito "servizio non disponibile"
+# (provato nei test automatici: 28 s contro 0,01 s).
+exit 1

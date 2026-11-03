@@ -23,7 +23,7 @@ time.sleep(20)
 EOT
 chmod +x "$T/bin/touchpad"
 # il servizio punta a un piccolo involucro che passa il finto TouchPad
-printf '#!/bin/sh\nexec 2>>%s/svc.err; echo "servizio avviato $(date +%%T)" >&2\nRKAVVIO_TP=%s exec bash -x %s "$@"\n' "$T" "$T/bin/touchpad" "$T/bin/rkavvio" > "$T/bin/avvio"; chmod +x "$T/bin/avvio"
+printf '#!/bin/sh\nexec 2>>%s/svc.err\nRKAVVIO_TP=%s exec bash -x %s "$@"\n' "$T" "$T/bin/touchpad" "$T/bin/rkavvio" > "$T/bin/avvio"; chmod +x "$T/bin/avvio"
 printf '[D-BUS Service]\nName=org.a11y.Bus\nExec=%s\n' "$T/bin/avvio" > "$XDG_DATA_HOME/dbus-1/services/org.a11y.Bus.service"
 eval "$(dbus-launch --sh-syntax 2>/dev/null)" || {
   ADDR=$(dbus-daemon --session --fork --print-address); export DBUS_SESSION_BUS_ADDRESS="$ADDR"; }
