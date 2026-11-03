@@ -1,0 +1,50 @@
+name: pulizia-foto
+
+on:
+  push:
+    branches: [main]
+    paths: ["fotopulizia/**", ".github/workflows/fotopulizia.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pulizia-foto
+  cancel-in-progress: true
+
+jobs:
+  ipa:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Progetto Xcode
+        run: |
+          brew install xcodegen
+          cd fotopulizia && xcodegen generate
+      - name: Compila (senza firma: la firma la mette LiveContainer / SideStore)
+        run: |
+          cd fotopulizia
+          xcodebuild -project PuliziaFoto.xcodeproj -scheme PuliziaFoto -configuration Release \
+            -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" build | tail -40
+          test -d build/Build/Products/Release-iphoneos/PuliziaFoto.app
+      - name: Crea il file .ipa
+        run: |
+          cd fotopulizia
+          mkdir -p Payload && cp -R build/Build/Products/Release-iphoneos/PuliziaFoto.app Payload/
+          zip -qry FMlab-PuliziaFoto.ipa Payload
+          ls -l FMlab-PuliziaFoto.ipa
+          /usr/libexec/PlistBuddy -c "Print :NSPhotoLibraryUsageDescription" Payload/PuliziaFoto.app/Info.plist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: FMlab-PuliziaFoto
+          path: fotopulizia/FMlab-PuliziaFoto.ipa
+      - name: Pubblica il download (sempre allo stesso indirizzo)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete pulizia-foto --yes --cleanup-tag 2>/dev/null || true
+          gh release create pulizia-foto fotopulizia/FMlab-PuliziaFoto.ipa --target "$GITHUB_SHA" \
+            --title "FMlab Pulizia Foto" \
+            --notes "App per iPhone: video grandi, doppioni, screenshot, registrazioni dello schermo e raffiche. Si installa in LiveContainer (+ in alto a destra → scegli il file .ipa). Tutto resta sul telefono; ogni cancellazione va in Eliminati di recente."
