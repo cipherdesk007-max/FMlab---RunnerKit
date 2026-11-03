@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # FMlab - RunnerKit Avvio - fa partire TouchPad quando si apre il desktop di LinuxRunner.
 #
 # Perche' cosi': il desktop di LinuxRunner avvia openbox, lxpanel e pcmanfm direttamente (vedi
@@ -10,6 +10,9 @@
 TP="${RKAVVIO_TP:-/usr/local/bin/touchpad}"   # (variabile solo per i test)
 LOCK=/tmp/rkavvio-$(id -u).lock
 REG="$HOME/.config/runnerkit/avvio.log"   # registro breve per rk collaudo / rk log (ultime 30 righe)
+# D-Bus passa al servizio dei canali interni (fd 3 e oltre) e aspetta che si chiudano: cio' che parte
+# da qui non deve ereditarli, altrimenti lxpanel e pcmanfm restano in attesa
+staccati() { local fd; for fd in /proc/$BASHPID/fd/*; do fd=${fd##*/}; [ "$fd" -gt 2 ] 2>/dev/null && eval "exec $fd>&-"; done; }
 nota() {
   mkdir -p "${REG%/*}" 2>/dev/null || return 0
   { tail -n 29 "$REG" 2>/dev/null; echo "$(date '+%Y-%m-%d %H:%M:%S') $*"; } > "$REG.n" 2>/dev/null && mv "$REG.n" "$REG"
@@ -18,7 +21,9 @@ if [ -f "$HOME/.config/autostart/touchpad.desktop" ] && [ -x "$TP" ]; then
   # lxpanel e pcmanfm partono insieme: un solo avvio (blocco valido 30 s)
   if mkdir "$LOCK" 2>/dev/null || { [ -z "$(find "$LOCK" -maxdepth 0 -mmin -1 2>/dev/null)" ] && rm -rf "$LOCK" && mkdir "$LOCK" 2>/dev/null; }; then
     if ! pgrep -f "^(/usr/bin/)?python3 $TP" >/dev/null 2>&1; then
-      (setsid "$TP" --avvio </dev/null >/dev/null 2>&1 &)
+      # D-Bus passa al servizio dei canali interni (fd 3 e oltre) e aspetta che si chiudano:
+      # TouchPad non deve ereditarli, altrimenti i programmi del desktop restano in attesa
+      (staccati; setsid "$TP" --avvio </dev/null >/dev/null 2>&1 &)
       nota "desktop aperto (${DISPLAY:-?}): avvio TouchPad"
     else
       nota "desktop aperto (${DISPLAY:-?}): TouchPad gia' aperto"
@@ -28,7 +33,7 @@ fi
 # pulizia settimanale (stesso problema: ~/.config/autostart non viene letto)
 find "$LOCK-pulizia" -maxdepth 0 -mmin +60 -exec rmdir {} \; 2>/dev/null
 if [ -f "$HOME/.config/autostart/pulizia.desktop" ] && [ -x /usr/local/bin/pulizia ] && mkdir "$LOCK-pulizia" 2>/dev/null; then
-  (setsid sh -c '/usr/local/bin/pulizia --auto-giro; sleep 3600; rmdir "$0"' "$LOCK-pulizia" </dev/null >/dev/null 2>&1 &)
+  (staccati; setsid sh -c '/usr/local/bin/pulizia --auto-giro; sleep 3600; rmdir "$0"' "$LOCK-pulizia" </dev/null >/dev/null 2>&1 &)
 fi
 # il vero servizio di accessibilita' (pacchetto at-spi2-core), se installato, continua a funzionare
 for l in ${RKAVVIO_LAUNCHER-/usr/libexec/at-spi-bus-launcher /usr/lib/at-spi2-core/at-spi-bus-launcher}; do
