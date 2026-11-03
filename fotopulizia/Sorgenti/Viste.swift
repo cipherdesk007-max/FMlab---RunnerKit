@@ -5,6 +5,7 @@ import UIKit
 @main
 struct PuliziaFotoApp: App {
     @StateObject private var libreria = Libreria()
+    @StateObject private var aggiornamenti = Aggiornamenti()
 
     var body: some Scene {
         WindowGroup {
@@ -16,6 +17,8 @@ struct PuliziaFotoApp: App {
                     .tabItem { Label("Telefono", systemImage: "iphone") }
             }
                 .environmentObject(libreria)
+                .environmentObject(aggiornamenti)
+                .task { await aggiornamenti.controlla() }
                 .tint(Color(red: 0.49, green: 0.23, blue: 0.93))
         }
     }
@@ -84,11 +87,13 @@ struct Analisi: View {
 
 struct Riepilogo: View {
     @EnvironmentObject var lib: Libreria
+    @EnvironmentObject var agg: Aggiornamenti
 
     var recuperabile: Int64 { Categoria.allCases.reduce(0) { $0 + lib.peso($1) } }
 
     var body: some View {
         List {
+            if agg.nuova != nil { Section { AvvisoAggiornamento(agg: agg) } }
             Section {
                 VStack(alignment: .leading, spacing: 6) {
                     Text(formatoByte(lib.risultato.totale)).font(.system(size: 34, weight: .bold))
@@ -129,8 +134,12 @@ struct Riepilogo: View {
             Section {
                 Text("Doppioni anche dall'app Foto: Raccolte → Utility → Duplicati → Unisci.")
                 Text("Spazio dell'aggiornamento iOS e delle app: Impostazioni → Generali → Spazio iPhone.")
+                Button(agg.controllo ? "Controllo…" : "Controlla aggiornamenti di FMlab Pulizia") {
+                    Task { await agg.controlla(manuale: true) }
+                }.disabled(agg.controllo)
+                if let e = agg.esito { Text(e).foregroundColor(.secondary) }
             } header: { Text("Altri consigli") } footer: {
-                Text("FMlab Pulizia Foto · parte di FMlab - RunnerKit").frame(maxWidth: .infinity)
+                Text("FMlab Pulizia \(agg.attuale) · parte di FMlab - RunnerKit").frame(maxWidth: .infinity)
             }
             .font(.footnote)
         }
