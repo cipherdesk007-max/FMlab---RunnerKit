@@ -3,6 +3,13 @@
 Formato: [versione] - data. Le versioni seguono MAJOR.MINOR.PATCH
 (MAJOR = cambia il modo d'uso, MINOR = funzioni nuove, PATCH = correzioni).
 
+## FMlab - RunnerKit 2026.11.03-1 - verifiche dell'avvio col desktop
+- Nuovo test automatico del meccanismo vero: bus D-Bus di sessione + due programmi GTK che partono insieme
+  (come lxpanel e pcmanfm) → TouchPad deve partire **una volta sola** e i programmi non devono aspettare.
+- Registro degli avvii (`~/.config/runnerkit/avvio.log`, in `rk log`): quando il desktop ha fatto partire
+  TouchPad e **in quanti secondi** TouchPad è comparso (misura reale sul telefono).
+- `rk collaudo` controlla anche l'aggancio all'apertura del desktop, l'ultimo avvio e il registro del visore.
+
 ## FMlab - RunnerKit 2026.11.02-17 - avvio col desktop che funziona davvero
 Trovato leggendo il codice di LinuxRunner (session.sh, desktop-components.sh): il desktop avvia openbox,
 lxpanel e pcmanfm direttamente e **non legge mai `~/.config/autostart`**. Quindi TouchPad non partiva da solo

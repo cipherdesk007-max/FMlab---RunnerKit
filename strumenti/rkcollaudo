@@ -1,7 +1,7 @@
 #!/bin/sh
-# RunnerKit Collaudo - prova ogni strumento sul telefono vero e salva un report da mandare.
+# FMlab - RunnerKit Collaudo - prova ogni strumento sul telefono vero e salva un report da mandare.
 #   rkcollaudo            (o: rk collaudo)
-VERSIONE="1.0.0"
+VERSIONE="1.1.0"
 PASS=0; FAIL=0; AVV=0
 OUT=""
 riga() { OUT="$OUT
@@ -11,7 +11,7 @@ ko()   { FAIL=$((FAIL + 1)); riga "  [ERRORE] $*"; }
 avv()  { AVV=$((AVV + 1));   riga "  [AVVISO] $*"; }
 sez()  { riga ""; riga "== $* =="; }
 
-riga "FMlab - RunnerKit Collaudo $VERSIONE — $(date '+%Y-%m-%d %H:%M')"
+riga "FMlab - RunnerKit Collaudo $VERSIONE — $(date '+%Y-%m-%d %H:%M') — kit $(cat /usr/local/share/runnerkit/versione 2>/dev/null || echo '?')"
 
 sez "LinuxRunner"
 [ -r /etc/os-release ] && riga "  sistema: $(. /etc/os-release; echo "$PRETTY_NAME")"
@@ -50,7 +50,17 @@ if pgrep -f /usr/local/bin/touchpad >/dev/null 2>&1; then
     ok "TouchPad risponde (istanza unica)"
   else ko "TouchPad non risponde al controllo"; fi
 else avv "TouchPad non aperto in questo momento"; fi
-[ -f "$HOME/.config/autostart/touchpad.desktop" ] && ok "avvio automatico col desktop" || avv "avvio automatico spento"
+if [ -f "$HOME/.config/autostart/touchpad.desktop" ]; then
+  ok "avvio automatico col desktop acceso"
+  grep -q rkavvio "$HOME/.local/share/dbus-1/services/org.a11y.Bus.service" 2>/dev/null &&
+    ok "aggancio all'apertura del desktop installato (D-Bus)" || ko "aggancio D-Bus mancante: rk aggiorna --forza"
+  if [ -s "$HOME/.config/runnerkit/avvio.log" ]; then ok "ultimo avvio col desktop: $(tail -1 "$HOME/.config/runnerkit/avvio.log")"
+  else avv "il desktop non ha ancora fatto partire TouchPad (fai Stop Desktop e Open Desktop, poi ripeti)"; fi
+else avv "avvio automatico spento (TouchPad: ⚙ -> Avvio col desktop -> Si')"; fi
+if [ -n "${LR_GUI_SESSION_DIR:-}" ]; then
+  [ -r "$LR_GUI_SESSION_DIR/display.log" ] && ok "TouchPad vede ogni Open Desktop (registro del visore leggibile)" ||
+    avv "registro del visore non leggibile: i pallini non si rimettono da soli a ogni Open Desktop"
+fi
 if [ -s "$HOME/.touchpad.log" ]; then
   n=$(grep -c "Traceback" "$HOME/.touchpad.log" 2>/dev/null)
   [ "${n:-0}" -gt 0 ] && avv "$n errori nel registro di TouchPad (rk log)" || ok "registro di TouchPad senza errori"

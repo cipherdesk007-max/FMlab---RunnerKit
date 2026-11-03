@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """TouchPad 2 - mouse + tastiera fluttuante per LinuxRunner.
 Parla direttamente con X11 (XTEST): nessun processo esterno per tocco."""
-__version__ = "3.2.0"
+__version__ = "3.3.0"
 
 import glob
 import json
@@ -9,6 +9,7 @@ import re
 import shutil
 import socket
 import time
+_T0 = time.time()   # per misurare quanto ci mette ad aprirsi sul telefono
 import os
 import subprocess
 import sys
@@ -296,6 +297,7 @@ class App:
         self._da_forzare = None
         self._server()
         self.say(f"TouchPad v{__version__}")
+        r.after_idle(self._tempo_avvio)
 
     # ---------- costruzione ----------
     def T(self, k):
@@ -795,6 +797,17 @@ class App:
         self._riapertura_desktop()
         # ridotto a pallini: controllo meno spesso (ogni risveglio costa processore sul telefono)
         self.root.after(2500 if self.mini else 1500, self._sempre_sopra)
+
+    def _tempo_avvio(self):
+        """Scrive nel registro quanto ci ha messo TouchPad a comparire (verificabile con rk log)."""
+        try:
+            os.makedirs(os.path.expanduser("~/.config/runnerkit"), exist_ok=True)
+            with open(os.path.expanduser("~/.config/runnerkit/avvio.log"), "a") as f:
+                f.write(time.strftime("%Y-%m-%d %H:%M:%S") +
+                        f" TouchPad {__version__} pronto in {time.time() - _T0:.1f} s"
+                        f"{' (avvio col desktop)' if '--avvio' in sys.argv else ''}\n")
+        except OSError:
+            pass
 
     def _riapertura_desktop(self):
         """Ogni "Open Desktop" dell'app collega di nuovo il visore (x11vnc lo scrive in display.log

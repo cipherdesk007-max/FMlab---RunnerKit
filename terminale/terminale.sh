@@ -192,7 +192,7 @@ rk() {  # comando unico di RunnerKit: rk, rk aggiorna, rk versioni, rk gpu, ...
     riposo) runnerboost --riposo "${2:-20}" ;;
     pulizia) pulizia ;;
     pulisci) pulizia --sicura ;;
-    log) unavolta --log; echo; tail -20 ~/.touchpad.log 2>/dev/null ;;
+    log) unavolta --log; echo; echo "-- avvii col desktop --"; tail -5 ~/.config/runnerkit/avvio.log 2>/dev/null; echo; tail -20 ~/.touchpad.log 2>/dev/null ;;
     collaudo) rkcollaudo ;;
     disinstalla) shift; rkdisinstalla "$@" ;;
     centro) (rkcentro "${2:-sistema}" >/dev/null 2>&1 &) ;;
