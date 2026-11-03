@@ -45,7 +45,7 @@ struct Principale: View {
                     Riepilogo()
                 }
             }
-            .navigationTitle("Pulizia Foto")
+            .navigationTitle("FMLAB Cleaner")
         }
         .navigationViewStyle(.stack)
         .task { if lib.accesso && !lib.analizzata { await lib.analizza() } }
@@ -63,7 +63,7 @@ struct Permesso: View {
             Text("Tutto resta sul telefono: niente internet, niente abbonamenti. Non cancello niente da sola: scegli tu, iOS chiede conferma e le foto finiscono in \"Eliminati di recente\" per 30 giorni.")
                 .font(.callout).foregroundColor(.secondary).multilineTextAlignment(.center)
             if lib.permesso == .denied || lib.permesso == .restricted {
-                Text("Accesso alle foto negato. Apri Impostazioni → LiveContainer (o Pulizia Foto) → Foto → Tutte le foto.")
+                Text("Accesso alle foto negato. Apri Impostazioni → LiveContainer (o FMLAB Cleaner) → Foto → Tutte le foto.")
                     .font(.callout).foregroundColor(.orange).multilineTextAlignment(.center)
                 Button("Apri Impostazioni") {
                     if let u = URL(string: UIApplication.openSettingsURLString) { UIApplication.shared.open(u) }
@@ -161,12 +161,12 @@ struct Riepilogo: View {
             Section {
                 Text("Doppioni anche dall'app Foto: Raccolte → Utility → Duplicati → Unisci.")
                 Text("Spazio dell'aggiornamento iOS e delle app: Impostazioni → Generali → Spazio iPhone.")
-                Button(agg.controllo ? "Controllo…" : "Controlla aggiornamenti di FMlab Pulizia") {
+                Button(agg.controllo ? "Controllo…" : "Controlla aggiornamenti di FMLAB Cleaner") {
                     Task { await agg.controlla(manuale: true) }
                 }.disabled(agg.controllo)
                 if let e = agg.esito { Text(e).foregroundColor(.secondary) }
             } header: { Text("Altri consigli") } footer: {
-                Text("FMlab Pulizia \(agg.attuale) · parte di FMlab - RunnerKit").frame(maxWidth: .infinity)
+                Text("FMLAB Cleaner \(agg.attuale)").frame(maxWidth: .infinity)
             }
             .font(.footnote)
         }

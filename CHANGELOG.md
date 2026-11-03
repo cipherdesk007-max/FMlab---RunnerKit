@@ -3,6 +3,11 @@
 Formato: [versione] - data. Le versioni seguono MAJOR.MINOR.PATCH
 (MAJOR = cambia il modo d'uso, MINOR = funzioni nuove, PATCH = correzioni).
 
+## FMLAB Cleaner 1.3.1 (ex FMlab Pulizia)
+- L'app per iPhone si chiama **FMLAB Cleaner** e ha un repository suo:
+  https://github.com/cipherdesk007-max/FMLAB-cleaner — da qui in poi versioni e aggiornamenti sono lì.
+  Questa versione fa da ponte: chi ha la 1.1–1.3.0 la riceve da qui, poi l'app si aggiorna dal repository nuovo.
+
 ## FMlab Pulizia 1.3.0
 - **Svuota "Eliminati di recente" tutto in una volta** dall'app (l'app Foto li carica a pezzi da circa 3000):
   mostra quanti sono e quanto pesano, poi una conferma e iOS chiede la sua. Se la versione di iOS non lo

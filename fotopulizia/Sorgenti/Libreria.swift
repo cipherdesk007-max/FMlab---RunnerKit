@@ -1,4 +1,4 @@
-// FMlab Pulizia Foto - analisi della libreria Foto dell'iPhone, tutta sul telefono.
+// FMLAB Cleaner - analisi della libreria Foto dell'iPhone, tutta sul telefono.
 // Niente rete, niente abbonamenti: si legge la libreria con PhotoKit e si cancella solo cio' che
 // scegli tu. iOS chiede sempre conferma e tutto finisce in "Eliminati di recente" (30 giorni).
 import Foundation

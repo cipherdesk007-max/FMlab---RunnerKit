@@ -1,5 +1,5 @@
 // Spazio delle app dentro LiveContainer. Le app ospitate condividono la "cartella" di LiveContainer,
-// quindi FMlab Pulizia puo' vedere quanto occupa ognuna e togliere SOLO cio' che si ricrea da solo:
+// quindi FMLAB Cleaner puo' vedere quanto occupa ognuna e togliere SOLO cio' che si ricrea da solo:
 // cache e file temporanei, i file di installazione (.ipa) rimasti, i dati di app gia' disinstallate.
 // Documenti e dati delle app non si toccano mai. Fuori da LiveContainer questa scheda non c'e':
 // le altre app dell'iPhone e i file di iOS non sono raggiungibili da nessuna app (regola di iOS).

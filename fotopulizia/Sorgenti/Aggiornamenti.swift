@@ -1,13 +1,15 @@
-// Controlla su GitHub se c'e' una versione nuova di FMlab Pulizia (ramo "stabile": solo versioni
-// compilate senza errori). Se c'e', un tocco apre il download del file .ipa: in LiveContainer si
+// Controlla su GitHub se c'e' una versione nuova di FMLAB Cleaner (pubblicata solo se compilata
+// senza errori). Se c'e', un tocco apre il download del file .ipa: in LiveContainer si
 // installa sopra la vecchia (+ in alto a destra -> il file scaricato) e i dati restano.
 import Foundation
 import SwiftUI
 
 @MainActor
 final class Aggiornamenti: ObservableObject {
-    static let urlVersione = URL(string: "https://raw.githubusercontent.com/cipherdesk007-max/FMlab---RunnerKit/stabile/fotopulizia/VERSIONE")!
-    static let urlIpa = URL(string: "https://github.com/cipherdesk007-max/FMlab---RunnerKit/releases/download/pulizia-foto/FMlab-PuliziaFoto.ipa")!
+    // Il numero di versione e il file .ipa stanno nella stessa pubblicazione "ultima" del repository
+    // FMLAB-cleaner: escono insieme, quindi l'avviso compare solo quando il file nuovo e' davvero pronto.
+    static let urlVersione = URL(string: "https://github.com/cipherdesk007-max/FMLAB-cleaner/releases/download/ultima/VERSIONE")!
+    static let urlIpa = URL(string: "https://github.com/cipherdesk007-max/FMLAB-cleaner/releases/download/ultima/FMLAB-Cleaner.ipa")!
 
     @Published var nuova: String?
     @Published var controllo = false
