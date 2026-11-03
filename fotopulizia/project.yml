@@ -20,7 +20,7 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.fmlab.puliziafoto
         PRODUCT_NAME: PuliziaFoto
         GENERATE_INFOPLIST_FILE: YES
-        INFOPLIST_KEY_CFBundleDisplayName: "Pulizia Foto"
+        INFOPLIST_KEY_CFBundleDisplayName: "FMlab Pulizia"
         INFOPLIST_KEY_NSPhotoLibraryUsageDescription: "Per trovare video grandi, screenshot e doppioni. Le foto restano sul telefono."
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait

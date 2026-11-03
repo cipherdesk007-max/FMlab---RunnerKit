@@ -8,7 +8,13 @@ struct PuliziaFotoApp: App {
 
     var body: some Scene {
         WindowGroup {
-            Principale()
+            TabView {
+                Principale()
+                    .tabItem { Label("Pulizia", systemImage: "sparkles") }
+                NavigationView { Telefono() }
+                    .navigationViewStyle(.stack)
+                    .tabItem { Label("Telefono", systemImage: "iphone") }
+            }
                 .environmentObject(libreria)
                 .tint(Color(red: 0.49, green: 0.23, blue: 0.93))
         }
