@@ -9,9 +9,11 @@
 #   pulizia --sicura --solo apt,cache   pulisce solo le categorie indicate
 #   pulizia --autoremove toglie i pacchetti Debian non piu' necessari
 # I file personali (documenti, Desktop, Shared, progetti) non vengono MAI cancellati.
-VERSIONE="1.3.0"
+VERSIONE="1.3.1"
 R="${PULIZIA_ROOT:-}"          # prefisso per i test
 H="${PULIZIA_HOME:-$HOME}"
+# App che fa girare Linux: FMLAB Linux (si firma in /proc/ish/version) o LinuxRunner originale
+APP=LinuxRunner; grep -qs 'FMLAB-Linux' /proc/ish/version && APP="FMLAB Linux"
 # sicurezza: senza una home vera non si cancella niente (eviterebbe percorsi come /.cache)
 case "$H" in ""|/) echo "pulizia: HOME non valida ('$H'), mi fermo." >&2; exit 1 ;; esac
 STATO="$H/.config/pulizia"
@@ -148,10 +150,12 @@ report() {
     head -40 | while read -r f; do printf '  %7.0f MB  %s\n' "$(( $(kb "$f") / 1024 ))" "$f"; done
   echo
   echo "--- SPAZIO DELL'IPHONE (fuori da Linux) ---"
-  echo "  Linux in LinuxRunner vede solo la cartella dell'app (regola di iOS): foto, video, file degli"
+  echo "  Linux in $APP vede solo la cartella dell'app (regola di iOS): foto, video, file degli"
   echo "  aggiornamenti di iOS e altre app si liberano dal telefono:"
   echo "  Impostazioni > Generali > Spazio iPhone (aggiornamento iOS scaricato: Elimina; app inutilizzate: Rimuovi app)"
-  echo "  Foto > Album > Eliminati di recente > Elimina tutto ; LinuxRunner: togli le distribuzioni che non usi"
+  echo "  Foto > Album > Eliminati di recente > Elimina tutto"
+  if [ "$APP" = "FMLAB Linux" ]; then echo "  FMLAB Linux: Distribuzioni > tocca quella che non usi > Elimina (anche Alpine) ; Impostazioni > Pulizia"
+  else echo "  LinuxRunner: togli le distribuzioni che non usi"; fi
   echo
   echo "--- PULIZIA AUTOMATICA ---"
   if [ -f "$AUTOSTART" ]; then echo "  attiva (max 1 volta a settimana)"; else echo "  spenta (accendi con: pulizia --auto-on)"; fi
@@ -195,11 +199,11 @@ case "$1" in
     sleep 60; mkdir -p "$STATO"; pulisci vero > "$STATO/ultima-pulizia.log" 2>&1 ;;
   ""|--report)
     out="$(dove_report)/pulizia-report-$(date +%Y%m%d-%H%M).txt"
-    echo "Analizzo il disco (su LinuxRunner puo' volerci qualche minuto)..."
+    echo "Analizzo il disco (su $APP puo' volerci qualche minuto)..."
     report | tee "$out"
     echo
     echo "Report salvato in: $out"
-    case "$out" in */LinuxRunnerShared/*|*/Shared/*) echo "Lo trovi anche nell'app File: In questo iPhone > LinuxRunner > Shared";; esac
+    case "$out" in */LinuxRunnerShared/*|*/Shared/*) echo "Lo trovi anche nell'app File: In questo iPhone > $APP > Shared";; esac
     echo "Mandamelo e decidiamo cosa togliere. Per la parte sicura: pulizia --sicura" ;;
   *) sed -n '2,9p' "$0" | sed 's/^# \{0,1\}//' ;;
 esac

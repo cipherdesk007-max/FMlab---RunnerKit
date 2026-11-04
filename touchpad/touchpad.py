@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """TouchPad 2 - mouse + tastiera fluttuante per LinuxRunner.
 Parla direttamente con X11 (XTEST): nessun processo esterno per tocco."""
-__version__ = "3.3.0"
+__version__ = "3.4.0"
 
 import glob
 import json
@@ -1017,6 +1017,13 @@ class App:
         self.say("auto-riduci " + (f"dopo {v} s" if v else "spento"))
 
     def _autohide_loop(self):
+        m = self._margini()   # FMLAB Linux: entrando/uscendo dallo schermo intero cambia la parte visibile
+        if m != getattr(self, "_marg_visti", m):
+            if self.mini and self.dock:
+                self._place_dock(*self._dock_xy())
+            elif not self.mini:
+                self._clamp()
+        self._marg_visti = m
         ah = self.cfg.get("autohide", 0)
         if ah and not self.mini and time.time() - self.last_touch > ah:
             self.toggle_mini()
@@ -1028,8 +1035,9 @@ class App:
         r.update_idletasks()
         w, h = r.winfo_reqwidth(), r.winfo_reqheight()
         x, y = r.winfo_x(), r.winfo_y()
-        nx = max(0, min(x, self.sw - w))
-        ny = max(0, min(y, self.sh - h))
+        L, T, R, B = self._margini()   # su FMLAB Linux a schermo intero: fuori da Dynamic Island e angoli
+        nx = max(0, max(L, min(x, self.sw - R - w)))
+        ny = max(0, max(T, min(y, self.sh - B - h)))
         if (nx, ny) != (x, y):
             r.geometry(f"+{nx}+{ny}")
 
@@ -1069,12 +1077,43 @@ class App:
             self.last_touch = time.time()
             self.root.after_idle(self._clamp)
 
+    def _margini(self):
+        """Parte del desktop che non si vede: su FMLAB Linux a schermo intero il desktop va sotto Dynamic Island,
+        angoli arrotondati e indicatore Home. L'app scrive quanto (in pixel di Linux) in fmlab-schermo nella
+        cartella della sessione: (sinistra, alto, destra, basso). Su LinuxRunner o senza il file: tutto 0."""
+        f = os.environ.get("TP_SCHERMO") or os.path.join(os.environ.get("LR_GUI_SESSION_DIR", "/nessuna"), "fmlab-schermo")
+        try:
+            mt = os.stat(f).st_mtime
+            if getattr(self, "_marg_mt", None) == mt:
+                return self._marg
+            with open(f) as fh:
+                for r in fh:
+                    if r.startswith("margini="):
+                        v = [max(0, min(self.sw // 4, int(x))) for x in r.split("=", 1)[1].split()]
+                        if len(v) == 4:
+                            self._marg_mt, self._marg = mt, tuple(v)
+                            return self._marg
+        except (OSError, ValueError):
+            pass
+        self._marg_mt, self._marg = None, (0, 0, 0, 0)
+        return self._marg
+
+    def _lato(self):
+        """Lato della colonna di pallini: si ricorda il lato, non i pixel, cosi' resta attaccata al bordo
+        anche quando cambia la risoluzione (es. FMLAB Linux 0.7: da 1168x540 a 1398x644)."""
+        lato = self.cfg.get("lato")
+        if lato not in ("sx", "dx"):
+            x = self.cfg.get("bubble", (self.sw, 0))[0]
+            lato = "sx" if x + self.S // 2 < self.sw // 2 else "dx"
+        return lato
+
     def _dock_xy(self):
         S, G, n = self.S, self.G, len(self.DOCK)
-        x, y = self.cfg.get("bubble", (self.sw - S - 6, 40))
-        x = max(0, min(x, self.sw - S))
-        y = max(0, min(y, self.sh - n * (S + G)))
-        return x, y
+        L, T, R, B = self._margini()
+        y = self.cfg.get("bubble", (0, 40))[1]
+        x = L + 6 if self._lato() == "sx" else self.sw - R - S - 6
+        y = max(T, min(y, self.sh - B - n * (S + G)))
+        return max(0, x), max(0, y)
 
     def _place_dock(self, x, y):
         for i, (b, *_) in enumerate(self.dock):
@@ -1156,9 +1195,10 @@ class App:
              "boost": lambda: self._centro("sistema", lambda: self._in_terminale("runnerboost")),
              "term": lambda: self._in_terminale(None), "aggiorna": self.aggiorna}[act]()
             return
-        S, n = self.S, len(self.DOCK)  # trascinata: si aggancia al lato piu' vicino
-        x = 6 if self.bubble.winfo_x() + S // 2 < self.sw // 2 else self.sw - S - 6
-        y = max(6, min(self.bubble.winfo_y(), self.sh - n * (S + self.G)))
+        S, n = self.S, len(self.DOCK)  # trascinata: si aggancia al lato piu' vicino (fuori da Dynamic Island & co.)
+        self.cfg["lato"] = "sx" if self.bubble.winfo_x() + S // 2 < self.sw // 2 else "dx"
+        self.cfg["bubble"] = (self.bubble.winfo_x(), max(6, self.bubble.winfo_y()))
+        x, y = self._dock_xy()
         self._place_dock(x, y)
         self.cfg["bubble"] = (x, y)
         self.save()

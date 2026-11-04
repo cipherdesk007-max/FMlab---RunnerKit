@@ -3,6 +3,19 @@
 Formato: [versione] - data. Le versioni seguono MAJOR.MINOR.PATCH
 (MAJOR = cambia il modo d'uso, MINOR = funzioni nuove, PATCH = correzioni).
 
+## FMlab - RunnerKit 2026.11.04-1 - su misura per FMLAB Linux
+- **TouchPad 3.4**: con FMLAB Linux a schermo intero il desktop arriva fino al bordo dell'iPhone. L'app (0.7.2)
+  dice a Linux quale parte resta sotto Dynamic Island, angoli e indicatore Home (`fmlab-schermo` nella cartella
+  della sessione) e TouchPad tiene **fuori da lì la colonna di pallini e la sua finestra**. Entrando o uscendo
+  dallo schermo intero si risistema da solo entro 2 secondi.
+- La colonna ricorda il **lato** (sinistra/destra), non i pixel: resta attaccata al bordo anche quando cambia la
+  risoluzione (FMLAB Linux 0.7 sceglie da sola 1398×644 sul 15 Pro Max).
+- **Riconosce FMLAB Linux** (che si firma in `/proc/ish/version`): Centro → riga **App** (es. "FMLAB Linux 0.7.2"),
+  `rk collaudo` mostra versione e base e controlla i margini dello schermo, Pulizia e `alliphone` usano il nome
+  giusto ("In questo iPhone > FMLAB Linux > Shared") e Pulizia indica Distribuzioni → Elimina e Impostazioni → Pulizia
+  dell'app. Su LinuxRunner originale tutto resta com'era.
+- Nuovo test automatico: pallini con margini a destra, a sinistra e uscendo dallo schermo intero.
+
 ## FMLAB Cleaner 1.3.1 (ex FMlab Pulizia)
 - L'app per iPhone si chiama **FMLAB Cleaner** e ha un repository suo:
   https://github.com/cipherdesk007-max/FMLAB-cleaner — da qui in poi versioni e aggiornamenti sono lì.

@@ -162,6 +162,34 @@ def main():
     shot(app, "tastiera-simboli")
     app.set_layer("abc")
 
+    # FMLAB Linux a schermo intero: i pallini e la finestra stanno fuori da Dynamic Island, angoli e indicatore Home
+    schermo = "/tmp/tp-fmlab-schermo"
+    with open(schermo, "w") as f:
+        f.write("# prova\nmargini=90 0 90 32\nschermo_intero=1\n")
+    os.environ["TP_SCHERMO"] = schermo
+    app.toggle_mini(); app.root.update()
+    app._autohide_loop(); app.root.update()
+    S = app.S
+    xs = {b.winfo_x() for b, *_ in app.dock}
+    assert xs == {app.sw - 90 - S - 6}, f"pallini sotto la zona coperta a destra: {xs}"
+    assert max(b.winfo_y() + S for b, *_ in app.dock) <= app.sh - 32, "pallini sotto l'indicatore Home"
+    shot(app, "pallini-fmlab-schermo-intero")
+    # trascinata a sinistra: si aggancia fuori dalla Dynamic Island anche li'
+    app._bx, app._by = 0, 0; app._bmoved = 0
+    app._place_dock(40, 100); app.root.update()
+    class _E: x_root = y_root = 0
+    app._bmoved = 50; app._b_up(_E(), "apri"); app.root.update()
+    assert app.cfg.get("lato") == "sx" and {b.winfo_x() for b, *_ in app.dock} == {90 + 6}, "lato sinistro non rispettato"
+    # uscendo dallo schermo intero (margini 0) la colonna torna al bordo
+    with open(schermo, "w") as f:
+        f.write("margini=0 0 0 0\nschermo_intero=0\n")
+    os.utime(schermo, (1, 1))
+    app._autohide_loop(); app.root.update()
+    assert {b.winfo_x() for b, *_ in app.dock} == {6}, "margini non aggiornati uscendo dallo schermo intero"
+    app.cfg["lato"] = "dx"; app._place_dock(*app._dock_xy()); app.root.update()
+    del os.environ["TP_SCHERMO"]
+    app.toggle_mini(); app.root.update()
+
     app.set_autohide(10)
     app.last_touch -= 60
     app._autohide_loop()

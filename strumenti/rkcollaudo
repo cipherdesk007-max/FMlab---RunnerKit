@@ -1,7 +1,7 @@
 #!/bin/sh
 # FMlab - RunnerKit Collaudo - prova ogni strumento sul telefono vero e salva un report da mandare.
 #   rkcollaudo            (o: rk collaudo)
-VERSIONE="1.1.0"
+VERSIONE="1.2.0"
 PASS=0; FAIL=0; AVV=0
 OUT=""
 riga() { OUT="$OUT
@@ -13,10 +13,15 @@ sez()  { riga ""; riga "== $* =="; }
 
 riga "FMlab - RunnerKit Collaudo $VERSIONE — $(date '+%Y-%m-%d %H:%M') — kit $(cat /usr/local/share/runnerkit/versione 2>/dev/null || echo '?')"
 
-sez "LinuxRunner"
+APP=LinuxRunner; grep -qs 'FMLAB-Linux' /proc/ish/version && APP="FMLAB Linux"
+sez "$APP"
 [ -r /etc/os-release ] && riga "  sistema: $(. /etc/os-release; echo "$PRETTY_NAME")"
-if [ -r /proc/ish/jit ]; then ok "LinuxRunner 1.1.0 o successiva (JIT: $(grep -m1 -i mode /proc/ish/jit 2>/dev/null))"
-else avv "LinuxRunner vecchio (manca /proc/ish/jit): aggiorna alla 1.1.0"; fi
+if [ "$APP" = "FMLAB Linux" ]; then
+  v=$(sed -n 's/.*FMLAB-Linux\/\([^ ]*\).*base=LinuxRunner\/\([^ ]*\).*/\1 (base LinuxRunner \2)/p' /proc/ish/version)
+  ok "FMLAB Linux ${v:-?}: RunnerKit si adatta (schermo intero, nomi, pulizia)"
+fi
+if [ -r /proc/ish/jit ]; then ok "motore 1.1.0 o successivo (JIT: $(grep -m1 -i mode /proc/ish/jit 2>/dev/null))"
+else avv "$APP vecchio (manca /proc/ish/jit): aggiorna"; fi
 [ -c /dev/linuxrunner-gpu ] && ok "GPU Metal disponibile" || avv "GPU Metal assente (Settings > Graphics > Renderer)"
 case "${LR_GUI_GPU_ACTIVE:-}" in
   mesa-metal-resident) ok "programmi del desktop sulla GPU (Metal)";;
@@ -58,6 +63,11 @@ if [ -f "$HOME/.config/autostart/touchpad.desktop" ]; then
   else avv "il desktop non ha ancora fatto partire TouchPad (fai Stop Desktop e Open Desktop, poi ripeti)"; fi
 else avv "avvio automatico spento (TouchPad: ⚙ -> Avvio col desktop -> Si')"; fi
 if [ -n "${LR_GUI_SESSION_DIR:-}" ]; then
+  if [ "$APP" = "FMLAB Linux" ]; then
+    m=$(sed -n 's/^margini=//p' "$LR_GUI_SESSION_DIR/fmlab-schermo" 2>/dev/null)
+    [ -n "$m" ] && ok "TouchPad conosce la parte coperta da Dynamic Island e angoli (margini: $m)" ||
+      avv "manca fmlab-schermo nella sessione: aggiorna FMLAB Linux alla 0.7.2 e riapri il desktop"
+  fi
   [ -r "$LR_GUI_SESSION_DIR/display.log" ] && ok "TouchPad vede ogni Open Desktop (registro del visore leggibile)" ||
     avv "registro del visore non leggibile: i pallini non si rimettono da soli a ogni Open Desktop"
 fi
@@ -107,5 +117,5 @@ f="$d/runnerkit-collaudo-$(date +%Y%m%d-%H%M).txt"
 printf '%s\n' "$OUT" > "$f"
 echo ""
 echo "Report salvato: $f"
-case "$f" in */LinuxRunnerShared/*|*/Shared/*) echo "Nell'app File: In questo iPhone > LinuxRunner > Shared";; esac
+case "$f" in */LinuxRunnerShared/*|*/Shared/*) echo "Nell'app File: In questo iPhone > $APP > Shared";; esac
 [ "$FAIL" = 0 ]

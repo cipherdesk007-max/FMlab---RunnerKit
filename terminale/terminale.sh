@@ -170,7 +170,8 @@ estrai() {  # estrae qualsiasi archivio
 aiphone() {  # copia file nella cartella che vedi dall'app File dell'iPhone
   local d=/mnt/LinuxRunnerShared; [[ -d $d ]] || d=~/Shared
   [[ -d $d ]] || { echo "cartella condivisa non trovata"; return 1; }
-  cp -rv "$@" "$d"/ && echo "-> app File: In questo iPhone > LinuxRunner > Shared"
+  local app=LinuxRunner; grep -qs FMLAB-Linux /proc/ish/version && app="FMLAB Linux"
+  cp -rv "$@" "$d"/ && echo "-> app File: In questo iPhone > $app > Shared"
 }
 dalliphone() { local d=/mnt/LinuxRunnerShared; [[ -d $d ]] || d=~/Shared; cd "$d" && ls -lh; }
 rk() {  # comando unico di RunnerKit: rk, rk aggiorna, rk versioni, rk gpu, ...
