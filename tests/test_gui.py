@@ -188,6 +188,18 @@ def main():
     assert {b.winfo_x() for b, *_ in app.dock} == {6}, "margini non aggiornati uscendo dallo schermo intero"
     app.cfg["lato"] = "dx"; app._place_dock(*app._dock_xy()); app.root.update()
     del os.environ["TP_SCHERMO"]
+    # telefono in verticale (FMLAB Linux 0.8 gira lo schermo): pallini in fila in basso, sopra la barra del desktop
+    vero_sw, vero_sh = app.sw, app.sh
+    app._aggiorna_schermo = lambda: False
+    app.sw, app.sh = 644, 1398
+    app._place_dock(*app._dock_xy()); app.root.update()
+    ys = {b.winfo_y() for b, *_ in app.dock}
+    xs = [b.winfo_x() for b, *_ in app.dock]
+    assert len(ys) == 1 and xs == sorted(xs) and len(set(xs)) == 6, f"in verticale non in fila: {xs} {ys}"
+    assert ys.pop() + S <= 1398 - app.PANNELLO and max(xs) + S <= 644, "fila fuori dallo schermo verticale"
+    app.sw, app.sh = vero_sw, vero_sh
+    del app._aggiorna_schermo
+    app._place_dock(*app._dock_xy()); app.root.update()
     app.toggle_mini(); app.root.update()
 
     app.set_autohide(10)

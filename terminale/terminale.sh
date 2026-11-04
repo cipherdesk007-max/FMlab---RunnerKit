@@ -24,6 +24,26 @@ alias diff='diff --color=auto'
 export LESS='-R -i -M'
 export GCC_COLORS='error=01;31:warning=01;35:note=01;36:caret=01;32:locus=01:quote=01'
 
+# lingua di Linux (come TouchPad): scelta di RunnerKit, poi variabili, poi /etc/default/locale; C/POSIX = italiano
+_rk_lingua() {
+  local v; v=$(cat ~/.config/runnerkit/lingua 2>/dev/null)
+  [[ -n $v ]] || for v in "${LANGUAGE%%:*}" "${LC_ALL:-}" "${LANG:-}"; do [[ -n $v && ${v%%.*} != C && ${v%%.*} != POSIX ]] && break; v=""; done
+  [[ -n $v ]] || v=$(sed -n 's/^LANG="\{0,1\}\([^"]*\)"\{0,1\}$/\1/p' /etc/default/locale 2>/dev/null)
+  [[ -z $v || ${v%%.*} == C || ${v%%.*} == POSIX ]] && v=it
+  printf '%s' "$v"
+}
+_RK_IT=0; [[ $(_rk_lingua) == it* ]] && _RK_IT=1
+_rk_data() {  # data nella lingua di Linux (in italiano anche se il locale it_IT non e' generato)
+  if (( _RK_IT )); then
+    local g=(domenica lunedì martedì mercoledì giovedì venerdì sabato) m=(gennaio febbraio marzo aprile maggio giugno luglio agosto settembre ottobre novembre dicembre)
+    printf '%s %s %s, %s' "${g[$(date +%w)]^}" "$(date +%d)" "${m[$(( 10#$(date +%m) - 1 ))]}" "$(date +%H:%M)"
+  else date '+%A %d %B, %H:%M'; fi
+}
+_rk_jit() {  # stato del JIT, tradotto
+  local j=""; [[ -r /proc/ish/jit ]] && j=$(grep -m1 -i mode /proc/ish/jit 2>/dev/null); j=${j##*: }
+  if (( _RK_IT )); then j=${j/off/spento}; j=${j/gadgets only/solo gadget}; j=${j/active/attivo}; fi
+  printf '%s' "$j"
+}
 _c() { printf '\[\033[%sm\]' "$1"; }
 _rk_n() { printf '\033[%sm' "$1"; }
 
@@ -62,7 +82,7 @@ rkinfo() {
   [[ -r /proc/ish/jit ]] && jit=$(grep -m1 -i mode /proc/ish/jit 2>/dev/null)
   printf '%s' "$(_rk_n '1;35')"
   echo '  ╭─ FMlab - RunnerKit ─────────────────────╮'
-  printf '  │ %-40s│\n' "$(date '+%A %d %B, %H:%M')"
+  printf '  │ %-40s│\n' "$(_rk_data)"
   echo '  ╰─────────────────────────────────────────╯'
   printf '%s' "$(_rk_n 0)"
   printf '  RAM    %s  %s/%s MB\n' "$(_rk_barra "$pct")" "$used" "$total"
@@ -72,7 +92,7 @@ rkinfo() {
   case ${LR_GUI_GPU_ACTIVE:-} in mesa-metal-resident) gpu="Metal (GPU del telefono)";; mesa-metal-verify) gpu="Metal (verifica)";; esac
   [[ -z ${LR_GUI_GPU_ACTIVE:-} && -c /dev/linuxrunner-gpu ]] && gpu="Metal disponibile"
   printf '  GPU: %s' "$gpu"
-  [[ -n $jit ]] && printf ' · JIT: %s' "${jit##*: }"
+  [[ -n $jit ]] && printf ' · JIT: %s' "$(_rk_jit)"
   echo
   printf '  %sComandi RunnerKit: rk%s\n' "$(_rk_n 2)" "$(_rk_n 0)"
 }
@@ -120,12 +140,17 @@ _rk_riga1() {
   fi
   case ${LR_GUI_GPU_ACTIVE:-} in mesa-metal-resident) gpu="Metal";; esac
   [[ -z ${LR_GUI_GPU_ACTIVE:-} && -c /dev/linuxrunner-gpu ]] && gpu="Metal disp."
-  if [[ -r /proc/ish/jit ]]; then jit=$(grep -m1 -i mode /proc/ish/jit 2>/dev/null); jit=${jit##*: }; fi
+  jit=$(_rk_jit)
   printf '\033[1;45;97m FMlab·RunnerKit \033[0;100;97m RAM %s %3d%% \033[0;100;97m│ Disco %s \033[0;100;97m│ GPU %s%s \033[0m' \
     "$(_rk_barra_mini "$pct")" "$pct" "${_rk_disco:-?}" "$gpu" "${jit:+ │ JIT $jit}"
 }
 _rk_barra_mini() { local p=$1 f=$(( $1 * 8 / 100 )) i s=""; for (( i = 0; i < 8; i++ )); do (( i < f )) && s+="▮" || s+="▯"; done; printf '%s' "$s"; }
-_rk_riga2() { printf '\033[2m rk = comandi · rk collaudo · rk backup · rk copia/incolla (appunti iPhone) · rk fisso off\033[0m'; }
+_rk_riga2() {  # secondo la larghezza: sul telefono in verticale la riga intera andava a capo e sporcava i comandi
+  local c=${COLUMNS:-80}
+  if (( c >= 92 )); then printf '\033[2m rk = comandi · rk collaudo · rk backup · rk copia/incolla (appunti iPhone) · rk fisso off\033[0m'
+  elif (( c >= 60 )); then printf '\033[2m rk = comandi · rk collaudo · rk copia/incolla · rk fisso off\033[0m'
+  else printf '\033[2m rk = comandi · rk fisso off\033[0m'; fi
+}
 _RK_H=2
 _rk_righe() {  # altezza del terminale (LINES puo' essere vuoto al primo prompt)
   local r=${LINES:-0}
@@ -138,7 +163,8 @@ _rk_fisso() {
   [[ ${RK_FISSO:-1} == 1 && -t 1 ]] || return 0
   local rows; rows=$(_rk_righe)
   (( rows >= 10 )) || return 0
-  printf '\0337\033[%d;%dr\033[1;1H\033[2K%s\033[2;1H\033[2K%s\0338' \
+  # \033[?7l: niente "a capo" mentre si disegna (una riga troppo lunga si taglia invece di finire nei comandi)
+  printf '\0337\033[?7l\033[%d;%dr\033[1;1H\033[2K%s\033[2;1H\033[2K%s\033[?7h\0338' \
     $((_RK_H + 1)) "$rows" "$(_rk_riga1)" "$(_rk_riga2)"
   return 0
 }
@@ -242,10 +268,11 @@ clear() {
   command clear 2>/dev/null || printf '\033[H\033[2J'
   if [[ ${RK_FISSO:-1} == 1 && -t 1 ]]; then
     _rk_fisso; printf '\033[%d;1H' $((_RK_H + 1))      # barra subito in cima, cursore sotto
-  elif [[ ${RK_BANNER:-1} = 1 ]]; then rkinfo; fi
+  fi
+  [[ ${RK_BANNER:-1} = 1 ]] && rkinfo                     # e il riquadro RunnerKit resta anche dopo clear
 }
 bind -x '"\C-l": clear' 2>/dev/null
 
 # all'apertura: barra fissa in cima e statistiche complete sotto
-if [[ ${RK_FISSO:-1} == 1 && -t 1 ]]; then clear; fi
-if [[ ${RK_BANNER:-1} = 1 ]]; then rkinfo; fi
+if [[ ${RK_FISSO:-1} == 1 && -t 1 ]]; then clear              # clear disegna barra e riquadro
+elif [[ ${RK_BANNER:-1} = 1 ]]; then rkinfo; fi

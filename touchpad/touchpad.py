@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """TouchPad 2 - mouse + tastiera fluttuante per LinuxRunner.
 Parla direttamente con X11 (XTEST): nessun processo esterno per tocco."""
-__version__ = "3.4.0"
+__version__ = "3.5.0"
 
 import glob
 import json
@@ -141,11 +141,33 @@ ABC_US = [list("1234567890-"), list("qwertyuiop'"), list("asdfghjkl;="),
           ["⇧"] + list("zxcvbnm,.") + ["⌫"], ["?123", "Ctrl", "Alt", "␣", "/", "-", "⏎"]]
 SYM_US = [list("!@#$%^&*()_"), list('[]{}<>|\\"+'), list("`~:;€£°§±×÷"),
           ["⇧"] + list("?¿ñçßé,.") + ["⌫"], ["abc", "Esc", "Tab", "␣", "←", "→", "⏎"]]
-_LINGUA = (os.environ.get("LANGUAGE") or os.environ.get("LC_ALL") or os.environ.get("LANG") or "it")
-try:
-    _LINGUA = open(os.path.expanduser("~/.config/runnerkit/lingua")).read().strip() or _LINGUA
-except OSError:
-    pass
+def lingua_linux():
+    """Lingua impostata in Linux: scelta di RunnerKit (rk italiano), poi variabili, poi /etc/default/locale.
+    C/POSIX (Debian appena installato) vuol dire "non scelta": resta l'italiano."""
+    try:
+        v = open(os.path.expanduser("~/.config/runnerkit/lingua")).read().strip()
+        if v:
+            return v
+    except OSError:
+        pass
+    vuota = lambda v: not v or v.lower().split(".")[0] in ("c", "posix")
+    for k in ("LANGUAGE", "LC_ALL", "LANG"):
+        v = os.environ.get(k, "").split(":")[0]
+        if not vuota(v):
+            return v
+    for f in ("/etc/default/locale", "/etc/locale.conf"):
+        try:
+            for r in open(f):
+                if r.startswith("LANG="):
+                    v = r.split("=", 1)[1].strip().strip('"')
+                    if not vuota(v):
+                        return v
+        except OSError:
+            pass
+    return "it"
+
+
+_LINGUA = lingua_linux()
 _l = _LINGUA.lower()
 if not (_l.startswith("it") or _l in ("", "c", "c.utf-8", "c.utf8", "posix")):
     ABC, SYM = ABC_US, SYM_US
@@ -1018,7 +1040,7 @@ class App:
 
     def _autohide_loop(self):
         m = self._margini()   # FMLAB Linux: entrando/uscendo dallo schermo intero cambia la parte visibile
-        if m != getattr(self, "_marg_visti", m):
+        if self._aggiorna_schermo() or m != getattr(self, "_marg_visti", m):   # telefono girato o margini nuovi
             if self.mini and self.dock:
                 self._place_dock(*self._dock_xy())
             elif not self.mini:
@@ -1107,17 +1129,45 @@ class App:
             lato = "sx" if x + self.S // 2 < self.sw // 2 else "dx"
         return lato
 
+    PANNELLO = 40   # spazio della barra del desktop in basso (LinuxRunner/LXQt): i pallini in fila stanno sopra
+
+    def _verticale(self):
+        """Telefono in verticale (schermo di Linux piu' alto che largo): pallini in fila in basso."""
+        return self.sh > self.sw
+
+    def _aggiorna_schermo(self):
+        """Misura vera dello schermo: con FMLAB Linux 0.8 cambia quando giri il telefono (RandR), e Tk non se ne
+        accorge da solo. True se e' cambiata."""
+        try:
+            g = self.x.d.screen().root.get_geometry()
+            w, h = g.width, g.height
+        except Exception:
+            return False
+        if (w, h) == (self.sw, self.sh) or w < 100 or h < 100:
+            return False
+        self.sw, self.sh = w, h
+        return True
+
     def _dock_xy(self):
         S, G, n = self.S, self.G, len(self.DOCK)
         L, T, R, B = self._margini()
+        if self._verticale():   # fila orizzontale in basso, sopra la barra del desktop
+            largo = n * S + (n - 1) * G
+            x = self.cfg.get("bubble_v_x", (self.sw - largo) // 2)
+            x = max(L + 6, min(x, self.sw - R - largo - 6))
+            return max(0, x), max(0, self.sh - B - self.PANNELLO - S - 6)
         y = self.cfg.get("bubble", (0, 40))[1]
         x = L + 6 if self._lato() == "sx" else self.sw - R - S - 6
         y = max(T, min(y, self.sh - B - n * (S + G)))
         return max(0, x), max(0, y)
 
     def _place_dock(self, x, y):
+        passo = self.S + self.G
         for i, (b, *_) in enumerate(self.dock):
-            b.geometry(f"{self.S}x{self.S}+{x}+{y + i * (self.S + self.G)}")
+            if self._verticale():
+                b.geometry(f"{self.S}x{self.S}+{x + i * passo}+{y}")
+            else:
+                b.geometry(f"{self.S}x{self.S}+{x}+{y + i * passo}")
 
     def _show_bubble(self):
         S = self.S
@@ -1196,6 +1246,11 @@ class App:
              "term": lambda: self._in_terminale(None), "aggiorna": self.aggiorna}[act]()
             return
         S, n = self.S, len(self.DOCK)  # trascinata: si aggancia al lato piu' vicino (fuori da Dynamic Island & co.)
+        if self._verticale():   # in verticale resta in fila in basso: si sposta solo a destra/sinistra
+            self.cfg["bubble_v_x"] = self.bubble.winfo_x()
+            self._place_dock(*self._dock_xy())
+            self.save()
+            return
         self.cfg["lato"] = "sx" if self.bubble.winfo_x() + S // 2 < self.sw // 2 else "dx"
         self.cfg["bubble"] = (self.bubble.winfo_x(), max(6, self.bubble.winfo_y()))
         x, y = self._dock_xy()

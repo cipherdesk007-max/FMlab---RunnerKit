@@ -3,6 +3,18 @@
 Formato: [versione] - data. Le versioni seguono MAJOR.MINOR.PATCH
 (MAJOR = cambia il modo d'uso, MINOR = funzioni nuove, PATCH = correzioni).
 
+## FMlab - RunnerKit 2026.11.04-2 - verticale, clear, lingua di Linux
+- **TouchPad 3.5 in verticale**: con FMLAB Linux 0.8 lo schermo di Linux si gira col telefono. In verticale i
+  pallini si mettono **in fila in basso**, sopra la barra del desktop (si spostano a destra/sinistra trascinandoli);
+  tornando in orizzontale tornano in colonna sul lato. TouchPad si accorge da solo della misura nuova (entro 2 s).
+- **Terminale**: `clear` e Ctrl+L puliscono ma **barra e riquadro RunnerKit restano**. Corretto il difetto delle
+  righe sporche ("ffk = comandi", "o ff"): la seconda riga della barra era più lunga dello schermo del telefono e
+  andava a capo nei comandi; ora si accorcia secondo la larghezza e non va mai a capo.
+- **Lingua di Linux**: TouchPad (tastiera italiana o USA) e terminale prendono la lingua impostata in Linux
+  (scelta di `rk italiano`, variabili, `/etc/default/locale`); se Linux non ne ha una (C/POSIX) resta l'italiano.
+  In italiano la data è in italiano ("Mercoledì 04 novembre") anche senza il pacchetto della lingua, e lo stato
+  del JIT è tradotto ("spento (solo gadget)").
+
 ## FMlab - RunnerKit 2026.11.04-1 - su misura per FMLAB Linux
 - **TouchPad 3.4**: con FMLAB Linux a schermo intero il desktop arriva fino al bordo dell'iPhone. L'app (0.7.2)
   dice a Linux quale parte resta sotto Dynamic Island, angoli e indicatore Home (`fmlab-schermo` nella cartella
