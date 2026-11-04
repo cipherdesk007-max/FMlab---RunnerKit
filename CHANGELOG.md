@@ -3,6 +3,11 @@
 Formato: [versione] - data. Le versioni seguono MAJOR.MINOR.PATCH
 (MAJOR = cambia il modo d'uso, MINOR = funzioni nuove, PATCH = correzioni).
 
+## FMlab - RunnerKit 2026.11.04-5
+- **Terminale pulito all'apertura**: il terminale dell'app nasce largo e subito dopo si stringe alla misura del
+  telefono; la riga lunga disegnata prima restava sotto la barra (righe doppie, "rk fisso o / ff"). Nei primi secondi,
+  finché non hai dato comandi, un cambio di misura ridisegna tutto da capo; dopo, solo la barra (i tuoi comandi restano).
+
 ## FMlab - RunnerKit 2026.11.04-4
 - **TouchPad 3.6.1**: in verticale i messaggi (es. "RunnerKit è già aggiornato") compaiono sopra la fila di pallini,
   non più sopra i pallini.

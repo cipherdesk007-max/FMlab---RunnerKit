@@ -118,9 +118,11 @@ rktop() {
 # ---------- prompt: utente, cartella, ramo git, esito e durata del comando ----------
 _rk_t0=""
 _rk_prima() { [[ -z $_rk_t0 ]] && _rk_t0=$SECONDS; }
+_rk_comandi=0   # quanti comandi hai gia' dato (dopo il primo non si cancella piu' niente da solo)
 trap '_rk_prima' DEBUG
 _rk_prompt() {
   local e=$? dur="" utente
+  [[ -n $_rk_t0 ]] && _rk_comandi=$((_rk_comandi + 1))
   if [[ -n $_rk_t0 ]]; then local d=$((SECONDS - _rk_t0)); (( d >= 3 )) && dur=" ⏱${d}s"; fi
   _rk_t0=""
   history -a
@@ -174,7 +176,10 @@ case ";${PROMPT_COMMAND:-};" in *";_rk_prompt_tutto;"*) ;; *) PROMPT_COMMAND="_r
 # all'uscita dal terminale si libera l'area di scorrimento (chi apre dopo trova lo schermo normale)
 trap '[[ -t 1 ]] && printf "\033[r"' EXIT
 # telefono ruotato / finestra ridimensionata: la barra si rimette subito al suo posto
-trap '_rk_fisso' WINCH
+# appena aperto il terminale dell'app nasce largo e poi si stringe alla misura del telefono: la riga lunga disegnata
+# prima restava sotto la barra ("rk fisso o / ff"). Nei primi secondi si ridisegna tutto da capo (barra e riquadro).
+_rk_winch() { if (( SECONDS < 10 )) && [[ ${_rk_comandi:-0} == 0 ]]; then clear; else _rk_fisso; fi; }
+trap '_rk_winch' WINCH
 
 # ---------- scorciatoie ----------
 alias ll='ls -lh' la='ls -lAh' l='ls -CF'
