@@ -8,15 +8,30 @@
 Touch control, keyboard, disk cleaning, performance, backups and one-tap updates for LinuxRunner's
 Debian desktop. Install with one command, update with one tap.
 
-> The tools' interface is in Italian (the author's language). The on-screen keyboard follows Linux's
-> language: Italian layout when Linux is Italian, US layout otherwise.
+> The tools' interface is in Italian (the author's language). The on-screen keyboard and the terminal follow the
+> language set in Linux: Italian layout when Linux is Italian, US layout otherwise (no language set = Italian).
 
 <p align="center">
   <img src="screenshots/telefono/touchpad-tasti.png" width="49%" alt="TouchPad, keys page">
   <img src="screenshots/telefono/pallini.png" width="49%" alt="Bubble dock">
 </p>
 
-## Install
+## With FMLAB Linux (recommended)
+
+In **[FMLAB Linux](https://github.com/cipherdesk007-max/fmlab-Linux-io)** RunnerKit is already inside: it installs
+itself the first time Debian is ready, and App Manager updates or removes it. With FMLAB Linux, RunnerKit adapts by
+itself:
+- **Full screen**: TouchPad's bubbles and window stay clear of the Dynamic Island, corners and Home indicator (the app
+  tells Linux which part of the screen is covered).
+- **Rotating the phone**: the FMLAB Linux desktop turns from landscape to portrait without restarting; TouchPad
+  notices, puts the bubbles **in a row at the bottom** above the panel in portrait, and its window goes back to its
+  corner. Rotation inside Linux uses Python + Xlib, installed by RunnerKit.
+- **The app's names and features**: Center (*App* row), Cleaning and `rk collaudo` know they run in FMLAB Linux
+  (`/proc/ish/version`) and also check the screen margins.
+
+<p align="center"><img src="screenshots/ultima-versione/pallini-fmlab-schermo-intero.png" width="70%" alt="Bubbles clear of the covered area, FMLAB Linux full screen (automated test)"></p>
+
+## Install (original LinuxRunner)
 
 In Debian's terminal (inside LinuxRunner):
 
@@ -31,8 +46,8 @@ Updates come from the **`stabile`** (stable) branch, which only receives version
 If the network drops mid-update, RunnerKit stays as it was (download everything, verify, then install).
 To remove everything and restore the system: `rk disinstalla`.
 
-Tested on **iPhone 15 Pro Max, iOS 27.2, LinuxRunner 1.1.0 (build 900), Debian 13**, LinuxRunner
-desktop (Openbox) at 960×540 with the Metal GPU enabled.
+Tested on **iPhone 15 Pro Max, iOS 27.2, Debian 13**, LinuxRunner desktop (Openbox) with the Metal GPU enabled:
+LinuxRunner 1.1.0 (build 900) at 960×540, and FMLAB Linux 0.8 at 1308×644, rotating between landscape and portrait.
 
 ## The tools
 
@@ -43,7 +58,7 @@ desktop (Openbox) at 960×540 with the Metal GPU enabled.
 | **UnaVolta** ("once") | Repeated taps on an icon open the program only once; if it's already open, its window is raised. Terminals, file managers and text editors always open a new window |
 | **Pulizia** (cleaning) | Safe disk cleaning, reports, optional weekly auto-clean |
 | **RunnerBoost** | Speed diagnosis, Metal GPU check (% of draws on Metal), repeatable benchmark with history, profiles |
-| **Terminale** | Status bar pinned at the top, colored prompt, single `rk` command, clipboard shared with iPhone |
+| **Terminale** | Status bar pinned at the top (fits the screen width), colored prompt, `clear` keeps the RunnerKit header, single `rk` command, clipboard shared with iPhone |
 | **Collaudo · Backup · Italiano** | On-device self-test report, backup/restore to the Files app, Italian locale |
 
 Type `rk` in a terminal for all commands, `rk versioni` for installed versions.
@@ -58,6 +73,10 @@ Type `rk` in a terminal for all commands, `rk versioni` for installed versions.
 | ⚡ | Open the Center on **System** |
 | >_ | Open a terminal |
 | ⟳ | Update RunnerKit; if already up to date it just says so. **Orange** = update available |
+
+In portrait the dock becomes a **row at the bottom**; when you rotate the phone the dock stays on its side and the
+TouchPad window returns to its corner (the one nearest to where you left it). Messages appear next to the bubbles,
+never on top of them.
 
 ### How LinuxRunner 1.1.0 uses the GPU (read from its source code)
 

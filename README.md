@@ -17,9 +17,14 @@ Si installa con un comando e poi si aggiorna con un tocco.
 
 In **[FMLAB Linux](https://github.com/cipherdesk007-max/fmlab-Linux-io)** RunnerKit è già dentro: si installa da solo
 la prima volta che Debian è pronto e si aggiorna o si toglie da **Gestione app**. Con FMLAB Linux RunnerKit si adatta
-da solo: a schermo intero i pallini di TouchPad restano fuori da Dynamic Island, angoli e indicatore Home, la colonna
-resta attaccata al bordo con qualsiasi risoluzione, e Centro, Pulizia e `rk collaudo` usano il nome e le funzioni
-dell'app.
+da solo:
+- **Schermo intero**: i pallini e la finestra di TouchPad restano fuori da Dynamic Island, angoli e indicatore Home
+  (l'app dice a Linux quale parte dello schermo è coperta).
+- **Telefono girato**: il desktop di FMLAB Linux si gira da orizzontale a verticale senza riavvio; TouchPad se ne accorge
+  da solo, in verticale mette i pallini **in fila in basso** sopra la barra, e la sua finestra torna nel suo angolo.
+  La rotazione dentro Linux usa Python + Xlib, che installa RunnerKit.
+- **Nomi e funzioni dell'app**: Centro (riga *App*), Pulizia e `rk collaudo` sanno che girano in FMLAB Linux
+  (`/proc/ish/version`) e controllano anche i margini dello schermo.
 
 <p align="center"><img src="screenshots/ultima-versione/pallini-fmlab-schermo-intero.png" width="70%" alt="Pallini fuori dalla zona coperta, FMLAB Linux a schermo intero (prova automatica)"></p>
 
@@ -85,6 +90,9 @@ Scrivi `rk` in un terminale per vedere tutti i comandi, e `rk versioni` per sape
 
 Trascinando un pallino si sposta tutta la colonna, che si aggancia al lato più vicino. TouchPad parte con
 il desktop (e a ogni "Open Desktop") direttamente come colonna di pallini sul lato, si apre una volta sola e resta sempre sopra le altre finestre.
+Col telefono in verticale i pallini diventano una **fila in basso**; quando giri il telefono la colonna resta attaccata
+al suo lato e la finestra di TouchPad torna nel suo angolo (quello più vicino a dove l'hai lasciata). I messaggi
+(es. "già aggiornato") compaiono accanto ai pallini, mai sopra.
 
 ## Centro RunnerKit
 
@@ -151,7 +159,10 @@ per scelta di LinuxRunner. Primo risultato su 15 Pro Max: **glxgears a 68,7 FPS*
 
 ## Terminale
 
-- **Barra di stato fissa** in cima (RAM, disco, GPU, JIT) mentre i comandi scorrono sotto; si spegne con `rk fisso off`
+- **Barra di stato fissa** in cima (RAM, disco, GPU, JIT) mentre i comandi scorrono sotto; si spegne con `rk fisso off`.
+  Si accorcia secondo la larghezza dello schermo (niente righe che vanno a capo sul telefono in verticale)
+- `clear` e Ctrl+L puliscono lo schermo ma **barra e riquadro RunnerKit restano**
+- Data e stato del JIT nella lingua di Linux (in italiano anche senza il pacchetto della lingua)
 - Prompt a colori: utente, cartella, ramo git, ✘ se l'ultimo comando fallisce, ⏱ se dura più di 3 s
 - Storia dei comandi lunga, senza doppioni, con data e ora
 - Comando unico **`rk`**: `rk centro`, `rk info`, `rk top`, `rk gpu`, `rk boost`, `rk pulizia`, `rk pulisci`,
@@ -163,7 +174,7 @@ per scelta di LinuxRunner. Primo risultato su 15 Pro Max: **glxgears a 68,7 FPS*
 |---|---|
 | `rk collaudo` | Prova ogni strumento sul telefono vero (GPU, XTEST, TouchPad, UnaVolta con 4 tocchi, icone, pulizia, spazio, backup) e salva un report in Shared |
 | `rk backup` / `rk ripristina` | Impostazioni, desktop, script, configurazione SSH ed elenco dei pacchetti in `Shared/RunnerKit-backup` (ultimi 5). Le chiavi SSH private restano fuori, perché la cartella dell'app File è visibile ad altre app (per includerle: `RKB_CHIAVI=1 rk backup`). Prima di ripristinare fa una copia di sicurezza |
-| `rk italiano` / `rk italiano off` | Lingua italiana per Debian, per i programmi aperti da icone e menu (tramite UnaVolta), per il terminale e per Firefox |
+| `rk italiano` / `rk italiano off` | Lingua italiana per Debian, per i programmi aperti da icone e menu (tramite UnaVolta), per il terminale e per Firefox. TouchPad (tastiera) e terminale seguono la lingua impostata in Linux; se Linux non ne ha una resta l'italiano |
 | `rk copia TESTO` · `comando \| rk copia` · `rk incolla` | Appunti condivisi con l'iPhone, tramite il dispositivo `/dev/clipboard` di LinuxRunner |
 | `rk disinstalla [--tutto]` | Toglie RunnerKit e annulla le sue modifiche (icone, avvio automatico, terminale, UnaVolta, profilo, lingua). Con `--tutto` toglie anche le impostazioni; i backup restano |
 
@@ -171,8 +182,9 @@ per scelta di LinuxRunner. Primo risultato su 15 Pro Max: **glxgears a 68,7 FPS*
 
 Linux non può toccare le foto dell'iPhone, ma LiveContainer dà il permesso alle Foto alle app che ospita.
 **[FMLAB Cleaner](https://github.com/cipherdesk007-max/FMLAB-cleaner)** è l'app gemella di RunnerKit, con un
-repository suo: pulizia di foto e video (anche compressione e "Eliminati di recente" in una volta), spazio delle
-app in LiveContainer, stato del telefono. Si installa in LiveContainer e si aggiorna da sola.
+repository suo: pulizia di foto e video (anche compressione e "Eliminati di recente" in una volta), file, spazio delle
+app in LiveContainer, stato del telefono. In italiano o in inglese (scelta nell'app). Si installa in LiveContainer e si
+aggiorna da sola.
 
 ## Qualità e verifiche
 
