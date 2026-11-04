@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """TouchPad 2 - mouse + tastiera fluttuante per LinuxRunner.
 Parla direttamente con X11 (XTEST): nessun processo esterno per tocco."""
-__version__ = "3.6.0"
+__version__ = "3.6.1"
 
 import glob
 import json
@@ -1297,10 +1297,14 @@ class App:
         tk.Label(t, text=testo, bg=self.T("key"), fg=self.T("fg"), padx=10, pady=6,
                  font=("DejaVu Sans", 10, "bold"), justify="left").pack()
         t.update_idletasks()
-        w = t.winfo_reqwidth()
+        w, h = t.winfo_reqwidth(), t.winfo_reqheight()
         bx, by = (self.bubble.winfo_x(), self.bubble.winfo_y()) if self.bubble else (self.sw - 60, 40)
-        x = bx - w - 8 if bx > self.sw // 2 else bx + self.S + 8
-        t.geometry(f"+{max(0, x)}+{by}")
+        if self._verticale() and self.dock:
+            # in verticale i pallini sono in fila in basso: il messaggio va sopra la fila, mai sopra i pallini
+            x = max(6, min(bx, self.sw - w - 6)); y = max(0, by - h - 10)
+        else:
+            x = bx - w - 8 if bx > self.sw // 2 else bx + self.S + 8; y = by
+        t.geometry(f"+{max(0, x)}+{y}")
         t.after(secondi * 1000, t.destroy)
         return t
 

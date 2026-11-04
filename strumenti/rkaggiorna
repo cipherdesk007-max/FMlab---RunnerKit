@@ -30,6 +30,13 @@ if [ -d /tmp/runnerkit-installa.lock ] && [ -n "$(find /tmp/runnerkit-installa.l
 fi
 locale=$(cat "$LOCALE_F" 2>/dev/null)
 T=$(date +%s)   # salta la cache di GitHub (~5 minuti)
+# Ultima versione "stabile" presa per codice esatto (commit): i file di quel commit non cambiano mai, quindi la
+# copia in cache di raw.githubusercontent.com non puo' dare una versione vecchia o file mescolati.
+if [ -z "${RK_REPO:-}" ]; then
+  sha=$(curl -fsSL --max-time 15 -H 'Accept: application/vnd.github.sha' \
+        "https://api.github.com/repos/cipherdesk007-max/FMlab---RunnerKit/commits/stabile" 2>/dev/null)
+  [[ $sha =~ ^[0-9a-f]{40}$ ]] && REPO="https://raw.githubusercontent.com/cipherdesk007-max/FMlab---RunnerKit/$sha"
+fi
 remota=$(curl -fsSL --retry 2 --max-time 15 "$REPO/VERSIONE?t=$T" 2>/dev/null | tr -d '[:space:]')
 # solo una versione vera (AAAA.MM.GG-N): una rete con pagina di accesso risponde con HTML
 [[ $remota =~ ^[0-9]{4}\.[0-9]{2}\.[0-9]{2}-[0-9]+$ ]] || remota=""

@@ -3,6 +3,12 @@
 Formato: [versione] - data. Le versioni seguono MAJOR.MINOR.PATCH
 (MAJOR = cambia il modo d'uso, MINOR = funzioni nuove, PATCH = correzioni).
 
+## FMlab - RunnerKit 2026.11.04-4
+- **TouchPad 3.6.1**: in verticale i messaggi (es. "RunnerKit è già aggiornato") compaiono sopra la fila di pallini,
+  non più sopra i pallini.
+- **Aggiornamento più sicuro**: `rk aggiorna` (e ⟳) prende l'ultima versione stabile per codice esatto (commit), così
+  la cache di GitHub non può mai dare una versione vecchia o file di due versioni mescolati.
+
 ## FMlab - RunnerKit 2026.11.04-3 - TouchPad torna nel suo angolo
 - **TouchPad 3.6**: quando giri il telefono anche la finestra di TouchPad (non solo i pallini) torna nel suo angolo
   invece di restare in mezzo allo schermo. L'angolo è quello più vicino a dove l'hai lasciata (di base in basso a
