@@ -3,6 +3,12 @@
 Formato: [versione] - data. Le versioni seguono MAJOR.MINOR.PATCH
 (MAJOR = cambia il modo d'uso, MINOR = funzioni nuove, PATCH = correzioni).
 
+## FMlab - RunnerKit 2026.11.04-3 - TouchPad torna nel suo angolo
+- **TouchPad 3.6**: quando giri il telefono anche la finestra di TouchPad (non solo i pallini) torna nel suo angolo
+  invece di restare in mezzo allo schermo. L'angolo è quello più vicino a dove l'hai lasciata (di base in basso a
+  destra), sempre fuori da Dynamic Island, indicatore Home e barra del desktop. Vale anche se il telefono è stato
+  girato mentre TouchPad era ridotto a pallini.
+
 ## FMlab - RunnerKit 2026.11.04-2 - verticale, clear, lingua di Linux
 - **TouchPad 3.5 in verticale**: con FMLAB Linux 0.8 lo schermo di Linux si gira col telefono. In verticale i
   pallini si mettono **in fila in basso**, sopra la barra del desktop (si spostano a destra/sinistra trascinandoli);

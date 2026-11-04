@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """TouchPad 2 - mouse + tastiera fluttuante per LinuxRunner.
 Parla direttamente con X11 (XTEST): nessun processo esterno per tocco."""
-__version__ = "3.5.0"
+__version__ = "3.6.0"
 
 import glob
 import json
@@ -338,7 +338,7 @@ class App:
         g.pack(side="left")
         g.bind("<ButtonPress-1>", self._grab)
         g.bind("<B1-Motion>", self._drag_win)
-        g.bind("<ButtonRelease-1>", lambda e: (self._clamp(), self.save()))
+        g.bind("<ButtonRelease-1>", lambda e: (self._clamp(), self._ricorda_angolo(), self.save()))
         self.tabs = {}
         for name in ("Mouse", "Tastiera", "Tasti", "⚙"):
             b = self.btn(bar, name, lambda n=name: self.show(n), bg=self.T("bg"))
@@ -727,6 +727,27 @@ class App:
     def _drag_win(self, e):
         self.root.geometry(f"+{e.x_root - self._ox}+{e.y_root - self._oy}")
 
+    def _ricorda_angolo(self):
+        """Angolo piu' vicino a dove hai lasciato la finestra (alto/basso + sinistra/destra): quando giri il
+        telefono TouchPad torna li', invece di restare in mezzo allo schermo nuovo."""
+        r = self.root
+        cx, cy = r.winfo_x() + r.winfo_width() // 2, r.winfo_y() + r.winfo_height() // 2
+        self.cfg["angolo"] = ("a" if cy < self.sh // 2 else "b") + ("s" if cx < self.sw // 2 else "d")
+
+    def _all_angolo(self):
+        """Mette la finestra nel suo angolo, fuori da Dynamic Island, indicatore Home e barra del desktop."""
+        r = self.root
+        r.update_idletasks()
+        w, h = r.winfo_reqwidth(), r.winfo_reqheight()
+        L, T, R, B = self._margini()
+        a = self.cfg.get("angolo", "bd")
+        x = L + 6 if a.endswith("s") else self.sw - R - w - 6
+        y = T + 6 if a.startswith("a") else self.sh - B - self.PANNELLO - h - 6
+        x, y = max(0, x), max(0, y)
+        r.geometry(f"+{x}+{y}")
+        self.cfg["geo"] = f"+{x}+{y}"
+        self.cfg["geo_schermo"] = f"{self.sw}x{self.sh}"
+
     def _alpha(self, d=0):
         a = self.cfg["alpha"] = max(0.3, min(1.0, round(self.cfg["alpha"] + d, 2)))
         if d < 0 and not self.mini:
@@ -1044,7 +1065,7 @@ class App:
             if self.mini and self.dock:
                 self._place_dock(*self._dock_xy())
             elif not self.mini:
-                self._clamp()
+                self._all_angolo()   # telefono girato: la finestra torna nel suo angolo, non resta in mezzo
         self._marg_visti = m
         ah = self.cfg.get("autohide", 0)
         if ah and not self.mini and time.time() - self.last_touch > ah:
@@ -1092,6 +1113,8 @@ class App:
             self._comp_riprendi()
             self.root.deiconify()
             self.root.geometry(self.cfg.get("geo", ""))
+            if self.cfg.get("geo_schermo") not in (None, f"{self.sw}x{self.sh}"):
+                self.root.after_idle(self._all_angolo)   # telefono girato mentre era ridotto: torna nel suo angolo
             self.root.attributes("-topmost", True)
             self.root.lift()
             self.mk.deiconify()
@@ -1449,6 +1472,7 @@ class App:
     def save(self):
         if not self.mini and self.root.winfo_viewable():
             self.cfg["geo"] = f"+{self.root.winfo_x()}+{self.root.winfo_y()}"
+            self.cfg["geo_schermo"] = f"{self.sw}x{self.sh}"
         try:
             os.makedirs(os.path.dirname(CFG), exist_ok=True)
             with open(CFG, "w") as f:

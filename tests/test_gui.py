@@ -197,6 +197,17 @@ def main():
     xs = [b.winfo_x() for b, *_ in app.dock]
     assert len(ys) == 1 and xs == sorted(xs) and len(set(xs)) == 6, f"in verticale non in fila: {xs} {ys}"
     assert ys.pop() + S <= 1398 - app.PANNELLO and max(xs) + S <= 644, "fila fuori dallo schermo verticale"
+    # finestra aperta: girando torna nel suo angolo (qui basso a destra), non resta in mezzo
+    app.toggle_mini(); app.root.update()
+    app.root.geometry("+300+200"); app.root.update()
+    app.cfg["angolo"] = "bd"
+    app.sw, app.sh = 644, 1398
+    app._all_angolo(); app.root.update()
+    r = app.root
+    assert r.winfo_x() + r.winfo_reqwidth() <= 644 - 5 and r.winfo_x() + r.winfo_reqwidth() >= 644 - 30, f"non a destra: {r.winfo_x()}"
+    assert r.winfo_y() + r.winfo_reqheight() <= 1398 - app.PANNELLO, "sotto la barra del desktop"
+    assert r.winfo_y() > 1398 // 2, f"non in basso: {r.winfo_y()}"
+    app.toggle_mini(); app.root.update()
     app.sw, app.sh = vero_sw, vero_sh
     del app._aggiorna_schermo
     app._place_dock(*app._dock_xy()); app.root.update()
