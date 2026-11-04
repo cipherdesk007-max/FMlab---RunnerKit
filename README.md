@@ -13,7 +13,17 @@ Si installa con un comando e poi si aggiorna con un tocco.
   <img src="screenshots/telefono/pallini.png" width="49%" alt="Colonna di pallini">
 </p>
 
-## Installazione
+## Con FMLAB Linux (consigliato)
+
+In **[FMLAB Linux](https://github.com/cipherdesk007-max/fmlab-Linux-io)** RunnerKit è già dentro: si installa da solo
+la prima volta che Debian è pronto e si aggiorna o si toglie da **Gestione app**. Con FMLAB Linux RunnerKit si adatta
+da solo: a schermo intero i pallini di TouchPad restano fuori da Dynamic Island, angoli e indicatore Home, la colonna
+resta attaccata al bordo con qualsiasi risoluzione, e Centro, Pulizia e `rk collaudo` usano il nome e le funzioni
+dell'app.
+
+<p align="center"><img src="screenshots/ultima-versione/pallini-fmlab-schermo-intero.png" width="70%" alt="Pallini fuori dalla zona coperta, FMLAB Linux a schermo intero (prova automatica)"></p>
+
+## Installazione (LinuxRunner originale)
 
 Nel terminale di Debian (in LinuxRunner):
 
